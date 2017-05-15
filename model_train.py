@@ -45,11 +45,9 @@ def main(_):
   #      print ("Runinng Adversarial")        
   #      al_train()
 
-    gd.generate_data(config.src_dir, config.dest_dir)
+    gd.generate_data(Config.src_dir, Config.dest_dir)
   
     main_NN.train(conf.config)
-    
-
 
 
 if __name__ == "__main__":
