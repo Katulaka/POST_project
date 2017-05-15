@@ -5,6 +5,8 @@ import tensorflow as tf
 import numpy as np
 import random
 
+import utils.data_preproc as dp
+
 class nnModel(object):
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size, n_hidden_fw, n_hidden_bw,
@@ -121,6 +123,10 @@ class nnModel(object):
 
         return outputs
 
-    def get_batch(self, train_data):
+    def get_batch(self, train_data, batch_size): #TODO fix this for real general data
 
-        #TODO
+        batched_vectors = dp.generate_batch(train_data['words'], batch_size)
+        for i,bv in enumerate(batched_vectors):
+            batched_vectors[i] = dp.data_padding(bv)
+
+        return batched_vectors

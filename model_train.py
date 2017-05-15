@@ -3,6 +3,8 @@ import numpy as np
 import conf as conf
 import main_NN as main_NN
 
+import utils.gen_dataset as gd
+
 
 def main(_):
     seed = int(time.time())
@@ -43,7 +45,9 @@ def main(_):
   #      print ("Runinng Adversarial")        
   #      al_train()
 
-  main_NN.train(conf.config)
+    gd.generate_data(config.src_dir, config.dest_dir)
+  
+    main_NN.train(conf.config)
     
 
 

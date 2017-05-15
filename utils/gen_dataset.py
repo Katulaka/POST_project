@@ -218,11 +218,3 @@ def generate_data(src_dir, dest_dir):
                     for s_tags, s_words in gen_tags(data_in):
                         print(s_tags, file=t_file)
                         print(s_words, file=w_file)
-
-
-if __name__ == '__main__':
-    
-    src_dir = 'raw_data/wsj/'
-    dest_dir = 'proc_data'
-    generate_data(src_dir, dest_dir)
-

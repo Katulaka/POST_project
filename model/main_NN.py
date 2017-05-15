@@ -5,6 +5,9 @@ import NN_model as nnModel
 import time
 import tensorflow as tf
 
+import utils.data_preproc as dp
+
+
 
 def create_model(session, config):
 
@@ -51,6 +54,8 @@ def train(config):
 
         step_loss_summary = tf.Summary()
         writer            = tf.summary.FileWriter("../logs/", sess.graph)
+        
+        train_set = dp.gen_data(config.train_dir) #TODO 
 
         while True:
 
@@ -59,8 +64,6 @@ def train(config):
             word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y = model.get_batch(train_set)
 
             pred, step_loss, _ = model.step(sess, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y)
-            
-
 
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint

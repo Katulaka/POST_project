@@ -32,13 +32,3 @@ def get_data(data_path):
     if not os.path.exists(os.path.join(data_path, 'wsj')):
         os.system("scp -r login.eecs.berkeley.edu:/project/eecs/nlp/corpora/'EnglishTreebank/wsj/ " + data_path)
         del_extra_files(os.path.join(data_path, 'wsj'))
-
-    
-if __name__ == '__main__':
-    
-
-
-
-
-
-    
