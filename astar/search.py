@@ -4,7 +4,7 @@ import numpy as np
 from itertools import permutations, product
 
  
-#class ClosedList(object):
+# class ClosedList(object):
 #
 #    def __init__(self):
 #        self.rindex = {}
@@ -32,28 +32,23 @@ from itertools import permutations, product
 #            return  None if len(res)==0 else res[0]
 #
 #
+# s1  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 1, 'rank' : [1]}}
+# s2  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 2, 'lid' : 4, 'rank' : [1,1,1]}}
+# s3  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 4, 'rank' : [1]*5}}
 #
-#s1  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 1, 'rank' : [1]}}
-#s2  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 2, 'lid' : 4, 'rank' : [1,1,1]}}
-#s3  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 4, 'rank' : [1]*5}}
-#
-#cl = ClosedList()
+# cl = ClosedList()
 #    
-#cl.put(AStar.State(**s1))
-#cl.put(AStar.State(**s2))
-#cl.put(AStar.State(**s3))
-#    
-#
-#astar = AStar()
-#astar.astar(AStar.State(**s1), AStar.State(**s3), tags)
+# cl.put(AStar.State(**s1))
+# cl.put(AStar.State(**s2))
+# cl.put(AStar.State(**s3))
 
 class Tag(object):
     def __init__(self, tag, score):
-        self.tag    = tag
-        self.score  = score
+        self.tag = tag
+        self.score = score
     
         
-tags = np.empty((3,5),object)
+tags = np.empty((3, 5), object)
     
 for i in range(3):
     for j in range(5):
@@ -62,25 +57,27 @@ for i in range(3):
 
 class Solver(AStar):
 
-  
     def __init__(self, tags):
         self.tags = tags
 
     def heuristic_cost_estimate(self, current, goal):
         """computes the 'direct' distance between two (x,y) tuples"""
-        idx_range   = range(0,current.rid)+range(current.lid, goal.lid)
-        rank        = [0]*len(idx_range)
-        pos         = zip(rank, idx_range)
+        idx_range = range(0, current.rid)+range(current.lid, goal.lid) #TODO fix this eq
+        rank = [0]*len(idx_range)
+        pos = zip(rank, idx_range)
         return sum([tags[el].score for el in pos])
 
-    def is_valid(self, tags):
-            return True #TODO
+    def is_valid(self):
+        """
+
+        :rtype: object
+        """
+        return True  # TODO
     
     def distance_between(self, tree, tree1):
-        idx_range   = range(tree.rid, tree.lid)
-        pos         = zip(tree.rank, idx_range)        
-        return  0 if not self.is_valid(tags) else sum([tags[el].score for el in pos])
-
+        idx_range = range(tree.rid, tree.lid)
+        pos = zip(tree.rank, idx_range)
+        return 0 if not self.is_valid() else sum([tags[el].score for el in pos])
 
     def neighbors(self, node):
         """ for a given coordinate in the maze, returns up to 4 adjacent(north,east,south,west)
@@ -89,12 +86,8 @@ class Solver(AStar):
         return node.successors
         
     def is_goal_reached(self, current, goal):
-        for curr in current:
-            if (curr.idx == goal.idx and curr.rank == goal.rank):
-                return True
-        return False
+        return current.idx == goal.idx and current.rank == goal.rank
 
-    
 
 class Tree:
     
@@ -105,28 +98,28 @@ class Tree:
         self.rank = rank
         self.successors = []
 
+
 def solve_treeSearch(tags):
     
-    max_lid, max_rank = tags.shape
+    max_rank, max_lid = tags.shape
 
-    Trees = []
-    Trees.extend([Tree(idx[0],idx[1],list(rank)) for idx in permutations(xrange(max_lid+1),2) if idx[0]<idx[1] for rank in product(xrange(max_rank),repeat = idx[1]-idx[0])])
+    trees = []
+    trees.extend([Tree(idx[0], idx[1], list(rank)) for idx in permutations(xrange(max_lid+1), 2) if idx[0] < idx[1]
+                  for rank in product(xrange(max_rank), repeat=idx[1]-idx[0])])
        
-    for j, t in enumerate(Trees):
-        t.successors.extend([Trees[i] for i, x in enumerate(Trees) if x.rid == t.rid and x.lid > t.lid and x.rank[:len(t.rank)] == t.rank])
+    for j, t in enumerate(trees):
+        t.successors.extend([trees[i] for i, x in enumerate(trees) if x.rid == t.rid and x.lid > t.lid and x.rank[:len(t.rank)] == t.rank])
         if len(t.rank) == 1 and t.rank[0] < max_rank - 1:
-            t.successors.extend([Trees[j + 1]])
+            t.successors.extend([trees[j + 1]])
     
-    start = [Trees[i]  for i,x in enumerate(Trees) if len(x.rank)==1 and x.rank[0] == 0]
+    start = [trees[i] for i, x in enumerate(trees) if len(x.rank) == 1 and x.rank[0] == 0]
     
-    goal = [Trees[i]  for i,x in enumerate(Trees) if x.rank==[max_rank-1]*max_lid] #TODO
+    goal = [trees[i] for i, x in enumerate(trees) if x.rank == [max_rank-1]*max_lid]  # TODO
 
-    import pdb; pdb.set_trace()
+ #   
     # let's solve it
     foundPath = list(Solver(tags).astar(start, goal[0]))
+    import pdb; pdb.set_trace()
+    print foundPath
 
 solve_treeSearch(tags)
-    
-
-
-

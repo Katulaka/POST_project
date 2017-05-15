@@ -4,15 +4,16 @@
 from abc import ABCMeta, abstractmethod
 from heapq import heappush, heappop
 
-#__author__ = "Julien Rialland"
-#__copyright__ = "Copyright 2012-2017, J.Rialland"
-#__license__ = "BSD"
-#__version__ = "0.9"
-#__maintainer__ = __author__
-#__email__ = "julien.rialland@gmail.com"
-#__status__ = "Production"
+# __author__ = "Julien Rialland"
+# __copyright__ = "Copyright 2012-2017, J.Rialland"
+# __license__ = "BSD"
+# __version__ = "0.9"
+# __maintainer__ = __author__
+# __email__ = "julien.rialland@gmail.com"
+# __status__ = "Production"
 
 Infinite = float('inf')
+
 
 class AStar:
     __metaclass__ = ABCMeta
@@ -42,7 +43,8 @@ class AStar:
 
     @abstractmethod
     def heuristic_cost_estimate(self, current, goal):
-        """Computes the estimated (rough) distance between a node and the goal, this method must be implemented in a subclass. The second parameter is always the goal."""
+        """Computes the estimated (rough) distance between a node and the goal, this method must be
+        implemented in a subclass. The second parameter is always the goal."""
         raise NotImplementedError
 
     @abstractmethod
@@ -54,15 +56,15 @@ class AStar:
 
     @abstractmethod
     def neighbors(self, node):
-        """For a given node, returns (or yields) the list of its neighbors. this method must be implemented in a subclass"""
+        """For a given node, returns (or yields) the list of its neighbors. this method must be
+        implemented in a subclass"""
         raise NotImplementedError
 
     @abstractmethod
     def is_goal_reached(self, current, goal):
         """ returns true when we can consider that 'current' is the goal"""
-        #return current == goal
+        # return current == goal
         raise NotImplementedError
-
 
     def reconstruct_path(self, last, reversePath=False):
         def _gen():
@@ -76,13 +78,14 @@ class AStar:
             return reversed(list(_gen()))
 
     def astar(self, start, goal, reversePath=False):
-        if self.is_goal_reached(start, goal):
-            return [start]
         searchNodes = AStar.SearchNodeDict()
-        startNode = searchNodes[start] = AStar.SearchNode(
-            start, gscore=.0, fscore=self.heuristic_cost_estimate(start, goal))
         openSet = []
-        heappush(openSet, startNode)
+        for strt in  start:
+            if self.is_goal_reached(strt, goal):
+                return [strt]
+            startNode = searchNodes[strt] = AStar.SearchNode(
+                strt, gscore=.0, fscore=self.heuristic_cost_estimate(strt, goal))
+            heappush(openSet, startNode)
         while openSet:
             current = heappop(openSet)
             if self.is_goal_reached(current.data, goal):
@@ -106,7 +109,8 @@ class AStar:
         return None
 
 
-#def find_path(start, goal, neighbors_fnct, reversePath=False, heuristic_cost_estimate_fnct=lambda a, b: Infinite, distance_between_fnct=lambda a, b: 1.0, is_goal_reached_fnct=lambda a, b: a == b):
+# def find_path(start, goal, neighbors_fnct, reversePath=False, heuristic_cost_estimate_fnct=lambda a, b: Infinite,
+# distance_between_fnct=lambda a, b: 1.0, is_goal_reached_fnct=lambda a, b: a == b):
 #    """A non-class version of the path finding algorithm"""
 #    class FindPath(AStar):
 #        def heuristic_cost_estimate(self, current, goal):
@@ -119,4 +123,4 @@ class AStar:
 #            return is_goal_reached_fnct(current, goal)
 #    return FindPath().astar(start, goal, reversePath)
 #
-#__all__ = ['AStar', 'find_path']
+# __all__ = ['AStar', 'find_path']
