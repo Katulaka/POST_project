@@ -15,11 +15,12 @@ def make_dir(path_dir):
     if not os.path.exists(path_dir):
         try:
             os.makedirs(os.path.abspath(path_dir))
-        except OSError as exc: # Guard against race condition
+        except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
 
-#TODO: hidden files
+
+# TODO: hidden files
 def del_extra_files(root_dir):
 
     print("[del_extra_files] Deleting mismatching files between dirs")
@@ -29,6 +30,7 @@ def del_extra_files(root_dir):
             shutil.rmtree(os.path.join(root_dir, f))
         if os.path.isfile(os.path.join(root_dir, f)):
             os.remove(os.path.join(root_dir, f))
+
 
 def get_data(data_path):
 
@@ -55,13 +57,13 @@ def flatten_list(list_):
 
 def build_dataset(words, vocabulary_size = 100000):
     
-    count       = [['UNK', -1]]
+    count = [['UNK', -1]]
     count.extend(collections.Counter(words).most_common(vocabulary_size - 1))
-    dictionary  = dict()
+    dictionary = dict()
     for word, _ in count:
         dictionary[word] = len(dictionary)
-    data        = list()
-    unk_count   = 0
+    data = list()
+    unk_count = 0
     for word in words:
         if word in dictionary:
             index = dictionary[word]
@@ -69,8 +71,8 @@ def build_dataset(words, vocabulary_size = 100000):
             index = 0  # dictionary['UNK']
         unk_count += 1
         data.append(index)
-    count[0][1]         = unk_count
-    reverse_dictionary  = dict(zip(dictionary.values(), dictionary.keys()))
+    count[0][1] = unk_count
+    reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
     
     return data, count, dictionary, reverse_dictionary
 
@@ -111,16 +113,18 @@ def gen_data(path, r_min=0, r_max=1):
 
     return vectors 
 
+
 def generate_batch(data, batch_size=32):
     dn = np.array(data)
     dn = np.array_split(dn, len(dn)/batch_size)
     return dn
 
+
 def data_padding(data, pad_sym=0):
     
-    max_len = len(max(data,key=len))
+    max_len = len(max(data, key=len))
     for i,el in enumerate(data):
         pad_len = max_len-len(el)
-        #import pdb; pdb.set_trace()                
-        data[i] =  np.lib.pad(el,(0,pad_len), 'constant', constant_values=(pad_sym))
+        # import pdb; pdb.set_trace()
+        data[i] = np.lib.pad(el, (0,pad_len), 'constant', constant_values=(pad_sym))
     return data
