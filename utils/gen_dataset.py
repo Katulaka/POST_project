@@ -170,7 +170,7 @@ def gen_height_list(tree, tree_dep_dict):
 def gen_tree_dep_dict(data_in):
     
     fin = "dep_treebank"
-    os.system("java -jar code/pennconverter.jar < "+data_in + "> "+fin)
+    os.system("java -jar code/utils/pennconverter.jar < "+data_in+"> "+fin)
     
     dep_dict_list = []
     dep_dict = {}
