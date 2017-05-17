@@ -12,7 +12,7 @@ from heapq import heappush, heappop
 # __email__ = "julien.rialland@gmail.com"
 # __status__ = "Production"
 
-Infinite = float('inf')
+#Infinite = float('inf')
 
 
 class AStar:
@@ -110,13 +110,15 @@ class AStar:
             current.closed = True
             self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
-             #   import pdb; pdb.set_trace()
                 if neighbor.closed:
                     continue
                 #tentative_gscore =  current.gscore + \
                 #    self.distance_between(current.data, neighbor.data)
                 #if tentative_gscore >= neighbor.gscore:
                 #   continue
+                if current.fscore > self.real_cost(neighbor.data) + \
+                        self.heuristic_cost(neighbor.data, goal):
+                    continue
 
                 neighbor.came_from = current
                 #neighbor.gscore = tentative_gscore

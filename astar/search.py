@@ -24,7 +24,9 @@ class Tag(object):
 tags = np.empty((3, 5), object)
     
 tvals = np.random.rand(3,5)
-tvals /= tvals.sum(axis=0)
+tvals /= -tvals.sum(axis=0)
+tvals.sort(axis=0)
+tvals = -tvals
 
 for i in range(3):
     for j in range(5):
@@ -60,8 +62,11 @@ class Solver(AStar):
             else:
                 self.lindex[node.lid] = [node]
 
-        def get(self, rid):
+        def getr(self, rid):
             return [] if not rid in self.rindex else self.rindex[rid]
+
+        def getl(self, lid):
+            return [] if not lid in self.lindex else self.lindex[lid]
             
 
     def __init__(self, tags):
@@ -88,7 +93,8 @@ class Solver(AStar):
     
     def neighbors(self, node):
         
-        neighbors = [Tree(node.rid, nb.lid, node.rank+nb.rank) for nb in self.cl.get(node.lid)]
+        neighbors = [Tree(node.rid, nb.lid, node.rank+nb.rank) for nb in self.cl.getr(node.lid)]
+        neighbors.extend([Tree(nb.rid, node.lid, nb.rank+node.rank) for nb in self.cl.getl(node.rid)])
         if len(node.rank) == 1 and node.rank[0] < self.tags.shape[0] - 1:
             node_rp1 = Tree(node.rid, node.lid, [node.rank[0] + 1])      
             neighbors.append(node_rp1)
