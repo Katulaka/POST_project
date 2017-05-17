@@ -81,7 +81,7 @@ class AStar:
             print "---------------------------------------------------"
             print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
-                return self.reconstruct_path(current)
+                return self.reconstruct_path(current, reversePath)
             current.out_openset = True
             current.closed = True
             self.move_to_closed(current.data)
