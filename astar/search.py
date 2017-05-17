@@ -3,17 +3,6 @@ import numpy as np
 
 from itertools import permutations, product
 
- 
-
-# s1  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 1, 'rank' : [1]}}
-# s2  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 2, 'lid' : 4, 'rank' : [1,1,1]}}
-# s3  = {'gscore': .0, 'fscore': .0, 'data' : {'rid' : 0, 'lid' : 4, 'rank' : [1]*5}}
-#
-# cl = ClosedList()
-#    
-# cl.put(AStar.State(**s1))
-# cl.put(AStar.State(**s2))
-# cl.put(AStar.State(**s3))
 
 class Tag(object):
     def __init__(self, tag, score):
@@ -21,18 +10,6 @@ class Tag(object):
         self.score = score
     
         
-tags = np.empty((3, 5), object)
-    
-tvals = np.random.rand(3,5)
-tvals /= -tvals.sum(axis=0)
-tvals.sort(axis=0)
-tvals = -tvals
-
-for i in range(3):
-    for j in range(5):
-        tags[i][j] = Tag(str(i+j), tvals[i][j])
-
-
 class Tree:
     
     def __init__(self, rid, lid, rank):
@@ -40,7 +17,6 @@ class Tree:
         self.lid = lid
         self.idx = (rid, lid)
         self.rank = rank
-  #      self.successors = []
 
 
 class Solver(AStar):
@@ -67,7 +43,15 @@ class Solver(AStar):
 
         def getl(self, lid):
             return [] if not lid in self.lindex else self.lindex[lid]
-            
+
+        def exist(self, rid, lid, rank):
+            set_rid = set(self.getr(rid))
+            set_lid = set(self.getl(lid))
+            candidates = list(set_rid.intersection(set_lid))
+            for candidate in candidates:
+                if candidate.rank == rank:
+                    return True
+            return False
 
     def __init__(self, tags):
         self.tags = tags
@@ -77,24 +61,35 @@ class Solver(AStar):
         idx_range = range(0, current.rid)+range(current.lid, goal.lid) 
         rank = [0]*len(idx_range)
         pos = zip(rank, idx_range)
-        return sum([tags[el].score for el in pos])
+        return sum([self.tags[el].score for el in pos])
 
-    def is_valid(self):
-            return True  # TODO
+    def is_valid(self, node): # TODO
+        
+        nvalid = range(1,4)
+        nrank = [0,0,0]
+        node_range = range(node.rid, node.lid)
+
+        if set(nvalid).issubset(set(node_range)): 
+            idx = node_range.index(nvalid[0]),len(nvalid)
+            return not node.rank[idx[0]:idx[0]+idx[1]] == nrank
+        else:
+            return True
+        
     
     def real_cost(self, current):
         
         idx_range = range(current.rid, current.lid)
         pos = zip(current.rank, idx_range)
-        return 0 if not self.is_valid() else sum([tags[el].score for el in pos])
+        return .0 if not self.is_valid(current) else sum([self.tags[el].score for el in pos])
 
     def move_to_closed(self, current):
         self.cl.put(current)
     
     def neighbors(self, node):
         
-        neighbors = [Tree(node.rid, nb.lid, node.rank+nb.rank) for nb in self.cl.getr(node.lid)]
-        neighbors.extend([Tree(nb.rid, node.lid, nb.rank+node.rank) for nb in self.cl.getl(node.rid)])
+        neighbors = [Tree(node.rid, nb.lid, node.rank+nb.rank) 
+                    for nb in self.cl.getr(node.lid)] 
+            
         if len(node.rank) == 1 and node.rank[0] < self.tags.shape[0] - 1:
             node_rp1 = Tree(node.rid, node.lid, [node.rank[0] + 1])      
             neighbors.append(node_rp1)
@@ -104,21 +99,36 @@ class Solver(AStar):
         return current.idx == goal.idx #and current.rank == goal.rank
 
 
-def solve_treeSearch(tags):
+def toy_example(rank, length):
     
-    max_rank, max_lid = tags.shape
+    tags = np.empty((rank, length), object)
+    
+    tvals = np.random.rand(rank, length)
+    tvals /= -tvals.sum(axis=0)
+    tvals.sort(axis=0)
+    tvals = -tvals
 
-    trees = []
-    trees.extend([Tree(idx[0], idx[1], list(rank)) for idx in permutations(xrange(max_lid+1), 2) if idx[0] < idx[1]
-                  for rank in product(xrange(max_rank), repeat=idx[1]-idx[0])])
+    for i in range(rank):
+        for j in range(length):
+            tags[i][j] = Tag(str(i+j), tvals[i][j])
+
+    return tvals, tags
+
+
+def solve_treeSearch():
     
-    start = [trees[i] for i, x in enumerate(trees) if len(x.rank) == 1 and x.rank[0] == 0]
-    
-    goal = [trees[i] for i, x in enumerate(trees) if x.rank == [max_rank-1]*max_lid]  # TODO
+    max_rank, max_lid = (3, 5)
+    tvals, tags = toy_example(max_rank, max_lid)
+
+    start = [Tree(idx, idx+1, [0]) for idx in xrange(max_lid)]
+    goal = Tree(0, max_lid, [])
 
     # let's solve it
-    foundPath = list(Solver(tags).astar(start, goal[0]))
-    print tvals    
-    print foundPath[-1].idx, foundPath[-1].rank
+    foundPath = Solver(tags).astar(start, goal)
+    if not foundPath is None:
+        foundPath = list(foundPath)
+        print tvals    
+        for fp in foundPath:
+            print fp.idx, fp.rank
 
-solve_treeSearch(tags)
+solve_treeSearch()

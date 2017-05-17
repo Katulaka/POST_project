@@ -4,38 +4,24 @@
 from abc import ABCMeta, abstractmethod
 from heapq import heappush, heappop
 
-# __author__ = "Julien Rialland"
-# __copyright__ = "Copyright 2012-2017, J.Rialland"
-# __license__ = "BSD"
-# __version__ = "0.9"
-# __maintainer__ = __author__
-# __email__ = "julien.rialland@gmail.com"
-# __status__ = "Production"
-
-#Infinite = float('inf')
-
 
 class AStar:
     __metaclass__ = ABCMeta
     __slots__ = ()
 
     class SearchNode:
-       # __slots__ = ('data', 'gscore', 'fscore',
-       #              'closed', 'came_from', 'out_openset')
-        __slots__ = ('data',  'fscore',
+        __slots__ = ('data', 'fscore',
                      'closed', 'came_from', 'out_openset')
 
-        #def __init__(self, data, gscore=.0, fscore=.0):
         def __init__(self, data, fscore=.0):
             self.data = data
-           # self.gscore = gscore
             self.fscore = fscore
             self.closed = False
             self.out_openset = True
             self.came_from = None
 
-        def __lt__(self, b):
-            return self.fscore > b.fscore
+        def __lt__(self, other):
+            return self.fscore > other.fscore
 
 
     class SearchNodeDict(dict):
@@ -55,14 +41,6 @@ class AStar:
     def real_cost(self, current):
         raise NotImplementedError        
 
-
- #   @abstractmethod
- #   def distance_between(self, n1, n2):
- #       """Gives the real distance between two adjacent nodes n1 and n2 (i.e n2 belongs to the list of n1's neighbors).
- #          n2 is guaranteed to belong to the list returned by the call to neighbors(n1).
- #          This method must be implemented in a subclass."""
- #       raise NotImplementedError
-
     @abstractmethod
     def neighbors(self, node):
         """For a given node, returns (or yields) the list of its neighbors. this method must be
@@ -72,13 +50,12 @@ class AStar:
     @abstractmethod
     def is_goal_reached(self, current, goal):
         """ returns true when we can consider that 'current' is the goal"""
-        # return current == goal
         raise NotImplementedError
 
     @abstractmethod
     def move_to_closed(self, current):
         raise NotImplementedError
-
+        
     def reconstruct_path(self, last, reversePath=False):
         def _gen():
             current = last
@@ -97,7 +74,6 @@ class AStar:
             if self.is_goal_reached(strt, goal):
                 return [strt]
             startNode = searchNodes[strt] = AStar.SearchNode(
-               # strt, gscore=.0, fscore=self.heuristic_cost_estimate(strt, goal))
                strt, fscore=self.real_cost(strt) + self.heuristic_cost(strt, goal))
             heappush(openSet, startNode)
         while openSet:
@@ -110,22 +86,17 @@ class AStar:
             current.closed = True
             self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
+                
                 if neighbor.closed:
                     continue
-                #tentative_gscore =  current.gscore + \
-                #    self.distance_between(current.data, neighbor.data)
-                #if tentative_gscore >= neighbor.gscore:
-                #   continue
-                if current.fscore > self.real_cost(neighbor.data) + \
-                        self.heuristic_cost(neighbor.data, goal):
-                    continue
-
-                neighbor.came_from = current
-                #neighbor.gscore = tentative_gscore
-                #neighbor.gscore = self.real_cost(neighbor.data)
-                #neighbor.fscore = neighbor.gscore + \
+               
                 neighbor.fscore = self.real_cost(neighbor.data) + \
-                    self.heuristic_cost(neighbor.data, goal)
+                        self.heuristic_cost(neighbor.data, goal)
+                neighbor.came_from = current
+                
+              #  if current.fscore > neighbor.fscore:
+              #      continue
+
                 if neighbor.out_openset:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
