@@ -20,19 +20,23 @@ class AStar:
     __slots__ = ()
 
     class SearchNode:
-        __slots__ = ('data', 'gscore', 'fscore',
+       # __slots__ = ('data', 'gscore', 'fscore',
+       #              'closed', 'came_from', 'out_openset')
+        __slots__ = ('data',  'fscore',
                      'closed', 'came_from', 'out_openset')
 
-        def __init__(self, data, gscore=Infinite, fscore=Infinite):
+        #def __init__(self, data, gscore=.0, fscore=.0):
+        def __init__(self, data, fscore=.0):
             self.data = data
-            self.gscore = gscore
+           # self.gscore = gscore
             self.fscore = fscore
             self.closed = False
             self.out_openset = True
             self.came_from = None
 
         def __lt__(self, b):
-            return self.fscore < b.fscore
+            return self.fscore > b.fscore
+
 
     class SearchNodeDict(dict):
 
@@ -42,17 +46,22 @@ class AStar:
             return v
 
     @abstractmethod
-    def heuristic_cost_estimate(self, current, goal):
+    def heuristic_cost(self, current, goal):
         """Computes the estimated (rough) distance between a node and the goal, this method must be
         implemented in a subclass. The second parameter is always the goal."""
         raise NotImplementedError
 
-    @abstractmethod
-    def distance_between(self, n1, n2):
-        """Gives the real distance between two adjacent nodes n1 and n2 (i.e n2 belongs to the list of n1's neighbors).
-           n2 is guaranteed to belong to the list returned by the call to neighbors(n1).
-           This method must be implemented in a subclass."""
-        raise NotImplementedError
+    @abstractmethod    
+    def real_cost(self, current):
+        raise NotImplementedError        
+
+
+ #   @abstractmethod
+ #   def distance_between(self, n1, n2):
+ #       """Gives the real distance between two adjacent nodes n1 and n2 (i.e n2 belongs to the list of n1's neighbors).
+ #          n2 is guaranteed to belong to the list returned by the call to neighbors(n1).
+ #          This method must be implemented in a subclass."""
+ #       raise NotImplementedError
 
     @abstractmethod
     def neighbors(self, node):
@@ -64,6 +73,10 @@ class AStar:
     def is_goal_reached(self, current, goal):
         """ returns true when we can consider that 'current' is the goal"""
         # return current == goal
+        raise NotImplementedError
+
+    @abstractmethod
+    def move_to_closed(self, current):
         raise NotImplementedError
 
     def reconstruct_path(self, last, reversePath=False):
@@ -84,28 +97,37 @@ class AStar:
             if self.is_goal_reached(strt, goal):
                 return [strt]
             startNode = searchNodes[strt] = AStar.SearchNode(
-                strt, gscore=.0, fscore=self.heuristic_cost_estimate(strt, goal))
+               # strt, gscore=.0, fscore=self.heuristic_cost_estimate(strt, goal))
+               strt, fscore=self.real_cost(strt) + self.heuristic_cost(strt, goal))
             heappush(openSet, startNode)
         while openSet:
             current = heappop(openSet)
+            print "---------------------------------------------------"
+            print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
                 return self.reconstruct_path(current, reversePath)
             current.out_openset = True
             current.closed = True
+            self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
+             #   import pdb; pdb.set_trace()
                 if neighbor.closed:
                     continue
-                tentative_gscore = current.gscore + \
-                    self.distance_between(current.data, neighbor.data)
-                if tentative_gscore >= neighbor.gscore:
-                    continue
+                #tentative_gscore =  current.gscore + \
+                #    self.distance_between(current.data, neighbor.data)
+                #if tentative_gscore >= neighbor.gscore:
+                #   continue
+
                 neighbor.came_from = current
-                neighbor.gscore = tentative_gscore
-                neighbor.fscore = tentative_gscore + \
-                    self.heuristic_cost_estimate(neighbor.data, goal)
+                #neighbor.gscore = tentative_gscore
+                #neighbor.gscore = self.real_cost(neighbor.data)
+                #neighbor.fscore = neighbor.gscore + \
+                neighbor.fscore = self.real_cost(neighbor.data) + \
+                    self.heuristic_cost(neighbor.data, goal)
                 if neighbor.out_openset:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
+                print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
         return None
 
 
