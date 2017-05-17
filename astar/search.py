@@ -65,8 +65,8 @@ class Solver(AStar):
 
     def is_valid(self, node): # TODO
         
-        nvalid = range(1,4)
-        nrank = [0,0,0]
+        nvalid = range(1,5)
+        nrank = [0,0,0,0]
         node_range = range(node.rid, node.lid)
 
         if set(nvalid).issubset(set(node_range)): 
