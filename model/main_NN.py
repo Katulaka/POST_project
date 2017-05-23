@@ -18,7 +18,7 @@ def create_model(session, config):
             config.batch_size, config.word_embedding_size, config.tag_embedding_size, 
             config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm, 
             config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
-            config.learning_rate, config.learning_rate_decay_factor)
+            config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):

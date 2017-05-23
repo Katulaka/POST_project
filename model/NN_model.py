@@ -8,7 +8,7 @@ class NNModel(object):
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size, n_hidden_fw, n_hidden_bw,
                  n_hidden_lstm, word_vocabulary_size, tag_vocabulary_size, learning_rate,
-                 learning_rate_decay_factor, dtype=tf.float32, scope_name='nn_model'):
+                 learning_rate_decay_factor, max_gradient_norm, dtype=tf.float32, scope_name='nn_model'):
 
         try:
             LSTM = tf.nn.rnn_cell.BasicLSTMCell
@@ -26,9 +26,7 @@ class NNModel(object):
             self.learning_rate = tf.Variable(float(learning_rate), trainable=False, dtype=dtype)
 
             self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * learning_rate_decay_factor)
-            # self.learning_rate_decay_op_1 = self.learning_rate.assign(0.05)
 
-            # self.global_step = tf.Variable(0, trainable=False)
    
             with tf.name_scope('input'):
                 self.word_inputs = tf.placeholder(tf.int32, shape=[None, None], name="word-input")
@@ -90,12 +88,34 @@ class NNModel(object):
 
                 outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
                 self.pred = tf.tanh(tf.matmul(outputs_reshape, w_out) + b_out, name='pred')
+                self.logits = tf.matmul(outputs_reshape, w_out) + b_out
 
-            with tf.name_scope("train"):
-                cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.pred, labels=self.y)
+            
+            targets = [self.tag_inputs[i + 1] for i in xrange(len(self.tag_inputs) - 1)]
+            with tf.name_scope("loss"):           #TODO check this 
+                #for logit, target, weight in zip(logits, targets, weights):
+                for logit, target in zip(self.logits, targets):
+                    target = tf.reshape(target, [-1])
+                    cross_entropy = nn_ops.tf.nn.softmax_cross_entropy_with_logits(logit, target)
+                    
                 self.loss = tf.reduce_mean(cross_entropy)
 
-                self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
+            
+            self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
+
+            #TODO checkk if this makes sense in this model
+            #opt = tf.train.GradientDescentOptimizer(self.learning_rate)
+            #self.global_step = tf.Variable(0, trainable=False)            
+            #self.tvars = tf.trainable_variables()                
+            #gradients = tf.gradients(self.loss, self.tvars)
+            #clipped_gradients, norm = tf.clip_by_global_norm(gradients, max_gradient_norm)
+            #self.update = opt.apply_gradients( zip(clipped_gradients, self.tvars), global_step = self.global_step))
+
+            all_variables = [k for k in tf.global_variables() if k.name.startswith(self.scope_name)]
+            self.saver = tf.train.Saver(all_variables)
+
+            
+            
 
     def step(self, session, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y):
 
@@ -114,4 +134,26 @@ class NNModel(object):
         for i, bv in enumerate(batched_vectors):
             batched_vectors[i] = dp.data_padding(bv)
 
+       #TODO maybe add weights 
+        # Batch decoder inputs are re-indexed decoder_inputs, we create weights.
+       # for length_idx in xrange(decoder_size):
+       #     batch_decoder_inputs.append(
+       #         np.array([decoder_inputs[batch_idx][length_idx]
+       #             for batch_idx in xrange(batch_size)], dtype=np.int32))
+
+       #     # Each line is a word across the entire batch. Some of them are just pads, some are real
+
+       #     # Create target_weights to be 0 for targets that are padding.
+       #     batch_weight = np.ones(batch_size, dtype=np.float32)
+       #     for batch_idx in xrange(batch_size):
+       #         # We set weight to 0 if the corresponding target is a PAD symbol.
+       #         # The corresponding target is decoder_input shifted by 1 forward.
+       #         if length_idx < decoder_size - 1:
+       #             target = decoder_inputs[batch_idx][length_idx + 1]
+       #         if length_idx == decoder_size - 1 or target == data_utils.PAD_ID:
+       #             batch_weight[batch_idx] = 0.0
+       #     batch_weights.append(batch_weight)
+
+        
+        
         return batched_vectors
