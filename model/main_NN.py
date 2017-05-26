@@ -14,7 +14,7 @@ def create_model(session, config):
 
     start_time = time.time()
     
-    model = nnModel.nnModel(
+    model = nnModel.NNModel(
             config.batch_size, config.word_embedding_size, config.tag_embedding_size, 
             config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm, 
             config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
@@ -58,9 +58,9 @@ def train(config):
 
             # Get a batch and make a step.
             start_time = time.time()
-            word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y = model.get_batch(train_set)
+            word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y = model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
 
-            pred, step_loss, _ = model.step(sess, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y)
+            pred, step_loss, _ = model.step(sess, word_seq_lens[0], tag_seq_lens[0], word_inputs[0], tag_inputs[0], y[0]) #TODO
 
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
