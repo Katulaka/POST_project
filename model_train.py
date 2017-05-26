@@ -1,14 +1,19 @@
 import numpy as np
-
-import conf as conf
-import main_NN as main_NN
+import tensorflow as tf
+import time
 
 import utils.gen_dataset as gd
+import utils.conf 
+import model.main_NN as main_NN
+
+
 
 
 def main(_):
     seed = int(time.time())
-    np.random.seed(seed)  
+    np.random.seed(seed) 
+
+    Config = utils.conf.Config
 
     import argparse
     parser = argparse.ArgumentParser()
@@ -45,9 +50,10 @@ def main(_):
   #      print ("Runinng Adversarial")        
   #      al_train()
 
-    gd.generate_data(Config.src_dir, Config.dest_dir)
+
+    #gd.generate_data(Config.src_dir, Config.dest_dir)
   
-    main_NN.train(conf.config)
+    main_NN.train(Config)
 
 
 if __name__ == "__main__":
