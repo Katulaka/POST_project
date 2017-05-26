@@ -15,8 +15,8 @@ class Config(object):
     train_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/proc_data/'
     steps_per_checkpoint = 100
     checkpoint_path = '/Users/katia.patkin/Berkeley/Research/BiRNN/checkpoints/'
-    src_dir = 'raw_data/wsj/'
-    dest_dir = 'proc_data'
+    src_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/raw_data/wsj/'
+    dest_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/proc_data'
 
 
    # training_epochs = 10
