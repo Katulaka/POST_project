@@ -1,12 +1,12 @@
 from __future__ import print_function
 
+import os
 from os import listdir
 from os.path import isfile, join
 
 import collections
 import numpy as np
 
-import os
 import shutil
 
 
@@ -85,7 +85,7 @@ def lookup_fn(sentences, dictionary):
     return vector
 
 
-def gen_data(path, r_min=0, r_max=1):
+def gen_data(path, r_min=0, r_max=24):
     
     data = {}
     count = {}
@@ -121,7 +121,7 @@ def generate_batch(data, batch_size=32):
 
 
 def data_padding(data, pad_sym=0):
-    
+   
     max_len = len(max(data, key=len))
     for i,el in enumerate(data):
         pad_len = max_len-len(el)
