@@ -45,6 +45,7 @@ class NNModel(object):
                 tag_embed_matrix = tf.Variable(tag_embed_matrix_init, name='tag-embeddings')
                 tag_embed = tf.nn.embedding_lookup(tag_embed_matrix, self.tag_inputs, name='tag-embed')
 
+                self.tag_embed = tag_embed
             with tf.name_scope('bidirectional-LSTM-Layer'):
                 # Bidirectional LSTM
                 # Forward and Backward direction cell
@@ -62,18 +63,26 @@ class NNModel(object):
                     bidi_out = tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell, lstm_bw_cell, word_embed,
                                                                sequence_length=self.word_seq_lens, dtype=dtype)
 
+            self.bidi_out = bidi_out
+            self.bidi_states = bidi_states
+
             with tf.name_scope('LSTM-Layer'): 
                 # LSTM
                 lstm_init = tf.concat(bidi_out, 2, name='lstm-init')
-                lstm_init_reshape = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw])
+                lstm_init_reshape = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw]) #TODO
    
                 lstm_init_reshape = LSTMStateTuple(lstm_init_reshape, tf.zeros_like(lstm_init_reshape))
 
-                input_shape = tf.shape(tag_embed)
-                lstm_input = tf.reshape(tag_embed, [input_shape[0]*input_shape[1], input_shape[2], tag_embedding_size])
+                self.lstm_init_reshape = lstm_init_reshape
+                self.input_shape = input_shape = tf.shape(tag_embed)
+                self.tag_embedding_size = tag_embedding_size
+#                lstm_input = tf.reshape(tag_embed, [input_shape[0]*input_shape[1], input_shape[2], tag_embedding_size]) #TODO
+                lstm_input = tf.expand_dims(tf.reshape(tag_embed, [-1,  input_shape[2]]), 1)
+                lstm_input.set_shape([None,None,tag_embedding_size])
  
                 lstm_cell = LSTM(n_hidden_lstm, forget_bias=1.0, state_is_tuple=True)  # TODO
 
+            #    lstm_out, _ = tf.nn.dynamic_rnn(lstm_cell, tag_embed,sequence_length=self.tag_seq_lens, dtype=dtype)
                 try:
                     lstm_out, _ = tf.nn.dynamic_rnn(lstm_cell, lstm_input, initial_state=lstm_init_reshape,
                                                     sequence_length=self.tag_seq_lens, dtype=dtype)
@@ -81,6 +90,8 @@ class NNModel(object):
                 except Exception:  # Old TensorFlow version only returns outputs not states
                     lstm_out = tf.nn.dynamic_rnn(lstm_cell, lstm_input, initial_state=lstm_init_reshape,
                                                  sequence_length=self.tag_seq_lens, dtype=dtype)
+
+            self.lstm_out = lstm_out
 
             # compute softmax
             with tf.name_scope('predictions'):
@@ -92,7 +103,7 @@ class NNModel(object):
                 self.pred = tf.tanh(tf.matmul(outputs_reshape, w_out) + b_out, name='pred')
                 self.logits = tf.matmul(outputs_reshape, w_out) + b_out
 
-            
+            self.logits = tf.reshape(self.logits, [input_shape[0],input_shape[1],tag_vocabulary_size])
          #   import pdb; pdb.set_trace()
             #targets = [self.tag_inputs[i + 1] for i in xrange(len(self.tag_inputs) - 1)] #TODO
             targets = self.tag_inputs
@@ -105,7 +116,6 @@ class NNModel(object):
                     
                 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y) #TODO
                 self.loss = tf.reduce_mean(cross_entropy)
-
             
             self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
 
@@ -125,18 +135,16 @@ class NNModel(object):
 
     def step(self, session, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y):
 
-        import pdb; pdb.set_trace()
-        
         word_inputs = np.vstack([np.expand_dims(x, 0) for x in word_inputs])
         tag_inputs =  np.vstack([np.expand_dims(x, 0) for x in tag_inputs])
         
-        input_feed = {self.word_seq_lens: word_seq_lens, self.tag_seq_lens: tag_seq_lens,
+        input_feed = {self.word_seq_lens: word_seq_lens, self.tag_seq_lens: np.ones(5252),
+                #tag_seq_lens,
                       self.word_inputs: word_inputs, self.tag_inputs: tag_inputs
                       , self.y: y}
 
-        output_feed = {self.pred, self.loss, self.optimizer}
+        output_feed = [self.pred, self.loss, self.optimizer]
       
-
         outputs = session.run(output_feed, input_feed)
 
         return outputs

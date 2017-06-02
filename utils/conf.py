@@ -6,8 +6,8 @@ class Config(object):
     n_hidden_fw = 128
     n_hidden_bw = 128
     n_hidden_lstm = 256
-    word_vocabulary_size = 100000
-    tag_vocabulary_size = 100000
+    word_vocabulary_size = 50000
+    tag_vocabulary_size = 50000
     num_steps = 100001
     learning_rate = 0.1
     learning_rate_decay_factor = 0.5
