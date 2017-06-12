@@ -37,9 +37,9 @@ class AStar:
         implemented in a subclass. The second parameter is always the goal."""
         raise NotImplementedError
 
-    @abstractmethod    
+    @abstractmethod
     def real_cost(self, current):
-        raise NotImplementedError        
+        raise NotImplementedError
 
     @abstractmethod
     def neighbors(self, node):
@@ -55,7 +55,7 @@ class AStar:
     @abstractmethod
     def move_to_closed(self, current):
         raise NotImplementedError
-        
+
     def reconstruct_path(self, last, reversePath=False):
         def _gen():
             current = last
@@ -86,16 +86,13 @@ class AStar:
             current.closed = True
             self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
-                
+
                 if neighbor.closed:
                     continue
-               
+
                 neighbor.fscore = self.real_cost(neighbor.data) + \
                         self.heuristic_cost(neighbor.data, goal)
                 neighbor.came_from = current
-                
-              #  if current.fscore > neighbor.fscore:
-              #      continue
 
                 if neighbor.out_openset:
                     neighbor.out_openset = False
