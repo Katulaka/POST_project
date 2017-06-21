@@ -13,10 +13,10 @@ import tensorflow as tf
 def create_model(session, config):
 
     start_time = time.time()
-    
+
     model = nnModel.NNModel(
-            config.batch_size, config.word_embedding_size, config.tag_embedding_size, 
-            config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm, 
+            config.batch_size, config.word_embedding_size, config.tag_embedding_size,
+            config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
             config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
             config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
 
@@ -24,13 +24,13 @@ def create_model(session, config):
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        if config.learning_rate < model.learning_rate.eval():       
+        if config.learning_rate < model.learning_rate.eval():
             print('Re-setting learning rate to %f' % config.learning_rate)
             session.run(model.learning_rate.assign(config.learning_rate), [])
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-    
+
     end_time = time.time()
     print("Time to create Gen_RNN model: %.2f" % (end_time - start_time))
 
@@ -51,16 +51,17 @@ def train(config):
 
         step_loss_summary = tf.Summary()
         writer = tf.summary.FileWriter("../logs/", sess.graph)
-        
-        train_set = dp.gen_data(config.train_dir)  # TODO
+
+        #train_set = dp.gen_data(config.train_dir)  # TODO
+        _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
 
         while True:
 
             # Get a batch and make a step.
             start_time = time.time()
-            word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y = model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
-
-            pred, step_loss, _ = model.step(sess, word_seq_lens[0], tag_seq_lens[0], word_inputs[0], tag_inputs[0], y[0]) #TODO
+            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+                model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
+            pred, step_loss, _ = model.step(sess, word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot)
 
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
@@ -108,26 +109,26 @@ def gen_toy_data(batch_size,tag_vocabulary_size,word_vocabulary_size, max_len = 
 
 #    loss_sum = tf.summary.scalar("loss", loss)
 #    summary_op = tf.summary.merge_all()
-#    
-#    
-#        
-#    logs_path = '/Users/katia.patkin/Berkeley/Research/BiRNN/tmp'    
-#    writer = tf.summary.FileWriter(logdir=logs_path, graph= sess.graph)    
+#
+#
+#
+#    logs_path = '/Users/katia.patkin/Berkeley/Research/BiRNN/tmp'
+#    writer = tf.summary.FileWriter(logdir=logs_path, graph= sess.graph)
 #
 #    training_epochs = 10
 #    num_examples    = 40
 #    display_step    = 1
 #
-#    
+#
 #    for epoch in range(training_epochs):
-#    
+#
 #        avg_loss = 0.
 #        total_batch = num_examples/batch_size
 #
 #        for i in range(total_batch):
 #            t_s_len, w_s_len, t_in, w_in, labels = gen_toy_data(batch_size,tag_vocabulary_size,word_vocabulary_size,
 #                                                               max_len = 3)
-#                             
+#
 #            feed_dict =  {word_inputs : w_in, tag_inputs : t_in, word_seq_lens : w_s_len,
 #                           tag_seq_lens: t_s_len, y : labels}
 #
