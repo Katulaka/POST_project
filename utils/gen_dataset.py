@@ -32,7 +32,7 @@ def read_balanced_line(fin):
 
 
 def get_tree(tree, line, max_id=0, leaf_id=1,  parent_id=None):
-    
+
     # starts by ['(', 'pos']
     pos_tag = line[1].split('-')[0].split('=')[0].split('|')[0]
     if parent_id is None:
@@ -42,32 +42,32 @@ def get_tree(tree, line, max_id=0, leaf_id=1,  parent_id=None):
         max_id += 1
 
     tree.create_node(pos_tag, pos_id, parent=parent_id, data=nRange(0,0))
-    
+
     parent_id = pos_id
     total_offset = 2
 
     if line[2] != '(':
         # sub-tree is leaf
-        # line[0:3] = ['(', 'pos', 'word', ')']        
+        # line[0:3] = ['(', 'pos', 'word', ')']
         word_tag = line[2]
         tree.create_node(word_tag, leaf_id, parent=parent_id, data=nRange(0,0))
 
         return 4, max_id, leaf_id+1
-    
+
     line = line[2:]
-    
+
     while line[0] != ')':
         offset, max_id, leaf_id = get_tree(tree, line, max_id, leaf_id, parent_id)
         total_offset += offset
         line = line[offset:]
-    
+
     return total_offset + 1, max_id, leaf_id
 
 
 def get_trees(fin):
 
     for line in read_balanced_line(fin):
-    
+
         tree = Tree()
         line = re.sub(r'\([\s]*-NONE-[^\)]+\)', '', line)
         p = re.compile('\([\S]+[\s]+\)')
@@ -104,13 +104,13 @@ def genRange(tree, nid, minR, maxR):
 
 
 def extend_path(tree, pid, leaf_id, path_dict):
- 
+
     path_tag = tree.parent(pid).tag
-    if tree.siblings(pid): 
+    if tree.siblings(pid):
         siblings = map(lambda sibling: sibling.tag ,  tree.siblings(pid))
         siblings.insert(0, path_tag)
         path_tag = "\\".join(siblings)
-    
+
     path_dict[leaf_id] = "+".join([path_tag, path_dict[leaf_id]])
 
 
@@ -118,15 +118,15 @@ def gen_suptag(tree, nid, height_dict, path_dict):
 
     # Stop condition
     if tree[nid].is_leaf():
-       
+
         pid = tree.parent(nid).identifier
         path_dict[nid] = tree[pid].tag
 
         if height_dict[nid] > 1 :
             extend_path(tree, pid, nid, path_dict)
-                                
+
         return nid, height_dict[nid] - 1
-    
+
     # Recursion
     for child in tree.children(nid):
         cid = child.identifier
@@ -136,11 +136,11 @@ def gen_suptag(tree, nid, height_dict, path_dict):
         return None, 1
 
     elif height > 1:
-        pid = tree.parent(nid).identifier        
+        pid = tree.parent(nid).identifier
         extend_path(tree, pid, leaf_id, path_dict)
-     
+
     return leaf_id, height - 1
-      
+
 
 def gen_height_list(tree, tree_dep_dict):
 
@@ -157,9 +157,9 @@ def gen_height_list(tree, tree_dep_dict):
             maxR = max(tree[depid].data.mRange[1], tree[lid].data.mRange[1])
             height = 0
             pid = tree.parent(lid).identifier
-        
+
             while tree[pid].data.mRange[0] > minR or tree[pid].data.mRange[1] < maxR:
-                height += 1             
+                height += 1
                 pid = tree.parent(pid).identifier
 
             hieght_dict[lid] = height
@@ -167,11 +167,11 @@ def gen_height_list(tree, tree_dep_dict):
     return hieght_dict
 
 
-def gen_tree_dep_dict(data_in):
-    
+def gen_tree_dep_dict(data_in, penn_path='code/utils/pennconverter.jar'):
+
     fin = "dep_treebank"
-    os.system("java -jar utils/pennconverter.jar < "+data_in+"> "+fin)
-    
+    os.system("java -jar "+penn_path+"< "+data_in+"> "+fin) #TODO add error msg
+
     dep_dict_list = []
     dep_dict = {}
     lines = iter(open(fin, 'r'))
@@ -188,25 +188,28 @@ def gen_tree_dep_dict(data_in):
     return dep_dict_list
 
 
-def gen_tags(fin):
-    
+def gen_super_tags(fin):
+
     tree_dep_dict = gen_tree_dep_dict(fin)
 
     for i, tree in enumerate(get_trees(fin)):
         genRange(tree, tree.root, 0, 1)
-        height_dict = gen_height_list(tree, tree_dep_dict[i])
+        try:
+            height_dict = gen_height_list(tree, tree_dep_dict[i])
+        except ValueError:
+            print ("Error")
         path_dict = {}
         gen_suptag(tree, tree.root, height_dict, path_dict)
         yield (' '.join(path_dict.values()), ' '.join(map(lambda key: tree[key].tag, path_dict.keys())))
-        
-        
+
+
 def generate_data(src_dir, dest_dir):
 
     for sub_dir in os.listdir(src_dir):
         out_path = os.path.join(dest_dir, sub_dir)
         make_dir(os.path.join(out_path, "tags"))
         make_dir(os.path.join(out_path, "words"))
-                    
+
         for f_in in os.listdir(os.path.join(src_dir, sub_dir)):
             data_in = os.path.join(src_dir, sub_dir, f_in)
             tags_out = os.path.join(out_path, "tags", f_in+'.tg')
@@ -214,6 +217,42 @@ def generate_data(src_dir, dest_dir):
 
             with open(tags_out, 'w') as t_file:
                 with open(words_out, 'w') as w_file:
-                    for s_tags, s_words in gen_tags(data_in):
+                    for s_tags, s_words in gen_super_tags(data_in):
                         print(s_tags, file=t_file)
                         print(s_words, file=w_file)
+
+
+def generate_data_flat(src_dir, dest_dir = os.getcwd(), gen_tags_fn=gen_super_tags):
+
+    tags_out = os.path.join(dest_dir, 'tags')
+    words_out = os.path.join(dest_dir, 'words')
+    with open(tags_out, 'w') as t_file:
+        with open(words_out, 'w') as w_file:
+            for sub_dir in os.listdir(src_dir):
+                for f_in in os.listdir(os.path.join(src_dir, sub_dir)):
+                    data_in = os.path.join(src_dir, sub_dir, f_in)
+                    print("Reading file %s" %(data_in))
+                    for s_tags, s_words in gen_tags_fn(data_in):
+                        print(s_tags, file=t_file)
+                        print(s_words, file=w_file)
+
+def gen_tags(fin):
+    for tree in get_trees(fin):
+        rng = xrange(1,len(tree.leaves(tree.root))+1)
+        words = ' '.join(map(lambda lid: tree[lid].tag, rng))
+        tags = ' '.join(map(lambda lid: tree.parent(lid).tag, rng))
+        yield (tags, words)
+
+#gen_tags('raw_data/wsj/00/wsj_0002.mrg')
+# def combine_datafiles(src_dir, r_min=0, r_max=24):
+#     sentences = {}
+#     for el in ['words', 'tags']:
+#         data_list = []
+#         for subdir in map(lambda n: str(n).zfill(2), range(r_min, r_max)):
+#             current_path = join(src_dir, subdir, el)
+#             for f in listdir(current_path):
+#                 data_list.extend(read_file(join(current_path, f)))
+#         sentences[el] = data_list
+#         with open(el, 'w') as f:
+#             f.write("\n".join([' '.join(s) for s in data_list]))
+#     return sentences
