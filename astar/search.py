@@ -41,13 +41,16 @@ class TagNode(object):
             subtagtrees = tagtrees[ptr:ptr+2]
             roots = [t[t.root] for t in subtagtrees]
             leaves = [ [l for l in t.leaves(t.root) if l.data.miss] for t in subtagtrees]
-            if roots[0].tag in map(lambda l: l.tag, leaves[1]):
+            # import pdb; pdb.set_trace()
+            if roots[0].tag in map(lambda l: l.tag, leaves[1]) and \
+            len(leaves[0]) == 0:
                 idm = map(lambda l: l.tag, leaves[1]).index(roots[0].tag)
                 tagtrees[ptr+1].paste(leaves[1][idm].identifier, tagtrees[ptr])
                 tagtrees[ptr+1].link_past_node(leaves[1][idm].identifier)
                 del tagtrees[ptr]
                 if ptr > 0 : ptr -= 1
-            elif roots[1].tag in map(lambda l: l.tag, leaves[0]):
+            elif roots[1].tag in map(lambda l: l.tag, leaves[0]) and \
+            len(leaves[1]) == 0:
                 idm = map(lambda l: l.tag, leaves[0]).index(roots[1].tag)
                 tagtrees[ptr].paste(leaves[0][idm].identifier, tagtrees[ptr+1])
                 tagtrees[ptr].link_past_node(leaves[0][idm].identifier)
@@ -114,12 +117,12 @@ class Solver(AStar):
 
     def neighbors(self, node):
         neighbors = [TagNode(node.rid, nb.lid, node.rank+nb.rank)
-                    for nb in self.cl.getr(node.lid)]
-                    #if TagNode(node.rid, nb.lid, node.rank+nb.rank).is_valid(self.tags)]
+                    for nb in self.cl.getr(node.lid) \
+                    if TagNode(node.rid, nb.lid, node.rank+nb.rank).is_valid(self.tags)]
 
         neighbors += [TagNode(nb.rid, node.lid, nb.rank+node.rank)
-                    for nb in self.cl.getl(node.rid)]
-                    #if TagNode(nb.rid, node.lid, nb.rank+node.rank).is_valid(self.tags)]
+                    for nb in self.cl.getl(node.rid) \
+                    if TagNode(nb.rid, node.lid, nb.rank+node.rank).is_valid(self.tags)]
 
         if len(node.rank) == 1 and node.rank[0] < self.tags.shape[0] - 1:
             node_rp1 = TagNode(node.rid, node.lid, [node.rank[0] + 1])
@@ -155,8 +158,8 @@ def toy_example(rank, tagsVal):
 
 
 def solve_treeSearch():
-    #tagsVal = 'NNP NP\\NNP+NNP S\\NP\\.+VP\\NP+VBZ NP\\PP+NP+NN PP\\NP+IN NP\\,\\NP+NP\\NNP+NNP NNP , DT NNP VBG NP\\DT\\NNP\\VBG+NN .'.split()
-    tagsVal = 'NP+PRP S\NP\.+VP\NP+VBZ DT NP\PP+NP\DT+NN PP\NP+IN PRP$ NN NP\NP+NP\PRP$\NN+NN NP+NN .'.split()
+    #tagsVal = 'NP+PRP S\NP\.+VP\NP+VBZ DT NP\PP+NP\DT+NN PP\NP+IN PRP$ NN NP\NP+NP\PRP$\NN+NN NP+NN .'.split()
+    tagsVal = 'NP+PRP S\NP\.+VP\VP+VBD VP\NP\PP+VBN DT NP\PP+NP\DT\CC\NN\NN+NNS CC NN NN PP\NP+IN NP+NNP PP\NP+IN CD NP\CD+NNS .'.split()
     max_lid = len(tagsVal)
     max_rank  = 2
     tvals, tags = toy_example(max_rank, tagsVal)
