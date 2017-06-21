@@ -5,9 +5,11 @@ class Config(object):
     tag_embedding_size = 128
     n_hidden_fw = 128
     n_hidden_bw = 128
-    n_hidden_lstm = 128
+    #n_hidden_lstm = 128 #TODO
+    n_hidden_lstm = 256
     word_vocabulary_size = 40000
-    tag_vocabulary_size = 50000 #TODO check vocab size - keep all tags
+    #tag_vocabulary_size = 50000 #TODO check vocab size - keep all tags
+    tag_vocabulary_size = 11390
     num_steps = 100001
     learning_rate = 0.1
     learning_rate_decay_factor = 0.5
