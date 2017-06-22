@@ -86,10 +86,8 @@ class AStar:
             current.closed = True
             self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
-
                 if neighbor.closed:
                     continue
-
                 neighbor.fscore = self.real_cost(neighbor.data) + \
                         self.heuristic_cost(neighbor.data, goal)
                 neighbor.came_from = current
