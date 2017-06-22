@@ -48,13 +48,19 @@ def _generate_batch(data, batch_size=32):
     dn = np.array_split(dn, len(dn)/batch_size)
     return dn
 
+
 def generate_batch(data, batch_size=32):
     batch = dict()
     d_keys = data.keys()
     d_size = len(data[d_keys[0]])
-    d_index = np.random.randint(d_size, size=batch_size)
-    for key in d_keys:
-        batch[key] = np.array(data[key])[d_index]
+    cond = True
+    while cond: #TODO fix dataset to avoid mismatching from word and tag
+        d_index = np.random.randint(d_size, size=batch_size)
+        for key in d_keys:
+            batch[key] = np.array(data[key])[d_index]
+        lw = map(lambda x: len(x), batch['word'])
+        lt = map(lambda x: len(x), batch['tag'])
+        cond = len([i for i in range(len(lw)) if lw[i]!=lt[i]])>0
     return batch
 
 def data_padding(data, mlen = 0, pad_sym=0):
