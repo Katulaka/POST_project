@@ -7,7 +7,7 @@ class Config(object):
     n_hidden_bw = 128
     #n_hidden_lstm = 128 #TODO
     n_hidden_lstm = 256
-    word_vocabulary_size = 40000
+    word_vocabulary_size = 48368
     #tag_vocabulary_size = 50000 #TODO check vocab size - keep all tags
     tag_vocabulary_size = 11390
     num_steps = 100001
