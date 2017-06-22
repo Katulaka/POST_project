@@ -41,6 +41,10 @@ def train(config):
 
     with tf.Session() as sess:
         # print("Creating %d layers of %d units." % (gen_config.num_layers, gen_config.size))
+        #TODO maybe fix gen_dataset to get config values
+        _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
+        config.tag_vocabulary_size = max(dictionary['tag'].values())
+        config.word_vocabulary_size = max(dictionary['word'].values())
         model = create_model(sess, config)
 
         # This is the training loop.
@@ -52,9 +56,6 @@ def train(config):
         step_loss_summary = tf.Summary()
         writer = tf.summary.FileWriter("../logs/", sess.graph)
 
-        #train_set = dp.gen_data(config.train_dir)  # TODO
-        _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
-
         while True:
 
             # Get a batch and make a step.
@@ -62,7 +63,6 @@ def train(config):
             word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
                 model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
             pred, step_loss, _ = model.step(sess, word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot)
-
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             moving_average_loss += step_loss
@@ -94,18 +94,18 @@ def train(config):
                 sys.stdout.flush()
 
 
-def gen_toy_data(batch_size,tag_vocabulary_size,word_vocabulary_size, max_len = 3):
-    import numpy as np
-    ex = np.random.randint(tag_vocabulary_size, size=(max_len*max_len*batch_size))
-    labels = np.zeros((max_len*max_len*batch_size, tag_vocabulary_size))
-    labels[np.arange(max_len*max_len*batch_size), ex] = 1
-    w_in = np.random.randint(word_vocabulary_size, size=(batch_size, max_len))
-    t_in = np.random.randint(tag_vocabulary_size, size=(batch_size, max_len, max_len))
-    w_s_len = [max_len] * batch_size
-    t_s_len = [max_len] * (max_len*batch_size)
-
-    return t_s_len, w_s_len, t_in, w_in, labels
-
+# def gen_toy_data(batch_size,tag_vocabulary_size,word_vocabulary_size, max_len = 3):
+#     import numpy as np
+#     ex = np.random.randint(tag_vocabulary_size, size=(max_len*max_len*batch_size))
+#     labels = np.zeros((max_len*max_len*batch_size, tag_vocabulary_size))
+#     labels[np.arange(max_len*max_len*batch_size), ex] = 1
+#     w_in = np.random.randint(word_vocabulary_size, size=(batch_size, max_len))
+#     t_in = np.random.randint(tag_vocabulary_size, size=(batch_size, max_len, max_len))
+#     w_s_len = [max_len] * batch_size
+#     t_s_len = [max_len] * (max_len*batch_size)
+#
+#     return t_s_len, w_s_len, t_in, w_in, labels
+#
 
 #    loss_sum = tf.summary.scalar("loss", loss)
 #    summary_op = tf.summary.merge_all()
