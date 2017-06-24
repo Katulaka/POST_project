@@ -3,15 +3,14 @@ import tensorflow as tf
 import time
 
 import utils.gen_dataset as gd
-import utils.conf 
-import model.main_NN as main_NN
-
-
+import utils.conf
+import model.NN_main as NN_main
+import utils.data_preproc as dp
 
 
 def main(_):
     seed = int(time.time())
-    np.random.seed(seed) 
+    np.random.seed(seed)
 
     Config = utils.conf.Config
 
@@ -36,9 +35,9 @@ def main(_):
 
   #  if(args.disc_prob):
   #      conf.disc_config.keep_prob = args.disc_prob
- 
-  #  if args.train_type == 'disc': 
-  #      print ("Runinng Discriminator Pre-Train") 
+
+  #  if args.train_type == 'disc':
+  #      print ("Runinng Discriminator Pre-Train")
   #      disc_pre_train()
   #  elif args.train_type == 'gen':
   #      print ("Runinng Generator Pre-Train")
@@ -47,13 +46,18 @@ def main(_):
   #      print ("Runinng Generator Pre-Train 2")
   #      gen_pre_train2()
   #  else:
-  #      print ("Runinng Adversarial")        
+  #      print ("Runinng Adversarial")
   #      al_train()
 
 
     #gd.generate_data(Config.src_dir, Config.dest_dir)
-  
-    main_NN.train(Config)
+    _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
+    #TODO maybe fix gen_dataset to get config values
+    Config.tag_vocabulary_size = max(dictionary['tag'].values())
+    Config.word_vocabulary_size = max(dictionary['word'].values())
+
+    NN_main.train(Config, train_set) #TODO Maybe make it read trainset from file
+    # NN_main.evaluate(Config)
 
 
 if __name__ == "__main__":

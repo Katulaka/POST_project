@@ -1,8 +1,6 @@
 from __future__ import print_function
 
 import NN_model as nnModel
-import utils.data_preproc as dp
-
 import time
 # import os
 import math
@@ -20,31 +18,28 @@ def create_model(session, config):
             config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
             config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
 
-    ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
+    # print("Creating %d layers of %d units." % (gen_config.num_layers, gen_config.size))
+    ckpt = tf.train.get_checkpoint_state(config.checkpoint_path) #TODO verify this
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
         if config.learning_rate < model.learning_rate.eval():
             print('Re-setting learning rate to %f' % config.learning_rate)
             session.run(model.learning_rate.assign(config.learning_rate), [])
+        end_time = time.time()
+        print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-
-    end_time = time.time()
-    print("Time to create Gen_RNN model: %.2f" % (end_time - start_time))
+        end_time = time.time()
+        print("Time to create Gen_RNN model: %.2f" % (end_time - start_time))
 
     return model
 
 
-def train(config):
+def train(config, train_set):
 
     with tf.Session() as sess:
-        # print("Creating %d layers of %d units." % (gen_config.num_layers, gen_config.size))
-        #TODO maybe fix gen_dataset to get config values
-        _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
-        config.tag_vocabulary_size = max(dictionary['tag'].values())
-        config.word_vocabulary_size = max(dictionary['word'].values())
         model = create_model(sess, config)
 
         # This is the training loop.
@@ -57,12 +52,11 @@ def train(config):
         writer = tf.summary.FileWriter("../logs/", sess.graph)
 
         while True:
-
             # Get a batch and make a step.
             start_time = time.time()
             word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
                 model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
-            pred, step_loss, _ = model.step(sess, word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot)
+            pred, step_loss, _  = model.step(sess, word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             moving_average_loss += step_loss
@@ -81,44 +75,73 @@ def train(config):
                 print ("global step %d learning rate %.4f step-time %.2f perplexity "
                        "%.6f" % (model.global_step.eval(), model.learning_rate.eval(),
                                  step_time, perplexity))
-                # Decrease learning rate if no improvement was seen over last 3 times.
-                # step_tracker = model.global_step.eval()
 
+                # Decrease learning rate if no improvement was seen over last 3 times.
                 if len(previous_losses) > 2 and loss > max(previous_losses[-3:]):
                     sess.run(model.learning_rate_decay_op)
                 previous_losses.append(loss)
                 # Save checkpoint and zero timer and loss.
-                # checkpoint_path = os.path.join()
+                # checkpoint_path = os.path.join() #TODO add checkpoint path generation
                 model.saver.save(sess, config.checkpoint_path, global_step=model.global_step)
                 step_time, loss = 0.0, 0.0
                 sys.stdout.flush()
 
+# def evaluate(config):
+#
+#     model = create_model(sess, config)
+#
+#
+    def decode(self, saver, sess):
 
-# def gen_toy_data(batch_size,tag_vocabulary_size,word_vocabulary_size, max_len = 3):
-#     import numpy as np
-#     ex = np.random.randint(tag_vocabulary_size, size=(max_len*max_len*batch_size))
-#     labels = np.zeros((max_len*max_len*batch_size, tag_vocabulary_size))
-#     labels[np.arange(max_len*max_len*batch_size), ex] = 1
-#     w_in = np.random.randint(word_vocabulary_size, size=(batch_size, max_len))
-#     t_in = np.random.randint(tag_vocabulary_size, size=(batch_size, max_len, max_len))
-#     w_s_len = [max_len] * batch_size
-#     t_s_len = [max_len] * (max_len*batch_size)
-#
-#     return t_s_len, w_s_len, t_in, w_in, labels
-#
+        start_time = time.time()
+        model = nnModel.NNModel(
+                config.batch_size, config.word_embedding_size, config.tag_embedding_size,
+                config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
+                config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
+                config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
+
+        ckpt = tf.train.get_checkpoint_state(config.checkpoint_path) #TODO verify this
+        if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+            print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+            model.saver.restore(session, ckpt.model_checkpoint_path)
+            end_time = time.time()
+            print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
+        else:
+            return #TODO
+
+        while(True):
+        # for _ in xrange(FLAGS.decode_batches_per_ckpt):
+            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+                model.get_batch(train_set, config.tag_vocabulary_size,
+                            config.batch_size)
+
+            for i in xrange(self._hps.batch_size):
+              bs = beam_search.BeamSearch(
+                  self._model, self._hps.batch_size,
+                  self._vocab.WordToId(data.SENTENCE_START),
+                  self._vocab.WordToId(data.SENTENCE_END),
+                  self._hps.dec_timesteps)
+
+          words_in_cp = words_in.copy()
+          words_in_cp[:] = words_in[i:i+1]
+          word_seq_len_cp = word_seq_len.copy()
+          word_seq_len_cp[:] = word_seq_len[i:i+1]
+          best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)[0]
+          decode_output = [int(t) for t in best_beam.tokens[1:]]
+          self._DecodeBatch(
+              origin_words_in[i], origin_tags_in[i], decode_output)
+      return True
+
 
 #    loss_sum = tf.summary.scalar("loss", loss)
 #    summary_op = tf.summary.merge_all()
-#
-#
-#
+
 #    logs_path = '/Users/katia.patkin/Berkeley/Research/BiRNN/tmp'
 #    writer = tf.summary.FileWriter(logdir=logs_path, graph= sess.graph)
 #
 #    training_epochs = 10
 #    num_examples    = 40
 #    display_step    = 1
-#
 #
 #    for epoch in range(training_epochs):
 #
