@@ -12,11 +12,11 @@ class Config(object):
     learning_rate = 0.1
     learning_rate_decay_factor = 0.5
     max_gradient_norm = 5.0
-    train_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/proc_data/'
     steps_per_checkpoint = 10
-    checkpoint_path = '/Users/katia.patkin/Berkeley/Research/BiRNN/checkpoints/'
-    src_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/raw_data/wsj/'
-    dest_dir = '/Users/katia.patkin/Berkeley/Research/BiRNN/proc_data'
+    train_dir = 'proc_data/'
+    checkpoint_path = 'checkpoints/'
+    src_dir = 'raw_data/wsj/'
+    dest_dir = 'proc_data'
     beam_size = 5
 
 

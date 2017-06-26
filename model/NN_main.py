@@ -91,46 +91,46 @@ def train(config, train_set):
 #     model = create_model(sess, config)
 #
 #
-    def decode(self, saver, sess):
-
-        start_time = time.time()
-        model = nnModel.NNModel(
-                config.batch_size, config.word_embedding_size, config.tag_embedding_size,
-                config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
-                config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
-                config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
-
-        ckpt = tf.train.get_checkpoint_state(config.checkpoint_path) #TODO verify this
-        if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-            print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
-            model.saver.restore(session, ckpt.model_checkpoint_path)
-            end_time = time.time()
-            print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
-        else:
-            return #TODO
-
-        while(True):
-        # for _ in xrange(FLAGS.decode_batches_per_ckpt):
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
-                model.get_batch(train_set, config.tag_vocabulary_size,
-                            config.batch_size)
-
-            for i in xrange(self._hps.batch_size):
-              bs = beam_search.BeamSearch(
-                  self._model, self._hps.batch_size,
-                  self._vocab.WordToId(data.SENTENCE_START),
-                  self._vocab.WordToId(data.SENTENCE_END),
-                  self._hps.dec_timesteps)
-
-          words_in_cp = words_in.copy()
-          words_in_cp[:] = words_in[i:i+1]
-          word_seq_len_cp = word_seq_len.copy()
-          word_seq_len_cp[:] = word_seq_len[i:i+1]
-          best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)[0]
-          decode_output = [int(t) for t in best_beam.tokens[1:]]
-          self._DecodeBatch(
-              origin_words_in[i], origin_tags_in[i], decode_output)
-      return True
+    # def decode(self, saver, sess):
+    #
+    #     start_time = time.time()
+    #     model = nnModel.NNModel(
+    #             config.batch_size, config.word_embedding_size, config.tag_embedding_size,
+    #             config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
+    #             config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
+    #             config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
+    #
+    #     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path) #TODO verify this
+    #     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+    #         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+    #         model.saver.restore(session, ckpt.model_checkpoint_path)
+    #         end_time = time.time()
+    #         print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
+    #     else:
+    #         return #TODO
+    #
+    #     while(True):
+    #     # for _ in xrange(FLAGS.decode_batches_per_ckpt):
+    #         word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+    #             model.get_batch(train_set, config.tag_vocabulary_size,
+    #                         config.batch_size)
+    #
+    #         for i in xrange(self._hps.batch_size):
+    #           bs = beam_search.BeamSearch(
+    #               self._model, self._hps.batch_size,
+    #               self._vocab.WordToId(data.SENTENCE_START),
+    #               self._vocab.WordToId(data.SENTENCE_END),
+    #               self._hps.dec_timesteps)
+    #
+    #       words_in_cp = words_in.copy()
+    #       words_in_cp[:] = words_in[i:i+1]
+    #       word_seq_len_cp = word_seq_len.copy()
+    #       word_seq_len_cp[:] = word_seq_len[i:i+1]
+    #       best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)[0]
+    #       decode_output = [int(t) for t in best_beam.tokens[1:]]
+    #       self._DecodeBatch(
+    #           origin_words_in[i], origin_tags_in[i], decode_output)
+    #   return True
 
 
 #    loss_sum = tf.summary.scalar("loss", loss)
