@@ -8,30 +8,37 @@ import utils.data_preproc as dp
 
 
 class NNModel(object):
+    #
+    # LSTM = tf.contrib.rnn.BasicLSTMCell
+    # LSTMStateTuple = tf.contrib.rnn.LSTMStateTuple
 
-    def __init__(self, batch_size, word_embedding_size, tag_embedding_size, n_hidden_fw, n_hidden_bw,
-                 n_hidden_lstm, word_vocabulary_size, tag_vocabulary_size,num_steps, learning_rate,
-                 learning_rate_decay_factor, max_gradient_norm, adam=True, dtype=tf.float32, scope_name='nn_model'):
-
-        LSTM = tf.contrib.rnn.BasicLSTMCell
-        LSTMStateTuple = tf.contrib.rnn.LSTMStateTuple
+    def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
+                n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
+                tag_vocabulary_size,num_steps, learning_rate,
+                learning_rate_decay_factor, max_gradient_norm, adam=True,
+                dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
         with tf.variable_scope(self.scope_name):
 
-            self.word_seq_lens = tf.placeholder(tf.int32, shape=[None], name='word-sequence-length')
-            self.tag_seq_lens = tf.placeholder(tf.int32, shape=[None], name='tag-sequence-length')
+            self.word_seq_lens = tf.placeholder(tf.int32, shape=[None],
+                                                name='word-sequence-length')
+            self.tag_seq_lens = tf.placeholder(tf.int32, shape=[None],
+                                                name='tag-sequence-length')
 
             self.learning_rate = tf.Variable(float(learning_rate),
-                trainable=False, dtype=dtype)
+                                    trainable=False, dtype=dtype)
             self.learning_rate_decay_op = self.learning_rate.assign(
-                self.learning_rate * learning_rate_decay_factor)
+                            self.learning_rate * learning_rate_decay_factor)
             self.global_step = tf.Variable(0, trainable=False)
 
             with tf.name_scope('input'):
-                self.word_inputs = tf.placeholder(tf.int32, shape=[None, None], name="word-input")
-                self.tag_inputs = tf.placeholder(tf.int32, shape=[None, None], name="tag-input")
-                self.targets = tf.placeholder(tf.int32, shape=[None, None, None], name="targets")
+                self.word_inputs = tf.placeholder(tf.int32, shape=[None, None],
+                                                            name="word-input")
+                self.tag_inputs = tf.placeholder(tf.int32, shape=[None, None],
+                                                            name="tag-input")
+                self.targets = tf.placeholder(tf.int32,shape=[None, None, None],
+                                                                name="targets")
 
             # Look up embeddings for inputs.
             with tf.name_scope('embedding'):
@@ -46,40 +53,39 @@ class NNModel(object):
             with tf.name_scope('bidirectional-LSTM-Layer'):
                 # Bidirectional LSTM
                 # Forward and Backward direction cell
-                lstm_fw_cell = LSTM(n_hidden_fw, forget_bias=1.0, state_is_tuple=True)
-                lstm_bw_cell = LSTM(n_hidden_bw, forget_bias=1.0, state_is_tuple=True)
+                lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_fw,
+                                        forget_bias=1.0, state_is_tuple=True)
+                lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_bw,
+                                        forget_bias=1.0, state_is_tuple=True)
 
             # Get lstm cell output
-                bidi_out, bidi_states = tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell, lstm_bw_cell,
-                                                                            word_embed,
-                                                                            sequence_length=self.word_seq_lens,
-                                                                            dtype=dtype)
+                bidi_out, bidi_states = tf.nn.bidirectional_dynamic_rnn(
+                                        lstm_fw_cell, lstm_bw_cell, word_embed,
+                                        sequence_length=self.word_seq_lens,
+                                        dtype=dtype)
 
-
-            # with tf.variable_scope('decoder'), tf.device(self._next_device()):
-            #     # When decoding, use model output from the previous step
-            #     # for the next step.
-            #     loop_function = None
-            #     if hps.mode == 'decode':
-            #       loop_function = _extract_argmax_and_embed(
-            #           embedding, (w, v), update_embedding=False)
+                self.bidi_states = bidi_states
+                self.bidi_out = bidi_out
 
             with tf.name_scope('LSTM-Layer'):
                 # LSTM
                 lstm_init = tf.concat(bidi_out, 2, name='lstm-init')
-                lstm_init_reshape = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw])
+                lstm_init = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw])
                 # remove padding:
                 mask = tf.not_equal(tf.reshape(self.word_inputs, [-1]), 0)
-                lstm_init_reshape = tf.boolean_mask(lstm_init_reshape, mask)
+                self.dec_init_state = tf.boolean_mask(lstm_init, mask)
+                self.lstm_init = tf.contrib.rnn.LSTMStateTuple(self.dec_init_state, tf.zeros_like(self.dec_init_state))
 
-                lstm_init_reshape = LSTMStateTuple(lstm_init_reshape, tf.zeros_like(lstm_init_reshape))
+                lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_lstm,
+                                        forget_bias=1.0, state_is_tuple=True)
+                lstm_out, lstm_state = tf.nn.dynamic_rnn(lstm_cell, tag_embed,
+                                        initial_state=self.lstm_init,
+                                        sequence_length=self.tag_seq_lens,
+                                        dtype=dtype)
 
-                lstm_cell = LSTM(n_hidden_lstm, forget_bias=1.0, state_is_tuple=True)
-                lstm_out, _ = tf.nn.dynamic_rnn(lstm_cell, tag_embed, initial_state=lstm_init_reshape,
-                                                    sequence_length=self.tag_seq_lens, dtype=dtype)
             self.tag_embed = tag_embed
-            self.lstm_init_reshape = lstm_init_reshape
             self.lstm_out = lstm_out
+            self.lstm_state =  lstm_state
             # compute softmax
             with tf.name_scope('predictions'):
                 w_uniform_dist = tf.random_uniform([n_hidden_lstm, tag_vocabulary_size], -1.0, 1.0)
@@ -89,7 +95,7 @@ class NNModel(object):
                 outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
                 self.logits = tf.matmul(outputs_reshape, w_out) + b_out
                 lstm_out_sahpe = tf.shape(lstm_out)
-                self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0],lstm_out_sahpe[1], -1])
+                self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0], lstm_out_sahpe[1], -1])
                 self.pred = tf.nn.softmax(self.logits, name='pred')
 
             with tf.name_scope("loss"):
@@ -115,7 +121,6 @@ class NNModel(object):
 
         output_feed = [self.pred, self.loss, self.optimizer]
         outputs = session.run(output_feed, input_feed)
-
         return outputs
 
 
@@ -131,8 +136,10 @@ class NNModel(object):
 
         seq_len_w = map(lambda x: len(x), bv_w)
         dp.data_padding(bv_w)
+        # import pdb; pdb.set_trace()
         bv_w = np.vstack([np.expand_dims(x, 0) for x in bv_w])
 
+        bv_t = dp.add_xos(bv_t)
         seq_len_t = map(lambda x: len(x), bv_t)
         bv_t_1hot = map(lambda x: dp._to_onehot(x, max(seq_len_t), tag_vocabulary_size), bv_t)
         bv_t_1hot = np.vstack([np.expand_dims(x, 0) for x in bv_t_1hot])
@@ -147,10 +154,25 @@ class NNModel(object):
         input_feed = {
             self.word_inputs: enc_inputs,
             self.word_seq_lens: enc_len}
-        output_feed = [self.lstm_init_reshape]
-        # results = sess.run(output_feed, input_feed)
-        # return results[0], results[1][0]
-        return session.run(output_feed, input_feed)
+
+        output_feed = self.dec_init_state
+        dec_init_states = session.run(output_feed, input_feed)
+        return [tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),
+                np.expand_dims(np.zeros_like(i), axis=0))
+                for i in dec_init_states]
+
+    # def decode_topk(self, sess, latest_tokens, enc_top_states, dec_init_states):
+    def decode_topk(self, sess, latest_tokens, dec_init_states):
+        """Return the topK results and new decoder states."""
+        input_feed = {
+            self.lstm_init: dec_init_states,
+            self.tag_inputs: latest_tokens,
+            self.tag_seq_lens: np.ones(1, np.int32)}
+        output_feed = [self.lstm_out, self.pred , self.lstm_state]
+        results = sess.run(output_feed,input_feed)
+        ids, probs, states = results[0], results[1], results[2]
+        # new_states = [s for s in states] #TODO
+        return ids, probs, states
 
 
 

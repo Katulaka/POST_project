@@ -21,7 +21,7 @@ def flatten(list_):
             yield element
 
 def build_dictionary(words, vocabulary_size = -1):
-    count = [['PAD', -1],['UNK', -1]]
+    count = [['PAD', -1],['SOS',-1],['EOS', -1], ['UNK', -1]]
     if vocabulary_size == -1:
         count.extend(collections.Counter(words).most_common())
     else:
@@ -70,6 +70,9 @@ def data_padding(data, mlen = 0, pad_sym=0):
         pad_len = max_len-len(el)
         data[i] = np.lib.pad(el, (0,pad_len), 'constant', constant_values=(pad_sym))
     return data
+
+def add_xos(data, start_token = 1, end_token = 2):
+    return map(lambda x: [start_token]+x+[end_token], data)
 
 def _to_onehot(vec_in, max_len, size):
     vec_out = np.zeros((max_len, size))

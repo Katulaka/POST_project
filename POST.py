@@ -16,7 +16,7 @@ def main(_):
 
     import argparse
     parser = argparse.ArgumentParser()
-  #  parser.add_argument('train_type', type=str)
+    parser.add_argument('--action', type=str)
   #  parser.add_argument('--gen_file', type=str)
   #  parser.add_argument('--disc_file', type=str)
   #  parser.add_argument('--gen_prob', type=float)
@@ -24,8 +24,8 @@ def main(_):
 
     args = parser.parse_args()
 
-  #  if (args.gen_file):
-  #      conf.gen_config.train_data_file = args.gen_file
+   # if (args.gen_file):
+   #     conf.gen_config.train_data_file = args.gen_file
 
   #  if(args.gen_prob):
   #      conf.gen_config.keep_prob = args.gen_prob
@@ -55,8 +55,12 @@ def main(_):
     #TODO maybe fix gen_dataset to get config values
     Config.tag_vocabulary_size = max(dictionary['tag'].values())
     Config.word_vocabulary_size = max(dictionary['word'].values())
-
-    NN_main.train(Config, train_set) #TODO Maybe make it read trainset from file
+    if (args.action == 'train'):
+        NN_main.train(Config, train_set) #TODO Maybe make it read trainset from file
+    elif (args.action == 'decode'):
+        NN_main.decode(Config, train_set)
+    else:
+        print("Nothing to do!!")
     # NN_main.evaluate(Config)
 
 

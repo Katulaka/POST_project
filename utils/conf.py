@@ -18,6 +18,7 @@ class Config(object):
     src_dir = 'raw_data/wsj/'
     dest_dir = 'proc_data'
     beam_size = 5
+    dec_timesteps = 100 #TODO
 
 
    # training_epochs = 10
