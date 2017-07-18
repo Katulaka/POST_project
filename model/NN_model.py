@@ -162,7 +162,7 @@ class NNModel(object):
                 for i in dec_init_states]
 
     # def decode_topk(self, sess, latest_tokens, enc_top_states, dec_init_states):
-    def decode_topk(self, sess, latest_tokens, dec_init_states):
+    def decode_topk(self, sess, latest_tokens, dec_init_states, k):
         """Return the topK results and new decoder states."""
         input_feed = {
             self.lstm_init: dec_init_states,
@@ -172,7 +172,9 @@ class NNModel(object):
         results = sess.run(output_feed,input_feed)
         ids, probs, states = results[0], results[1], results[2]
         # new_states = [s for s in states] #TODO
-        return ids, probs, states
+        topk_ids = np.argsort(np.squeeze(ids))[-k:]
+        topk_probs = np.squeeze(probs)[topk_ids]
+        return topk_ids, topk_probs, states
 
 
 
