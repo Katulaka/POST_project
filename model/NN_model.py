@@ -168,11 +168,10 @@ class NNModel(object):
             self.lstm_init: dec_init_states,
             self.tag_inputs: latest_tokens,
             self.tag_seq_lens: np.ones(1, np.int32)}
-        output_feed = [self.lstm_out, self.pred , self.lstm_state]
+        output_feed = [self.pred , self.lstm_state]
         results = sess.run(output_feed,input_feed)
-        ids, probs, states = results[0], results[1], results[2]
-        # new_states = [s for s in states] #TODO
-        topk_ids = np.argsort(np.squeeze(ids))[-k:]
+        probs, states = results[0], results[1]
+        topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
 

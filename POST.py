@@ -1,11 +1,13 @@
 import numpy as np
 import tensorflow as tf
 import time
+import os
 
 import utils.gen_dataset as gd
+import utils.data_preproc as dp
 import utils.conf
 import model.NN_main as NN_main
-import utils.data_preproc as dp
+
 
 
 def main(_):
@@ -17,51 +19,34 @@ def main(_):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str)
-  #  parser.add_argument('--gen_file', type=str)
-  #  parser.add_argument('--disc_file', type=str)
-  #  parser.add_argument('--gen_prob', type=float)
-  #  parser.add_argument('--disc_prob', type=float)
-
+    parser.add_argument('--tags_type', type=str, default='stags')
     args = parser.parse_args()
 
-   # if (args.gen_file):
-   #     conf.gen_config.train_data_file = args.gen_file
 
-  #  if(args.gen_prob):
-  #      conf.gen_config.keep_prob = args.gen_prob
+    data_dir = os.path.join(os.getcwd(), 'data')
+    w_file = os.path.join(data_dir, 'words')
+    t_file = os.path.join(data_dir, args.tags_type)
+    gen_tags_fn = gd.gen_tags if args.tags_type == 'tags' else gd.gen_stags
 
-  #  if (args.disc_file):
-  #      conf.disc_config.train_data_file = args.disc_file
+    if not os.path.exists(t_file):
+        gd.generate_data_flat(Config.src_dir, data_dir, gen_tags_fn)
 
-  #  if(args.disc_prob):
-  #      conf.disc_config.keep_prob = args.disc_prob
+    _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file, t_file)
 
-  #  if args.train_type == 'disc':
-  #      print ("Runinng Discriminator Pre-Train")
-  #      disc_pre_train()
-  #  elif args.train_type == 'gen':
-  #      print ("Runinng Generator Pre-Train")
-  #      gen_pre_train()
-  #  elif args.train_type == 'gen2':
-  #      print ("Runinng Generator Pre-Train 2")
-  #      gen_pre_train2()
-  #  else:
-  #      print ("Runinng Adversarial")
-  #      al_train()
-
-
-    #gd.generate_data(Config.src_dir, Config.dest_dir)
-    _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file = 'data/words', t_file = 'data/stags')
     #TODO maybe fix gen_dataset to get config values
-    Config.tag_vocabulary_size = max(dictionary['tag'].values())
-    Config.word_vocabulary_size = max(dictionary['word'].values())
+    Config.tag_vocabulary_size = max(dictionary['tag'].values()) + 1
+    Config.word_vocabulary_size = max(dictionary['word'].values()) + 1
+
+    Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints',
+                                                                args.tags_type)
     if (args.action == 'train'):
-        NN_main.train(Config, train_set) #TODO Maybe make it read trainset from file
+
+        NN_main.train(Config, train_set, args.tags_type)
     elif (args.action == 'decode'):
-        NN_main.decode(Config, train_set)
+        # Config.dec_timesteps = 3 if args.tags_type == 'tags' else 20
+        NN_main.decode(Config, train_set, reverse_dictionary)
     else:
         print("Nothing to do!!")
-    # NN_main.evaluate(Config)
 
 
 if __name__ == "__main__":
