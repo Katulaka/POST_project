@@ -42,13 +42,19 @@ class NNModel(object):
 
             # Look up embeddings for inputs.
             with tf.name_scope('embedding'):
-                word_embed_matrix_init = tf.random_uniform([word_vocabulary_size, word_embedding_size], -1.0, 1.0)
-                word_embed_matrix = tf.Variable(word_embed_matrix_init, name='word-embeddings')
-                word_embed = tf.nn.embedding_lookup(word_embed_matrix, self.word_inputs, name='word-embed')
+                word_embed_matrix_init = tf.random_uniform(
+                    [word_vocabulary_size, word_embedding_size], -1.0, 1.0)
+                word_embed_matrix = tf.Variable(word_embed_matrix_init,
+                                                    name='word-embeddings')
+                word_embed = tf.nn.embedding_lookup(word_embed_matrix,
+                                        self.word_inputs, name='word-embed')
 
-                tag_embed_matrix_init = tf.random_uniform([tag_vocabulary_size, tag_embedding_size], -1.0, 1.0)
-                tag_embed_matrix = tf.Variable(tag_embed_matrix_init, name='tag-embeddings')
-                tag_embed = tf.nn.embedding_lookup(tag_embed_matrix, self.tag_inputs, name='tag-embed')
+                tag_embed_matrix_init = tf.random_uniform(
+                        [tag_vocabulary_size, tag_embedding_size], -1.0, 1.0)
+                tag_embed_matrix = tf.Variable(tag_embed_matrix_init,
+                                                        name='tag-embeddings')
+                tag_embed = tf.nn.embedding_lookup(tag_embed_matrix,
+                                            self.tag_inputs, name='tag-embed')
 
             with tf.name_scope('bidirectional-LSTM-Layer'):
                 # Bidirectional LSTM
@@ -74,7 +80,9 @@ class NNModel(object):
                 # remove padding:
                 mask = tf.not_equal(tf.reshape(self.word_inputs, [-1]), 0)
                 self.dec_init_state = tf.boolean_mask(lstm_init, mask)
-                self.lstm_init = tf.contrib.rnn.LSTMStateTuple(self.dec_init_state, tf.zeros_like(self.dec_init_state))
+                self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
+                                            self.dec_init_state,
+                                            tf.zeros_like(self.dec_init_state))
 
                 lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_lstm,
                                         forget_bias=1.0, state_is_tuple=True)
@@ -88,14 +96,17 @@ class NNModel(object):
             self.lstm_state =  lstm_state
             # compute softmax
             with tf.name_scope('predictions'):
-                w_uniform_dist = tf.random_uniform([n_hidden_lstm, tag_vocabulary_size], -1.0, 1.0)
+                w_uniform_dist = tf.random_uniform([n_hidden_lstm,
+                                            tag_vocabulary_size], -1.0, 1.0)
                 self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-                self.b_out = b_out = tf.Variable(tf.zeros([tag_vocabulary_size]), name='b-out')
+                self.b_out = b_out = tf.Variable(
+                                tf.zeros([tag_vocabulary_size]), name='b-out')
 
                 outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
                 self.logits = tf.matmul(outputs_reshape, w_out) + b_out
                 lstm_out_sahpe = tf.shape(lstm_out)
-                self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0], lstm_out_sahpe[1], -1])
+                self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0],
+                                                        lstm_out_sahpe[1], -1])
                 self.pred = tf.nn.softmax(self.logits, name='pred')
 
             with tf.name_scope("loss"):

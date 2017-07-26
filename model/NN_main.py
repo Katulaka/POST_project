@@ -7,6 +7,8 @@ import math
 import sys
 import os
 import tensorflow as tf
+import copy
+
 
 
 def create_model(session, config):
@@ -135,7 +137,9 @@ def decode(config, train_set, reverse_dict):
                       2, #EOS
                       config.dec_timesteps)
 
-            best_beam = bs.BeamSearch(sess, words_in, word_seq_len)
+            words_in_cp = copy.copy(words_in)
+            word_seq_len_cp = copy.copy(word_seq_len)
+            best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
             print (best_beam)
 
             tmp = [[[(map(lambda x: reverse_dict['tag'][x],g[0][1:-1]), g[1])

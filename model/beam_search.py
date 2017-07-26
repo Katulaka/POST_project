@@ -164,13 +164,14 @@ class BeamSearch(object):
                             new_states))
           # Filter and collect any hypotheses that have the end token.
           hyps = []
+        #   import pdb; pdb.set_trace()
           for h in self._BestHyps(all_hyps):
               if h.latest_token == self._end_token:
                   # Pull the hypothesis off the beam if the end token is reached.
                   results.append(h)
-              elif len(results) >= self._beam_size and \
-                    h.score < min(map(lambda h: h.score, results)):
-                    pass
+            #   elif len(results) >= self._beam_size and \
+            #         h.score < min(map(lambda h: h.score, results)):
+            #         pass
               else:
                   # Otherwise continue to the extend the hypothesis.
                   hyps.append(h)
