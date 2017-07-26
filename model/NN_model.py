@@ -73,45 +73,67 @@ class NNModel(object):
                 self.bidi_states = bidi_states
                 self.bidi_out = bidi_out
 
-            with tf.name_scope('LSTM-Layer'):
+            with tf.name_scope('Bridge'):
                 # LSTM
                 lstm_init = tf.concat(bidi_out, 2, name='lstm-init')
                 lstm_init = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw])
                 # remove padding:
                 mask = tf.not_equal(tf.reshape(self.word_inputs, [-1]), 0)
                 self.dec_init_state = tf.boolean_mask(lstm_init, mask)
-                self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
-                                            self.dec_init_state,
-                                            tf.zeros_like(self.dec_init_state))
 
-                lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_lstm,
-                                        forget_bias=1.0, state_is_tuple=True)
-                lstm_out, lstm_state = tf.nn.dynamic_rnn(lstm_cell, tag_embed,
-                                        initial_state=self.lstm_init,
-                                        sequence_length=self.tag_seq_lens,
-                                        dtype=dtype)
+            def output_tag_sequences():
+                """Generate sequences of tags"""
+                with tf.name_scope('LSTM-Layer')
+                    self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
+                                                self.dec_init_state,
+                                                tf.zeros_like(self.dec_init_state))
 
-            self.tag_embed = tag_embed
-            self.lstm_out = lstm_out
-            self.lstm_state =  lstm_state
-            # compute softmax
-            with tf.name_scope('predictions'):
-                w_uniform_dist = tf.random_uniform([n_hidden_lstm,
-                                            tag_vocabulary_size], -1.0, 1.0)
-                self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-                self.b_out = b_out = tf.Variable(
-                                tf.zeros([tag_vocabulary_size]), name='b-out')
+                    lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_lstm,
+                                            forget_bias=1.0, state_is_tuple=True)
+                    lstm_out, lstm_state = tf.nn.dynamic_rnn(lstm_cell, tag_embed,
+                                            initial_state=self.lstm_init,
+                                            sequence_length=self.tag_seq_lens,
+                                            dtype=dtype)
 
-                outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
-                self.logits = tf.matmul(outputs_reshape, w_out) + b_out
-                lstm_out_sahpe = tf.shape(lstm_out)
-                self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0],
-                                                        lstm_out_sahpe[1], -1])
-                self.pred = tf.nn.softmax(self.logits, name='pred')
+                self.tag_embed = tag_embed
+                self.lstm_out = lstm_out
+                self.lstm_state =  lstm_state
+                # compute softmax
+                with tf.name_scope('predictions'):
+                    w_uniform_dist = tf.random_uniform([n_hidden_lstm,
+                                                tag_vocabulary_size], -1.0, 1.0)
+                    self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
+                    self.b_out = b_out = tf.Variable(
+                                    tf.zeros([tag_vocabulary_size]), name='b-out')
 
-            with tf.name_scope("loss"):
-                cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.targets)
-                self.loss = tf.reduce_mean(cross_entropy)
+                    outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
+                    self.logits = tf.matmul(outputs_reshape, w_out) + b_out
+                    lstm_out_sahpe = tf.shape(lstm_out)
+                    self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0],
+                                                            lstm_out_sahpe[1], -1])
+                    self.pred = tf.nn.softmax(self.logits, name='pred')
+
+                with tf.name_scope("loss"):
+                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.targets)
+                    self.loss = tf.reduce_mean(cross_entropy)
+
+            def output_tags():
+                """Generate only the first tag"""
+                with tf.name_scope('predict-tags'):
+                    w_uniform_dist = tf.random_uniform([n_hidden_fw + n_hidden_bw,
+                                                        tag_vocabulary_size], -1.0, 1.0)
+                    self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
+                    self.b_out = b_out = tf.Variable(
+                                    tf.zeros([tag_vocabulary_size]), name='b-out')
+                    self.logits = tf.matmul(self.dec_init_state, w_out) + b_out
+
+                with tf.name_scope("loss"):
+                    first_targets_only = tf.slice(self.targets, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
+                    self.tag_targets = tag_targets = tf.squeeze(first_targets_only, axis=1)
+                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.tag_targets)
+                    self.loss = tf.reduce_mean(cross_entropy)
+
+            output_tags()
 
             if adam:
                 self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, global_step=self.global_step)

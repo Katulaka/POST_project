@@ -10,6 +10,7 @@ import tensorflow as tf
 import copy
 
 
+TAGS_ONLY = True
 
 def create_model(session, config):
 
@@ -123,8 +124,34 @@ def train(config, train_set, cp_path):
                 step_time, loss = 0.0, 0.0
                 sys.stdout.flush()
 
+from collections import Counter
+
+def decode_tags_only(config, train_set, reverse_dict):
+    with tf.Session() as sess:
+        model = restore_model(sess, config)
+        guesses = Counter()
+        while(True):
+            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+                model.get_batch(train_set, config.tag_vocabulary_size,
+                        config.batch_size)
+            predicted_tags = decode_one_tag(sess, model, word_seq_len, words_in)
+            true_tags = np.slice(tags_in, (0, 1), (-1, 1))
+            guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
+
+def decode_one_tag(sess, model, word_seq_len, words_in):
+    input_feed = {
+        model.word_inputs: words_in,
+        model.word_seq_lens: word_seq_len
+    }
+    output_feed = model.logits
+    results = sess.run(output_feed, input_feed)
+    return np.argmax(results, axis=1)
 
 def decode(config, train_set, reverse_dict):
+
+    if TAGS_ONLY:
+        decode_tags_only(config, train_set, reverse_dict)
+        return
 
     with tf.Session() as sess:
         model = restore_model(sess, config)
