@@ -83,7 +83,7 @@ class NNModel(object):
 
             def output_tag_sequences():
                 """Generate sequences of tags"""
-                with tf.name_scope('LSTM-Layer')
+                with tf.name_scope('LSTM-Layer'):
                     self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
                                                 self.dec_init_state,
                                                 tf.zeros_like(self.dec_init_state))
@@ -107,14 +107,16 @@ class NNModel(object):
                                     tf.zeros([tag_vocabulary_size]), name='b-out')
 
                     outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
-                    self.logits = tf.matmul(outputs_reshape, w_out) + b_out
+                    self.proj = tf.matmul(outputs_reshape, w_out) + b_out
+
                     lstm_out_sahpe = tf.shape(lstm_out)
-                    self.logits = tf.reshape(self.logits, [lstm_out_sahpe[0],
+                    self.logits = tf.reshape(self.proj, [lstm_out_sahpe[0],
                                                             lstm_out_sahpe[1], -1])
                     self.pred = tf.nn.softmax(self.logits, name='pred')
 
                 with tf.name_scope("loss"):
-                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.targets)
+                    self.targets_flat = tf.reshape(self.targets, [-1, tag_vocabulary_size])
+                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.proj, labels=self.targets_flat)
                     self.loss = tf.reduce_mean(cross_entropy)
 
             def output_tags():
@@ -126,6 +128,7 @@ class NNModel(object):
                     self.b_out = b_out = tf.Variable(
                                     tf.zeros([tag_vocabulary_size]), name='b-out')
                     self.logits = tf.matmul(self.dec_init_state, w_out) + b_out
+                    self.pred = tf.nn.softmax(self.logits, name='pred')
 
                 with tf.name_scope("loss"):
                     first_targets_only = tf.slice(self.targets, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
@@ -133,7 +136,8 @@ class NNModel(object):
                     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.tag_targets)
                     self.loss = tf.reduce_mean(cross_entropy)
 
-            output_tags()
+            # output_tags()
+            output_tag_sequences()
 
             if adam:
                 self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, global_step=self.global_step)
@@ -152,6 +156,7 @@ class NNModel(object):
                         self.tag_inputs: tag_inputs,
                         self.targets: targets}
 
+        # import pdb; pdb.set_trace()
         output_feed = [self.pred, self.loss, self.optimizer]
         outputs = session.run(output_feed, input_feed)
         return outputs
@@ -172,14 +177,16 @@ class NNModel(object):
         # import pdb; pdb.set_trace()
         bv_w = np.vstack([np.expand_dims(x, 0) for x in bv_w])
 
-        bv_t = dp.add_xos(bv_t)
-        seq_len_t = map(lambda x: len(x), bv_t)
-        bv_t_1hot = map(lambda x: dp._to_onehot(x, max(seq_len_t), tag_vocabulary_size), bv_t)
+        bv_t_go = dp.add_go(bv_t)
+        bv_t_eos = dp.add_eos(bv_t)
+        seq_len_t = map(lambda x: len(x), bv_t_go)
+        bv_t_1hot = map(lambda x: dp._to_onehot(x, max(seq_len_t),
+                                        tag_vocabulary_size), bv_t_eos)
         bv_t_1hot = np.vstack([np.expand_dims(x, 0) for x in bv_t_1hot])
-        dp.data_padding(bv_t)
-        bv_t = np.vstack([np.expand_dims(x, 0) for x in bv_t])
+        dp.data_padding(bv_t_go)
+        bv_t_go = np.vstack([np.expand_dims(x, 0) for x in bv_t_go])
 
-        return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_1hot
+        return seq_len_w, seq_len_t, bv_w, bv_t_go, bv_t_1hot
 
 
     def encode_top_state(self, session, enc_inputs, enc_len):

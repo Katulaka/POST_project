@@ -8,9 +8,10 @@ import sys
 import os
 import tensorflow as tf
 import copy
+import numpy as np
 
 
-TAGS_ONLY = True
+TAGS_ONLY = False
 
 def create_model(session, config):
 
@@ -117,6 +118,9 @@ def train(config, train_set, cp_path):
                     loss > max(previous_losses[-3:]) :
                     #and model.learning_rate.eval() > 0.000001:
                     sess.run(model.learning_rate_decay_op)
+                if model.learning_rate.eval() < 0.000001:
+                    sess.run(model.learning_rate.assign(0.1), [])
+
                 previous_losses.append(loss)
                 # Save checkpoint and zero timer and loss.
                 checkpoint_path = os.path.join(config.checkpoint_path, cp_path) #TODO add checkpoint path generation
@@ -135,8 +139,9 @@ def decode_tags_only(config, train_set, reverse_dict):
                 model.get_batch(train_set, config.tag_vocabulary_size,
                         config.batch_size)
             predicted_tags = decode_one_tag(sess, model, word_seq_len, words_in)
-            true_tags = np.slice(tags_in, (0, 1), (-1, 1))
+            true_tags = np.squeeze(tags_in[:,1:2], axis=1)
             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
+            import pdb; pdb.set_trace()
 
 def decode_one_tag(sess, model, word_seq_len, words_in):
     input_feed = {
@@ -168,9 +173,9 @@ def decode(config, train_set, reverse_dict):
             word_seq_len_cp = copy.copy(word_seq_len)
             best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
             print (best_beam)
+            import pdb; pdb.set_trace()
 
             tmp = [[[(map(lambda x: reverse_dict['tag'][x],g[0][1:-1]), g[1])
                     for g in bi] for bi in b]
                         for b in best_beam ]
-            import pdb; pdb.set_trace()
     return True

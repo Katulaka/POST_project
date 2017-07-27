@@ -74,6 +74,12 @@ def data_padding(data, mlen = 0, pad_sym=0):
 def add_xos(data, start_token = 1, end_token = 2):
     return map(lambda x: [start_token]+x+[end_token], data)
 
+def add_go(data, start_token = 1):
+    return map(lambda x: [start_token]+x, data)
+
+def add_eos(data, end_token = 2):
+    return map(lambda x: x+[end_token], data)
+
 def _to_onehot(vec_in, max_len, size):
     vec_out = np.zeros((max_len, size))
     vec_out[np.arange(len(vec_in)), vec_in] = 1
