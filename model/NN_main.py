@@ -2,12 +2,15 @@ from __future__ import print_function
 
 import NN_model as nnModel
 import beam_search as beam_search
-import time
+import utils.data_preproc as dp
+
 import math
+import time
 import sys
 import os
-import tensorflow as tf
 import copy
+
+import tensorflow as tf
 import numpy as np
 
 
@@ -87,8 +90,10 @@ def train(config, train_set, cp_path):
             # Get a batch and make a step.
             start_time = time.time()
             word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
-                model.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
-            pred, step_loss, _  = model.step(sess, word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot)
+                dp.get_batch(train_set, config.tag_vocabulary_size,
+                                                config.batch_size)
+            pred, step_loss, _  = model.step(sess, word_seq_len, tag_seq_len,
+                                            words_in, tags_in, tags_in_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             if moving_average_loss == 0:
@@ -136,7 +141,7 @@ def decode_tags_only(config, train_set, reverse_dict):
         guesses = Counter()
         while(True):
             word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
-                model.get_batch(train_set, config.tag_vocabulary_size,
+                dp.get_batch(train_set, config.tag_vocabulary_size,
                         config.batch_size)
             predicted_tags = decode_one_tag(sess, model, word_seq_len, words_in)
             true_tags = np.squeeze(tags_in[:,1:2], axis=1)
@@ -152,30 +157,30 @@ def decode_one_tag(sess, model, word_seq_len, words_in):
     results = sess.run(output_feed, input_feed)
     return np.argmax(results, axis=1)
 
-def decode(config, train_set, reverse_dict):
+def decode(config, train_set):
 
     if TAGS_ONLY:
         decode_tags_only(config, train_set, reverse_dict)
         return
 
+    word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+    dp.get_batch(train_set, config.tag_vocabulary_size,
+    config.batch_size)
+
     with tf.Session() as sess:
         model = restore_model(sess, config)
-        while(True): # for i in xrange(config.batch_size):
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
-                model.get_batch(train_set, config.tag_vocabulary_size,
-                        config.batch_size)
-            bs = beam_search.BeamSearch(model, config.beam_size,
-                      1, #SOS
-                      2, #EOS
-                      config.dec_timesteps)
+        # while(True):
+        # for i in xrange(config.decode_size):
+        bs = beam_search.BeamSearch(model, config.beam_size,
+                  1, #GO
+                  2, #EOS
+                  config.dec_timesteps)
 
-            words_in_cp = copy.copy(words_in)
-            word_seq_len_cp = copy.copy(word_seq_len)
-            best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
-            print (best_beam)
-            import pdb; pdb.set_trace()
+        words_in_cp = copy.copy(words_in)
+        word_seq_len_cp = copy.copy(word_seq_len)
+        best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
+        import pdb; pdb.set_trace()
+        print (best_beam)
 
-            tmp = [[[(map(lambda x: reverse_dict['tag'][x],g[0][1:-1]), g[1])
-                    for g in bi] for bi in b]
-                        for b in best_beam ]
-    return True
+
+    return words_in, tags_in, best_beam

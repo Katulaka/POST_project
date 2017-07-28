@@ -3,8 +3,6 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-import copy
-import utils.data_preproc as dp
 
 
 class NNModel(object):
@@ -156,37 +154,9 @@ class NNModel(object):
                         self.tag_inputs: tag_inputs,
                         self.targets: targets}
 
-        # import pdb; pdb.set_trace()
         output_feed = [self.pred, self.loss, self.optimizer]
         outputs = session.run(output_feed, input_feed)
         return outputs
-
-
-    def get_batch(self, train_data, tag_vocabulary_size, batch_size=32):
-
-        def arr_dim(a): return 1 + arr_dim(a[0]) if (type(a) == list) else 0
-
-        bv = dp.generate_batch(train_data, batch_size)
-        bv_w = copy.copy(bv['word'])
-        bv_t = copy.copy(bv['tag'])
-        if arr_dim(bv_t.tolist()) == 3:
-            bv_t = [x for y in bv_t for x in y]
-
-        seq_len_w = map(lambda x: len(x), bv_w)
-        dp.data_padding(bv_w)
-        # import pdb; pdb.set_trace()
-        bv_w = np.vstack([np.expand_dims(x, 0) for x in bv_w])
-
-        bv_t_go = dp.add_go(bv_t)
-        bv_t_eos = dp.add_eos(bv_t)
-        seq_len_t = map(lambda x: len(x), bv_t_go)
-        bv_t_1hot = map(lambda x: dp._to_onehot(x, max(seq_len_t),
-                                        tag_vocabulary_size), bv_t_eos)
-        bv_t_1hot = np.vstack([np.expand_dims(x, 0) for x in bv_t_1hot])
-        dp.data_padding(bv_t_go)
-        bv_t_go = np.vstack([np.expand_dims(x, 0) for x in bv_t_go])
-
-        return seq_len_w, seq_len_t, bv_w, bv_t_go, bv_t_1hot
 
 
     def encode_top_state(self, session, enc_inputs, enc_len):
@@ -214,38 +184,3 @@ class NNModel(object):
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
-
-
-
-
-    # def _step(self, session, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, y):
-    #
-    #     word_inputs = np.vstack([np.expand_dims(x, 0) for x in word_inputs])
-    #     tag_inputs =  np.vstack([np.expand_dims(x, 0) for x in tag_inputs])
-    #
-    #     input_feed = {self.word_seq_lens: word_seq_lens,
-    #                     self.tag_seq_lens: tag_seq_lens,
-    #                     self.word_inputs: word_inputs,
-    #                     self.tag_inputs: tag_inputs, self.y: y}
-    #
-    #     output_feed = [self.pred, self.loss, self.optimizer]
-    #
-    #     outputs = session.run(output_feed, input_feed)
-    #
-    #     return outputs
-    #
-    # def _get_batch(self, train_data, tag_vocabulary_size, batch_size=32):  # TODO fix this for real general data
-    #
-    #     bv = dp.generate_batch(train_data, batch_size)
-    #     bv_w = copy.copy(bv['word'])
-    #     bv_t = copy.copy(bv['tag'])
-    #
-    #     seq_len_w = map(lambda x: len(x), bv_w)
-    #     dp.data_padding(bv_w)
-    #
-    #     seq_len_t = map(lambda x: len(x), bv_t)
-    #     max_len = len(max(bv_t, key=len))
-    #     bv_t_1hot = map(lambda x: dp._to_onehot(x, max_len, tag_vocabulary_size), bv_t)
-    #     dp.data_padding(bv_t)
-    #
-    #     return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_1hot

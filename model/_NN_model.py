@@ -217,7 +217,6 @@ class NNModel(object):
                 np.expand_dims(np.zeros_like(i), axis=0))
                 for i in dec_init_states]
 
-    # def decode_topk(self, sess, latest_tokens, enc_top_states, dec_init_states):
     def decode_topk(self, sess, latest_tokens, dec_init_states, k):
         """Return the topK results and new decoder states."""
         input_feed = {

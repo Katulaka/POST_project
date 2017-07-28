@@ -8,6 +8,7 @@ import collections
 import numpy as np
 
 import shutil
+import copy
 
 
 def read_file(fname):
@@ -121,24 +122,27 @@ def gen_dataset(w_file = 'words', t_file = 'tags', max_len=10, tvocab_size=-1, w
 
     return count, dictionary, reverse_dictionary, vectors
 
-def get_batch(self, train_data, tag_vocabulary_size, batch_size=32):
+def get_batch(train_data, tag_vocabulary_size, batch_size=32):
 
     def arr_dim(a): return 1 + arr_dim(a[0]) if (type(a) == list) else 0
 
-    bv = dp.generate_batch(train_data, batch_size)
+    bv = generate_batch(train_data, batch_size)
     bv_w = copy.copy(bv['word'])
     bv_t = copy.copy(bv['tag'])
     if arr_dim(bv_t.tolist()) == 3:
         bv_t = [x for y in bv_t for x in y]
 
     seq_len_w = map(lambda x: len(x), bv_w)
-    dp.data_padding(bv_w)
+    data_padding(bv_w)
     bv_w = np.vstack([np.expand_dims(x, 0) for x in bv_w])
 
-    seq_len_t = map(lambda x: len(x), bv_t)
-    bv_t_1hot = map(lambda x: dp._to_onehot(x, max(seq_len_t), tag_vocabulary_size), bv_t)
+    bv_t_go = add_go(bv_t)
+    bv_t_eos = add_eos(bv_t)
+    seq_len_t = map(lambda x: len(x), bv_t_go)
+    bv_t_1hot = map(lambda x: _to_onehot(x, max(seq_len_t),
+                                        tag_vocabulary_size), bv_t_eos)
     bv_t_1hot = np.vstack([np.expand_dims(x, 0) for x in bv_t_1hot])
-    dp.data_padding(bv_t)
-    bv_t = np.vstack([np.expand_dims(x, 0) for x in bv_t])
+    data_padding(bv_t_go)
+    bv_t_go = np.vstack([np.expand_dims(x, 0) for x in bv_t_go])
 
-    return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_1hot
+    return seq_len_w, seq_len_t, bv_w, bv_t_go, bv_t_1hot

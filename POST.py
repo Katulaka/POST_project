@@ -44,7 +44,11 @@ def main(_):
         NN_main.train(Config, train_set, args.tags_type)
     elif (args.action == 'decode'):
         # Config.dec_timesteps = 3 if args.tags_type == 'tags' else 20
-        NN_main.decode(Config, train_set, reverse_dictionary)
+        words_in, tags_in, best_beam = NN_main.decode(Config, train_set)
+
+        tmp = [[[(map(lambda x: reverse_dict['tag'][x],g[0][1:-1]), g[1])
+                for g in bi] for bi in b]
+                    for b in best_beam ]
     else:
         print("Nothing to do!!")
 
