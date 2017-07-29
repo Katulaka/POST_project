@@ -9,7 +9,6 @@ import utils.conf
 import model.NN_main as NN_main
 
 
-
 def main(_):
     seed = int(time.time())
     np.random.seed(seed)
@@ -20,6 +19,7 @@ def main(_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str)
     parser.add_argument('--tags_type', type=str, default='stags')
+    parser.add_argument('--batch', type=int, default=32)
     args = parser.parse_args()
 
 
@@ -36,9 +36,10 @@ def main(_):
     #TODO maybe fix gen_dataset to get config values
     Config.tag_vocabulary_size = max(dictionary['tag'].values()) + 1
     Config.word_vocabulary_size = max(dictionary['word'].values()) + 1
-
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints',
-                                                                args.tags_type)
+                                            args.tags_type)
+    Config.batch_size = args.batch
+    
     if (args.action == 'train'):
         NN_main.train(Config, train_set, args.tags_type)
 

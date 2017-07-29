@@ -9,159 +9,164 @@ class NNModel(object):
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
-                tag_vocabulary_size,num_steps, learning_rate,
-                learning_rate_decay_factor, max_gradient_norm, adam=True,
+                tag_vocabulary_size, learning_rate,
+                learning_rate_decay_factor, mode,
                 dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
-        with tf.variable_scope(self.scope_name):
+        self.w_embed_size = word_embedding_size
+        self.t_embed_size = tag_embedding_size
+        self.w_vocab_size = word_vocabulary_size
+        self.t_vocab_size = tag_vocabulary_size
+        self.n_hidden_fw = n_hidden_fw
+        self.n_hidden_bw = n_hidden_bw
+        self.n_hidden_lstm = n_hidden_lstm
+        self.dtype = dtype
+        self.lr = learning_rate
+        self.lr_decay_factor = learning_rate_decay_factor
+        self.dtype = dtype
+        self.mode = mode
 
-            self.word_seq_lens = tf.placeholder(tf.int32, shape=[None],
-                                                name='word-sequence-length')
-            self.tag_seq_lens = tf.placeholder(tf.int32, shape=[None],
-                                                name='tag-sequence-length')
+    def _add_placeholders(self):
+        """Inputs to be fed to the graph."""
+        self.w_seq_len = tf.placeholder(tf.int32, [None], 'word-sequence-length')
 
-            self.learning_rate = tf.Variable(float(learning_rate),
-                                    trainable=False, dtype=dtype)
-            self.learning_rate_decay_op = self.learning_rate.assign(
-                            self.learning_rate * learning_rate_decay_factor)
-            self.global_step = tf.Variable(0, trainable=False)
+        self.t_seq_len = tf.placeholder(tf.int32, [None], 'tag-sequence-length')
 
-            with tf.name_scope('input'):
-                self.word_inputs = tf.placeholder(tf.int32, shape=[None, None],
-                                                            name="word-input")
-                self.tag_inputs = tf.placeholder(tf.int32, shape=[None, None],
-                                                            name="tag-input")
-                self.targets = tf.placeholder(tf.int32,shape=[None, None, None],
-                                                                name="targets")
+        self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
 
-            # Look up embeddings for inputs.
-            with tf.name_scope('embedding'):
-                word_embed_matrix_init = tf.random_uniform(
-                    [word_vocabulary_size, word_embedding_size], -1.0, 1.0)
-                word_embed_matrix = tf.Variable(word_embed_matrix_init,
-                                                    name='word-embeddings')
-                word_embed = tf.nn.embedding_lookup(word_embed_matrix,
-                                        self.word_inputs, name='word-embed')
+        self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
 
-                tag_embed_matrix_init = tf.random_uniform(
-                        [tag_vocabulary_size, tag_embedding_size], -1.0, 1.0)
-                tag_embed_matrix = tf.Variable(tag_embed_matrix_init,
-                                                        name='tag-embeddings')
-                tag_embed = tf.nn.embedding_lookup(tag_embed_matrix,
-                                            self.tag_inputs, name='tag-embed')
+        self.labels = tf.placeholder(tf.int32, [None, None, None], 'labels')
 
-            with tf.name_scope('bidirectional-LSTM-Layer'):
-                # Bidirectional LSTM
-                # Forward and Backward direction cell
-                lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_fw,
-                                        forget_bias=1.0, state_is_tuple=True)
-                lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_bw,
-                                        forget_bias=1.0, state_is_tuple=True)
+    def _add_embeddings(self):
+        """ Look up embeddings for inputs. """
+        with tf.name_scope('embedding'):
+            w_embed_mat_init = tf.random_uniform(
+            [self.w_vocab_size, self.w_embed_size], -1.0, 1.0)
 
+            w_embed_mat = tf.Variable(w_embed_mat_init,
+                                    name='word-embeddings')
+
+            self.word_embed = tf.nn.embedding_lookup(w_embed_mat,
+                                    self.w_in, name='word-embed')
+
+            t_embed_mat_init = tf.random_uniform(
+                [self.t_vocab_size, self.t_embed_size], -1.0, 1.0)
+
+            t_embed_mat = tf.Variable(t_embed_mat_init,
+                                            name='tag-embeddings')
+
+            self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
+                                        self.t_in, name='tag-embed')
+
+    def _add_bidi_lstm(self):
+        """ Bidirectional LSTM """
+        with tf.name_scope('bidirectional-LSTM-Layer'):
+            # Forward and Backward direction cell
+            lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
+                                    forget_bias=1.0, state_is_tuple=True)
+            lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
+                                    forget_bias=1.0, state_is_tuple=True)
             # Get lstm cell output
-                bidi_out, bidi_states = tf.nn.bidirectional_dynamic_rnn(
-                                        lstm_fw_cell, lstm_bw_cell, word_embed,
-                                        sequence_length=self.word_seq_lens,
-                                        dtype=dtype)
+            self.bidi_out, self.bidi_states = tf.nn.bidirectional_dynamic_rnn(
+                                    lstm_fw_cell, lstm_bw_cell, self.word_embed,
+                                    sequence_length=self.w_seq_len,
+                                    dtype=self.dtype)
 
-                self.bidi_states = bidi_states
-                self.bidi_out = bidi_out
+    def _add_bridge(self):
+        with tf.name_scope('Bridge'):
+            # LSTM
+            lstm_init = tf.concat(self.bidi_out, 2, name='lstm-init')
+            lstm_init = tf.reshape(lstm_init, [-1, self.n_hidden_fw + self.n_hidden_bw])
+            # remove padding:
+            mask = tf.not_equal(tf.reshape(self.w_in, [-1]), 0)
+            self.dec_init_state = tf.boolean_mask(lstm_init, mask)
 
-            with tf.name_scope('Bridge'):
-                # LSTM
-                lstm_init = tf.concat(bidi_out, 2, name='lstm-init')
-                lstm_init = tf.reshape(lstm_init, [-1, n_hidden_fw + n_hidden_bw])
-                # remove padding:
-                mask = tf.not_equal(tf.reshape(self.word_inputs, [-1]), 0)
-                self.dec_init_state = tf.boolean_mask(lstm_init, mask)
+    def _add_lstm_layer(self):
+        """Generate sequences of tags"""
+        with tf.name_scope('LSTM-Layer'):
+            self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
+                                        self.dec_init_state,
+                                        tf.zeros_like(self.dec_init_state))
 
-            def output_tag_sequences():
-                """Generate sequences of tags"""
-                with tf.name_scope('LSTM-Layer'):
-                    self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
-                                                self.dec_init_state,
-                                                tf.zeros_like(self.dec_init_state))
-
-                    lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_hidden_lstm,
-                                            forget_bias=1.0, state_is_tuple=True)
-                    lstm_out, lstm_state = tf.nn.dynamic_rnn(lstm_cell, tag_embed,
-                                            initial_state=self.lstm_init,
-                                            sequence_length=self.tag_seq_lens,
-                                            dtype=dtype)
-
-                self.tag_embed = tag_embed
-                self.lstm_out = lstm_out
-                self.lstm_state =  lstm_state
-                # compute softmax
-                with tf.name_scope('predictions'):
-                    w_uniform_dist = tf.random_uniform([n_hidden_lstm,
-                                                tag_vocabulary_size], -1.0, 1.0)
-                    self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-                    self.b_out = b_out = tf.Variable(
-                                    tf.zeros([tag_vocabulary_size]), name='b-out')
-
-                    outputs_reshape = tf.reshape(lstm_out, [-1, n_hidden_lstm])
-                    self.proj = tf.matmul(outputs_reshape, w_out) + b_out
-
-                    lstm_out_sahpe = tf.shape(lstm_out)
-                    self.logits = tf.reshape(self.proj, [lstm_out_sahpe[0],
-                                                            lstm_out_sahpe[1], -1])
-                    self.pred = tf.nn.softmax(self.logits, name='pred')
-
-                with tf.name_scope("loss"):
-                    self.targets_flat = tf.reshape(self.targets, [-1, tag_vocabulary_size])
-                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.proj, labels=self.targets_flat)
-                    self.loss = tf.reduce_mean(cross_entropy)
-
-            def output_tags():
-                """Generate only the first tag"""
-                with tf.name_scope('predict-tags'):
-                    w_uniform_dist = tf.random_uniform([n_hidden_fw + n_hidden_bw,
-                                                        tag_vocabulary_size], -1.0, 1.0)
-                    self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-                    self.b_out = b_out = tf.Variable(
-                                    tf.zeros([tag_vocabulary_size]), name='b-out')
-                    self.logits = tf.matmul(self.dec_init_state, w_out) + b_out
-                    self.pred = tf.nn.softmax(self.logits, name='pred')
-
-                with tf.name_scope("loss"):
-                    first_targets_only = tf.slice(self.targets, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
-                    self.tag_targets = tag_targets = tf.squeeze(first_targets_only, axis=1)
-                    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.tag_targets)
-                    self.loss = tf.reduce_mean(cross_entropy)
-
-            # output_tags()
-            output_tag_sequences()
-
-            if adam:
-                self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, global_step=self.global_step)
-            else:
-                self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
-
-            all_variables = [k for k in tf.global_variables() if k.name.startswith(self.scope_name)]
-            self.saver = tf.train.Saver(all_variables)
+            lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_lstm,
+                                    forget_bias=1.0, state_is_tuple=True)
+            self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
+                                    self.tag_embed,
+                                    initial_state=self.lstm_init,
+                                    sequence_length=self.t_seq_len,
+                                    dtype=self.dtype)
 
 
-    def step(self, session, word_seq_lens, tag_seq_lens, word_inputs, tag_inputs, targets):
+    def _add_projection(self):
+        # compute softmax
+        with tf.name_scope('predictions'):
+            w_uniform_dist = tf.random_uniform([self.n_hidden_lstm,
+                                        self.t_vocab_size], -1.0, 1.0)
+            self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
+            self.b_out = b_out = tf.Variable(
+                            tf.zeros([self.t_vocab_size]), name='b-out')
 
-        input_feed = {self.word_seq_lens: word_seq_lens,
-                        self.tag_seq_lens: tag_seq_lens,
-                        self.word_inputs: word_inputs,
-                        self.tag_inputs: tag_inputs,
-                        self.targets: targets}
+            outputs_reshape = tf.reshape(self.lstm_out, [-1, self.n_hidden_lstm])
+            self.proj = tf.matmul(outputs_reshape, w_out) + b_out
 
+            lstm_out_sahpe = tf.shape(self.lstm_out)
+            self.logits = tf.reshape(self.proj,
+                            [lstm_out_sahpe[0], lstm_out_sahpe[1], -1])
+            self.pred = tf.nn.softmax(self.logits, name='pred')
+
+    def _add_train_op(self):
+
+        self.learning_rate = tf.Variable(float(self.lr),
+                                trainable=False, dtype=self.dtype)
+        self.learning_rate_decay_op = self.learning_rate.assign(
+                        self.learning_rate * self.lr_decay_factor)
+
+        with tf.name_scope("loss"):
+            self.labels_flat = tf.reshape(self.labels, [-1, self.t_vocab_size])
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                                    logits=self.proj, labels=self.labels_flat)
+            self.loss = tf.reduce_mean(cross_entropy)
+
+        self.optimizer = tf.train.AdamOptimizer(
+            learning_rate=self.learning_rate).minimize(
+                self.loss, global_step=self.global_step)
+
+
+    def build_graph(self):
+        """ Function builds the computation graph """
+        with tf.variable_scope(self.scope_name):
+            self.global_step = tf.Variable(0, trainable=False, name='g_step')
+            self._add_placeholders()
+            self._add_embeddings()
+            self._add_bidi_lstm()
+            self._add_bridge()
+            self._add_lstm_layer()
+            self._add_projection()
+            if (self.mode == 'train'): self._add_train_op()
+        all_variables = [k for k in tf.global_variables()
+                        if k.name.startswith(self.scope_name)]
+        self.saver = tf.train.Saver(all_variables)
+
+
+    def step(self, session, w_seq_len, t_seq_len, w_in, t_in, labels):
+        """ Training step, returns the prediction, loss"""
+        input_feed = {
+            self.w_seq_len: w_seq_len,
+            self.t_seq_len: t_seq_len,
+            self.w_in: w_in,
+            self.t_in: t_in,
+            self.labels: labels}
         output_feed = [self.pred, self.loss, self.optimizer]
-        outputs = session.run(output_feed, input_feed)
-        return outputs
+        return session.run(output_feed, input_feed)
 
 
     def encode_top_state(self, session, enc_inputs, enc_len):
         """Return the top states from encoder for decoder."""
         input_feed = {
-            self.word_inputs: enc_inputs,
-            self.word_seq_lens: enc_len}
-
+            self.w_in: enc_inputs,
+            self.w_seq_len: enc_len}
         output_feed = self.dec_init_state
         dec_init_states = session.run(output_feed, input_feed)
         return [tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),
@@ -172,11 +177,28 @@ class NNModel(object):
         """Return the topK results and new decoder states."""
         input_feed = {
             self.lstm_init: dec_init_states,
-            self.tag_inputs: latest_tokens,
-            self.tag_seq_lens: np.ones(1, np.int32)}
+            self.t_in: latest_tokens,
+            self.t_seq_len: np.ones(1, np.int32)}
         output_feed = [self.pred , self.lstm_state]
         results = sess.run(output_feed,input_feed)
         probs, states = results[0], results[1]
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
+
+    # def output_tags():
+    #     """Generate only the first tag"""
+    #     with tf.name_scope('predict-tags'):
+    #         w_uniform_dist = tf.random_uniform([n_hidden_fw + n_hidden_bw,
+    #                                             t_vocab_size], -1.0, 1.0)
+    #         self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
+    #         self.b_out = b_out = tf.Variable(
+    #                         tf.zeros([t_vocab_size]), name='b-out')
+    #         self.logits = tf.matmul(self.dec_init_state, w_out) + b_out
+    #         self.pred = tf.nn.softmax(self.logits, name='pred')
+    #
+    #     with tf.name_scope("loss"):
+    #         first_labels_only = tf.slice(self.labels, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
+    #         self.tag_labels = tag_labels = tf.squeeze(first_labels_only, axis=1)
+    #         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.tag_labels)
+    #         self.loss = tf.reduce_mean(cross_entropy)

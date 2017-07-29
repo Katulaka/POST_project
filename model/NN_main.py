@@ -1,9 +1,9 @@
 from __future__ import print_function
 
-import NN_model as nnModel
-import beam.beam_search as beam_search
 import utils.data_preproc as dp
+import NN_model as nnModel
 import astar.search as ast
+import beam.search as beam_search
 
 import math
 import time
@@ -14,10 +14,9 @@ import copy
 import tensorflow as tf
 import numpy as np
 
+# TAGS_ONLY = False
 
-TAGS_ONLY = False
-
-def create_model(session, config):
+def get_model(session, config, mode='decode'):
 
     start_time = time.time()
 
@@ -26,151 +25,100 @@ def create_model(session, config):
             config.tag_embedding_size,
             config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
             config.word_vocabulary_size, config.tag_vocabulary_size,
-            config.num_steps,
-            config.learning_rate, config.learning_rate_decay_factor,
-            config.max_gradient_norm)
+            config.learning_rate, config.learning_rate_decay_factor, mode)
 
-    # model.build_graph()
+    model.build_graph()
+
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        if config.learning_rate < model.learning_rate.eval():
-            print('Re-setting learning rate to %f' % config.learning_rate)
-            session.run(model.learning_rate.assign(config.learning_rate), [])
-        end_time = time.time()
-        print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
-    else:
+        if (mode == 'train'):
+            if config.learning_rate < model.learning_rate.eval():
+                print('Re-setting learning rate to %f' % config.learning_rate)
+                session.run(model.learning_rate.assign(config.learning_rate), [])
+        print("Time to restore model: %.2f" % (time.time() - start_time))
+    elif (mode == 'train'):
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-        end_time = time.time()
-        print("Time to create Gen_RNN model: %.2f" % (end_time - start_time))
-
+        print("Time to create model: %.2f" % (time.time() - start_time))
+    else:
+        print ("Error")
+        return None
     return model
-
-
-def restore_model(session, config):
-
-    start_time = time.time()
-
-    model = nnModel.NNModel(
-            config.batch_size, config.word_embedding_size, config.tag_embedding_size,
-            config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
-            config.word_vocabulary_size, config.tag_vocabulary_size, config.num_steps,
-            config.learning_rate, config.learning_rate_decay_factor, config.max_gradient_norm)
-
-    # model.build_graph()
-    ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
-    if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-        print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
-        model.saver.restore(session, ckpt.model_checkpoint_path)
-        end_time = time.time()
-        print("Time to restore Gen_RNN model: %.2f" % (end_time - start_time))
-        return model
-
-    print ("Error")
-    return
-
 
 def train(config, train_set, cp_path):
 
     with tf.Session() as sess:
-        model = create_model(sess, config)
+        model = get_model(sess, config, 'train')
 
         # This is the training loop.
         step_time, loss = 0.0, 0.0
-        moving_average_loss = 0.0
+        moving_average_loss = 0.0 #TODO fix this moving_average_loss
         current_step = 0
-        decay=0.999
-        previous_losses = []
+        decay = 0.999
+        prev_losses = []
 
-        step_loss_summary = tf.Summary()
-        writer = tf.summary.FileWriter("../logs/", sess.graph)
+        # step_loss_summary = tf.Summary()
+        # writer = tf.summary.FileWriter("../logs/", sess.graph)
 
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_pad, tags_in_1hot = \
+            w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
                 dp.get_batch(train_set, config.tag_vocabulary_size,
-                                                config.batch_size)
-            pred, step_loss, _  = model.step(sess, word_seq_len, tag_seq_len,
-                                            words_in, tags_in_pad, tags_in_1hot)
+                                config.batch_size)
+            pred, step_loss, _  = model.step(sess, w_seq_len, t_seq_len,
+                                            words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             if moving_average_loss == 0:
                 moving_average_loss = step_loss
             else:
                 moving_average_loss = moving_average_loss * decay + (1 - decay) * loss
-            #     moving_average_loss = min(running_avg_loss, 12)
-            # moving_average_loss += step_loss #TODO fix this moving_average_loss
             current_step += 1
 
             # Once in a while, we save checkpoint, print statistics, and run evals.
             if current_step % config.steps_per_checkpoint == 0:
 
-                bucket_value = step_loss_summary.value.add()
-                bucket_value.tag = "loss"
-                bucket_value.simple_value = float(loss)
-                writer.add_summary(step_loss_summary, current_step)
+                # bucket_value = step_loss_summary.value.add()
+                # bucket_value.tag = "loss"
+                # bucket_value.simple_value = float(loss)
+                # writer.add_summary(step_loss_summary, current_step)
 
                 # Print statistics for the previous epoch.
-                perplexity = math.exp(loss) if loss < 300 else float('inf')
-                print ("global step %d learning rate %f step-time %.2f perplexity "
-                       "%.6f" % (model.global_step.eval(), model.learning_rate.eval(),
-                                 step_time, perplexity))
+                perplex = math.exp(loss) if loss < 300 else float('inf')
+                print ("global step %d learning rate %f step-time %.2f"
+                       " perplexity %.6f (loss %.6f)" % (model.global_step.eval(),
+                        model.learning_rate.eval(), step_time, perplex, loss))
 
-                # Decrease learning rate if no improvement was seen over last 3 times.
-                if len(previous_losses) > 2 and \
-                    loss > max(previous_losses[-3:]) :
-                    #and model.learning_rate.eval() > 0.000001:
+                # Decrease learning rate if no improvement
+                # was seen over last 3 times.
+                if len(prev_losses) > 2 and loss > max(prev_losses[-3:]) :
                     sess.run(model.learning_rate_decay_op)
-                if model.learning_rate.eval() < 0.000001:
-                    sess.run(model.learning_rate.assign(0.1), [])
+                # if model.learning_rate.eval() < 0.000001:
+                #     sess.run(model.learning_rate.assign(0.1), [])
 
-                previous_losses.append(loss)
+                prev_losses.append(loss)
                 # Save checkpoint and zero timer and loss.
-                checkpoint_path = os.path.join(config.checkpoint_path, cp_path) #TODO add checkpoint path generation
-                model.saver.save(sess, checkpoint_path, global_step=model.global_step)
+                ckpt_path = os.path.join(config.checkpoint_path, cp_path)
+                model.saver.save(sess, ckpt_path, global_step=model.global_step)
                 step_time, loss = 0.0, 0.0
                 sys.stdout.flush()
 
-from collections import Counter
-
-def decode_tags_only(config, train_set, reverse_dict):
-    with tf.Session() as sess:
-        model = restore_model(sess, config)
-        guesses = Counter()
-        while(True):
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_pad, tags_in_1hot = \
-                dp.get_batch(train_set, config.tag_vocabulary_size,
-                        config.batch_size)
-            predicted_tags = decode_one_tag(sess, model, word_seq_len, words_in)
-            true_tags = np.squeeze(tags_in_pad[:,1:2], axis=1)
-            guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
-            import pdb; pdb.set_trace()
-
-def decode_one_tag(sess, model, word_seq_len, words_in):
-    input_feed = {
-        model.word_inputs: words_in,
-        model.word_seq_lens: word_seq_len
-    }
-    output_feed = model.logits
-    results = sess.run(output_feed, input_feed)
-    return np.argmax(results, axis=1)
-
-def _run_beam(config, words_in, word_seq_len):
+def _run_beam(config, words, w_seq_len):
 
     with tf.Session() as sess:
-        model = restore_model(sess, config)
+        model = get_model(sess, config)
         bs = beam_search.BeamSearch(model,
                                     config.beam_size,
                                     1, #GO
                                     2, #EOS
                                     config.dec_timesteps)
 
-        words_in_cp = copy.copy(words_in)
-        word_seq_len_cp = copy.copy(word_seq_len)
-        best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
+        words_cp = copy.copy(words)
+        w_seq_len_cp = copy.copy(w_seq_len)
+        best_beam = bs.BeamSearch(sess, words_cp, w_seq_len_cp)
 
     return best_beam
 
@@ -181,10 +129,10 @@ def decode(config, train_set, rev_dict):
     #     decode_tags_only(config, train_set, reverse_dict)
     #     return
 
-    word_seq_len, tag_seq_len, words_in, tags_in, _ , tags_in_1hot = \
+    w_seq_len, t_seq_len, words, tags_in, _ , tags_1hot = \
         dp.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
 
-    best_beams = _run_beam(config, words_in, word_seq_len)
+    best_beams = _run_beam(config, words, w_seq_len)
 
     best_beam_trans = map(lambda beam: map(lambda pair:
         ('+'.join(map(lambda i: rev_dict[i], pair[0])), pair[1])
@@ -193,7 +141,7 @@ def decode(config, train_set, rev_dict):
     real_tags_trans = map(lambda tag:
             '+'.join(map(lambda i: rev_dict[i],tag)),tags_in)
 
-    ind = map(lambda i: sum(word_seq_len[:i]), xrange(config.batch_size+1))
+    ind = map(lambda i: sum(w_seq_len[:i]), xrange(config.batch_size+1))
     decode_tags = []
     orig_tags = []
     for i in xrange(config.batch_size):
@@ -206,3 +154,27 @@ def decode(config, train_set, rev_dict):
             decode_tags.append([])
 
     return orig_tags, decode_tags
+
+    # from collections import Counter
+    #
+    # def decode_tags_only(config, train_set, reverse_dict):
+    #     with tf.Session() as sess:
+    #         model = get_model(sess, config)
+    #         guesses = Counter()
+    #         while(True):
+    #             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
+    #                 dp.get_batch(train_set, config.tag_vocabulary_size,
+    #                         config.batch_size)
+    #             predicted_tags = decode_one_tag(sess, model, w_seq_len, words)
+    #             true_tags = np.squeeze(tags_pad[:,1:2], axis=1)
+    #             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
+    #             import pdb; pdb.set_trace()
+    #
+    # def decode_one_tag(sess, model, w_seq_len, words):
+    #     input_feed = {
+    #         model.word_inputs: words,
+    #         model.w_seq_lens: w_seq_len
+    #     }
+    #     output_feed = model.logits
+    #     results = sess.run(output_feed, input_feed)
+    #     return np.argmax(results, axis=1)
