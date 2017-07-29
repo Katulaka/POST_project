@@ -4,7 +4,7 @@ import time
 import os
 
 import utils.gen_dataset as gd
-import utils.data_preproc as dp
+from utils.batcher import *
 import utils.conf
 import model.NN_main as NN_main
 
@@ -17,11 +17,10 @@ def main(_):
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--action', type=str)
+    parser.add_argument('--action', type=str, default='train')
     parser.add_argument('--tags_type', type=str, default='stags')
     parser.add_argument('--batch', type=int, default=32)
     args = parser.parse_args()
-
 
     data_dir = os.path.join(os.getcwd(), 'data')
     w_file = os.path.join(data_dir, 'words')
@@ -31,21 +30,20 @@ def main(_):
     if not os.path.exists(t_file):
         gd.generate_data_flat(Config.src_dir, data_dir, gen_tags_fn)
 
-    _, dictionary, reverse_dictionary, train_set = dp.gen_dataset(w_file, t_file)
-
     #TODO maybe fix gen_dataset to get config values
-    Config.tag_vocabulary_size = max(dictionary['tag'].values()) + 1
-    Config.word_vocabulary_size = max(dictionary['word'].values()) + 1
+    word_vocab, tag_vocab, train_set = gen_dataset(w_file, t_file)
+    Config.tag_vocabulary_size = tag_vocab.vocab_size()
+    Config.word_vocabulary_size = word_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints',
                                             args.tags_type)
     Config.batch_size = args.batch
-    
+
     if (args.action == 'train'):
         NN_main.train(Config, train_set, args.tags_type)
 
     elif (args.action == 'decode'):
         orig_tags, decode_tags = NN_main.decode(Config, train_set,
-                                            reverse_dictionary['tag'])
+                                            tag_vocab._id_to_token)
 
         import pdb; pdb.set_trace()
     else:
