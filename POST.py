@@ -3,7 +3,7 @@ import tensorflow as tf
 import time
 import os
 
-import utils.gen_dataset as gd
+import utils.dataset as gd
 from utils.batcher import *
 import utils.conf
 import model.NN_main as NN_main
@@ -28,10 +28,10 @@ def main(_):
     gen_tags_fn = gd.gen_tags if args.tags_type == 'tags' else gd.gen_stags
 
     if not os.path.exists(t_file):
-        gd.generate_data_flat(Config.src_dir, data_dir, gen_tags_fn)
+        gd.generate_data_flat(Config.src_dir, data_dir, args.tags_type)
 
     #TODO maybe fix gen_dataset to get config values
-    word_vocab, tag_vocab, train_set = gen_dataset(w_file, t_file)
+    word_vocab, tag_vocab, train_set = gd.gen_dataset(w_file, t_file)
     Config.tag_vocabulary_size = tag_vocab.vocab_size()
     Config.word_vocabulary_size = word_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints',

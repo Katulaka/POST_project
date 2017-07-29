@@ -1,10 +1,10 @@
 from __future__ import print_function
 from treelib import Node, Tree
-from utils import *
+
 import re
 import os
 
-def get_tree(tree, line, max_id=0, leaf_id=1,  parent_id=None):
+def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 
     # starts by ['(', 'pos']
     pos_tag = line[1].split('-')[0].split('=')[0].split('|')[0]
@@ -24,7 +24,6 @@ def get_tree(tree, line, max_id=0, leaf_id=1,  parent_id=None):
         # line[0:3] = ['(', 'pos', 'word', ')']
         word_tag = line[2]
         tree.create_node(word_tag, leaf_id, parent=parent_id, data=nRange(0,0))
-
         return 4, max_id, leaf_id+1
 
     line = line[2:]
@@ -50,7 +49,6 @@ def get_trees(fin):
         max_id = len([w for w in re.compile('[\S]+\)').findall(line) if not w.endswith('))')]) + 1
         line = line.replace('(', ' ( ').replace(')', ' ) ').split()[1:]
         get_tree(tree, line, max_id)
-        # return tree
         yield tree
 
 
@@ -74,7 +72,6 @@ def genRange(tree, nid, minR, maxR):
                                 tree.children(nid))),
                              max(map(lambda child: child.data.mRange[1],
                                 tree.children(nid))))
-
     return (minR, maxR)
 
 
@@ -110,9 +107,7 @@ def gen_height_list(tree, tree_dep_dict):
                 pid = tree.parent(pid).identifier
 
             hieght_dict[lid] = height
-
     return hieght_dict
-
 
 def gen_tree_dep_dict(data_in, penn_path='code/utils/pennconverter.jar'):
 
@@ -131,7 +126,6 @@ def gen_tree_dep_dict(data_in, penn_path='code/utils/pennconverter.jar'):
             dep_dict = {}
 
     os.remove(fin)
-
     return dep_dict_list
 
 def gen_stag(tree, nid, height_dict, path_dict):
@@ -177,41 +171,7 @@ def gen_stags(fin):
 
 def gen_tags(fin):
     for tree in get_trees(fin):
-        rng = xrange(1,len(tree.leaves(tree.root))+1)
+        rng = xrange(1, len(tree.leaves(tree.root))+1)
         words = ' '.join(map(lambda lid: tree[lid].tag, rng))
         tags = ' '.join(map(lambda lid: tree.parent(lid).tag, rng))
         yield (tags, words)
-
-
-def generate_data_flat(src_dir, dest_dir = os.getcwd(), gen_tags_fn=gen_stags):
-
-    tags_out = os.path.join(dest_dir, 'tags')
-    words_out = os.path.join(dest_dir, 'words')
-    with open(tags_out, 'w') as t_file:
-        with open(words_out, 'w') as w_file:
-            for sub_dir in os.listdir(src_dir):
-                for f_in in os.listdir(os.path.join(src_dir, sub_dir)):
-                    data_in = os.path.join(src_dir, sub_dir, f_in)
-                    print("Reading file %s" %(data_in))
-                    for s_tags, s_words in gen_tags_fn(data_in):
-                        print(s_tags, file=t_file)
-                        print(s_words, file=w_file)
-
-
-def generate_data(src_dir, dest_dir, gen_tags_fn=gen_stags):
-
-    for sub_dir in os.listdir(src_dir):
-        out_path = os.path.join(dest_dir, sub_dir)
-        make_dir(os.path.join(out_path, "tags"))
-        make_dir(os.path.join(out_path, "words"))
-
-        for f_in in os.listdir(os.path.join(src_dir, sub_dir)):
-            data_in = os.path.join(src_dir, sub_dir, f_in)
-            tags_out = os.path.join(out_path, "tags", f_in+'.tg')
-            words_out = os.path.join(out_path, "words", f_in+'.wrd')
-
-            with open(tags_out, 'w') as t_file:
-                with open(words_out, 'w') as w_file:
-                    for s_tags, s_words in gen_tags_fn(data_in):
-                        print(s_tags, file=t_file)
-                        print(s_words, file=w_file)

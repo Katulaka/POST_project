@@ -1,10 +1,5 @@
 from __future__ import print_function
 
-import utils.data_preproc as dp
-import NN_model as nnModel
-import astar.search as ast
-import beam.search as beam_search
-
 import math
 import time
 import sys
@@ -14,34 +9,39 @@ import copy
 import tensorflow as tf
 import numpy as np
 
+import utils.batcher as batcher
+import NN_model as nnModel
+import astar.search as ast
+import beam.search as beam_search
+
 
 def get_model(session, config, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
-    model = nnModel.NNModel(
-            config.batch_size, config.word_embedding_size,
-            config.tag_embedding_size,
-            config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
-            config.word_vocabulary_size, config.tag_vocabulary_size,
-            config.learning_rate, config.learning_rate_decay_factor, mode)
+    model = nnModel.NNModel(config.batch_size, config.word_embedding_size,
+                            config.tag_embedding_size, config.n_hidden_fw,
+                            config.n_hidden_bw, config.n_hidden_lstm,
+                            config.word_vocabulary_size,
+                            config.tag_vocabulary_size,config.learning_rate,
+                            config.learning_rate_decay_factor, mode)
     model.build_graph()
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        if (mode == 'train'):
+        if mode == 'train':
             if config.learning_rate < model.learning_rate.eval():
                 print('Re-setting learning rate to %f' % config.learning_rate)
                 session.run(model.learning_rate.assign(config.learning_rate), [])
         print("Time to restore model: %.2f" % (time.time() - start_time))
-    elif (mode == 'train'):
+    elif mode == 'train':
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
         print("Time to create model: %.2f" % (time.time() - start_time))
     else:
-        print ("Error")
+        raise ValueError('Model not found to restore.')
         return None
     return model
 
@@ -51,7 +51,8 @@ def train(config, train_set, cp_path):
         model = get_model(sess, config, 'train')
 
         # This is the training loop.
-        step_time, loss = 0.0, 0.0
+        step_time = 0.0
+        loss = 0.0
         moving_average_loss = 0.0 #TODO fix this moving_average_loss
         current_step = 0
         decay = 0.999
@@ -64,7 +65,7 @@ def train(config, train_set, cp_path):
             # Get a batch and make a step.
             start_time = time.time()
             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
-                dp.get_batch(train_set, config.tag_vocabulary_size,
+                batcher.get_batch(train_set, config.tag_vocabulary_size,
                                 config.batch_size)
             pred, step_loss, _  = model.step(sess, w_seq_len, t_seq_len,
                                             words, tags_pad, tags_1hot)
@@ -73,7 +74,8 @@ def train(config, train_set, cp_path):
             if moving_average_loss == 0:
                 moving_average_loss = step_loss
             else:
-                moving_average_loss = moving_average_loss * decay + (1 - decay) * loss
+                moving_average_loss = (moving_average_loss * decay
+                                        + (1 - decay)*loss)
             current_step += 1
 
             # Once in a while, we save checkpoint, print statistics, and run evals.
@@ -94,8 +96,8 @@ def train(config, train_set, cp_path):
                 # was seen over last 3 times.
                 if len(prev_losses) > 2 and loss > max(prev_losses[-3:]) :
                     sess.run(model.learning_rate_decay_op)
-                # if model.learning_rate.eval() < 0.000001:
-                #     sess.run(model.learning_rate.assign(0.1), [])
+                if model.learning_rate.eval() < 0.000001:
+                    sess.run(model.learning_rate.assign(0.1), [])
 
                 prev_losses.append(loss)
                 # Save checkpoint and zero timer and loss.
@@ -126,7 +128,7 @@ def decode(config, train_set, rev_dict):
 
 
     w_seq_len, t_seq_len, words, tags_in, _ , tags_1hot = \
-        dp.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
+        batcher.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
 
     best_beams = _run_beam(config, words, w_seq_len)
 
@@ -157,7 +159,7 @@ def decode(config, train_set, rev_dict):
 #         guesses = Counter()
 #         while(True):
 #             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
-#                 dp.get_batch(train_set, config.tag_vocabulary_size,
+#                 batcher.get_batch(train_set, config.tag_vocabulary_size,
 #                         config.batch_size)
 #             predicted_tags = model.decode_one_tag(sess, w_seq_len, words)
 #             true_tags = np.squeeze(tags_pad[:,1:2], axis=1)

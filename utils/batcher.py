@@ -6,38 +6,9 @@ import copy
 import numpy as np
 
 # class Batcher(object):
-
-def gen_sourcefile(text_w, text_t, max_len=10):
-
-    indeces = [i for i in range(len(text_w)) if len(text_w[i])<=max_len]
-    word_list = np.ndarray.tolist(np.array(text_w)[indeces])
-    tag_list = np.ndarray.tolist(np.array(text_t)[indeces])
-
-    with open('word_file', 'w') as f:
-        f.write("\n".join([' '.join(s) for s in word_list]))
-
-    with open('tag_file', 'w') as f:
-        f.write("\n".join([' '.join(s) for s in tag_list]))
-
-    return word_list, tag_list
-
-def gen_dataset(w_file = 'words', t_file = 'tags', max_len=10, tvocab_size=-1, wvocab_size=-1):
-
-    text = read_file(w_file)
-    text_flat = list(flatten(text))
-    word_vocab = Vocab(text_flat, wvocab_size)
-
-    tags = read_file(t_file)
-    tags_flat = list(flatten([tag.split('+') for tree in tags for tag in tree]))
-    tag_vocab = Vocab(tags_flat, tvocab_size)
-
-    vectors = dict()
-    word_list, tag_list = gen_sourcefile(text, tags, max_len)
-    vectors['word'] = lookup_fn(word_list, word_vocab)
-    tag_list_mod = [[tag.split('+') for tag in tree] for tree in tag_list]
-    vectors['tag'] = map(lambda tag_list: lookup_fn(tag_list, tag_vocab), tag_list_mod)
-
-    return word_vocab, tag_vocab, vectors
+#
+#     def __init__(self, vocab):
+#         self._vocab = vocab
 
 
 def _generate_batch(data, batch_size=32):

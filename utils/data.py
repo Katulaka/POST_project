@@ -54,8 +54,8 @@ class Vocab(object):
 
 def lookup_fn(sentences, vocab):
     vector = []
-    for sentence in sentences:
-        vector.append(list(map(lambda w: vocab.token_to_id(w), sentence)))
+    for s in sentences:
+        vector.append(list(map(lambda w: vocab.token_to_id(w), s)))
     return vector
 
 def data_padding(data, mlen = 0, pad_sym = PAD[1]):
@@ -63,7 +63,7 @@ def data_padding(data, mlen = 0, pad_sym = PAD[1]):
     max_len = mlen if mlen>0 else len(max(data, key=len))
     for i,el in enumerate(data):
         pad_len = max_len-len(el)
-        data[i] = np.lib.pad(el, (0,pad_len), 'constant', constant_values=(pad_sym))
+        data[i] = np.lib.pad(el, (0, pad_len), 'constant', constant_values=(pad_sym))
     return data
 
 def add_go(data, start_token = GO[1]):

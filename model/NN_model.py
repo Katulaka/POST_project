@@ -9,9 +9,8 @@ class NNModel(object):
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
-                tag_vocabulary_size, learning_rate,
-                learning_rate_decay_factor, mode,
-                dtype=tf.float32, scope_name='nn_model'):
+                tag_vocabulary_size, learning_rate,learning_rate_decay_factor,
+                mode, dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
         self.w_embed_size = word_embedding_size
@@ -37,7 +36,7 @@ class NNModel(object):
 
         self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
 
-        self.labels = tf.placeholder(tf.int32, [None, None, None], 'labels')
+        self.targets = tf.placeholder(tf.int32, [None, None, None], 'targets')
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -124,9 +123,9 @@ class NNModel(object):
                         self.learning_rate * self.lr_decay_factor)
 
         with tf.name_scope("loss"):
-            self.labels_flat = tf.reshape(self.labels, [-1, self.t_vocab_size])
+            self.targets_flat = tf.reshape(self.targets, [-1, self.t_vocab_size])
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                                    logits=self.proj, labels=self.labels_flat)
+                                    logits=self.proj, labels=self.targets_flat)
             self.loss = tf.reduce_mean(cross_entropy)
 
         self.optimizer = tf.train.AdamOptimizer(
@@ -150,14 +149,14 @@ class NNModel(object):
         self.saver = tf.train.Saver(all_variables)
 
 
-    def step(self, session, w_seq_len, t_seq_len, w_in, t_in, labels):
+    def step(self, session, w_seq_len, t_seq_len, w_in, t_in, targets):
         """ Training step, returns the prediction, loss"""
         input_feed = {
             self.w_seq_len: w_seq_len,
             self.t_seq_len: t_seq_len,
             self.w_in: w_in,
             self.t_in: t_in,
-            self.labels: labels}
+            self.targets: targets}
         output_feed = [self.pred, self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
@@ -207,7 +206,7 @@ class NNModel(object):
     #         self.pred = tf.nn.softmax(self.logits, name='pred')
     #
     #     with tf.name_scope("loss"):
-    #         first_labels_only = tf.slice(self.labels, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
-    #         self.tag_labels = tag_labels = tf.squeeze(first_labels_only, axis=1)
-    #         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.tag_labels)
+    #         first_targets_only = tf.slice(self.targets, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
+    #         self.tag_targets = tag_targets = tf.squeeze(first_targets_only, axis=1)
+    #         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, targets=self.tag_targets)
     #         self.loss = tf.reduce_mean(cross_entropy)
