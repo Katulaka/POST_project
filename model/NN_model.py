@@ -186,6 +186,15 @@ class NNModel(object):
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
 
+    # def decode_one_tag(sess, w_seq_len, words):
+    #     input_feed = {
+    #         self.word_inputs: words,
+    #         self.w_seq_lens: w_seq_len
+    #     }
+    #     output_feed = self.logits
+    #     results = sess.run(output_feed, input_feed)
+    #     return np.argmax(results, axis=1)
+
     # def output_tags():
     #     """Generate only the first tag"""
     #     with tf.name_scope('predict-tags'):

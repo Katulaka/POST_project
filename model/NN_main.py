@@ -14,10 +14,9 @@ import copy
 import tensorflow as tf
 import numpy as np
 
-# TAGS_ONLY = False
 
 def get_model(session, config, mode='decode'):
-
+    """ Creates new model for restores existing model """
     start_time = time.time()
 
     model = nnModel.NNModel(
@@ -26,7 +25,6 @@ def get_model(session, config, mode='decode'):
             config.n_hidden_fw, config.n_hidden_bw, config.n_hidden_lstm,
             config.word_vocabulary_size, config.tag_vocabulary_size,
             config.learning_rate, config.learning_rate_decay_factor, mode)
-
     model.build_graph()
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
@@ -118,28 +116,24 @@ def _run_beam(config, words, w_seq_len):
 
         words_cp = copy.copy(words)
         w_seq_len_cp = copy.copy(w_seq_len)
-        best_beam = bs.BeamSearch(sess, words_cp, w_seq_len_cp)
-
-    return best_beam
+        return bs.BeamSearch(sess, words_cp, w_seq_len_cp)
 
 
 def decode(config, train_set, rev_dict):
 
-    # if TAGS_ONLY:
-    #     decode_tags_only(config, train_set, reverse_dict)
-    #     return
+    def _translate(seq, rev_dict):
+        return '+'.join(map(lambda i: rev_dict[i], seq))
+
 
     w_seq_len, t_seq_len, words, tags_in, _ , tags_1hot = \
         dp.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
 
     best_beams = _run_beam(config, words, w_seq_len)
 
-    best_beam_trans = map(lambda beam: map(lambda pair:
-        ('+'.join(map(lambda i: rev_dict[i], pair[0])), pair[1])
-            ,beam) ,best_beams)
+    best_beam_trans = map(lambda beam: map(lambda x:
+        (_translate(x[0], rev_dict), x[1]), beam) ,best_beams)
 
-    real_tags_trans = map(lambda tag:
-            '+'.join(map(lambda i: rev_dict[i],tag)),tags_in)
+    real_tags_trans = map(lambda tag: _translate(tag, rev_dict),tags_in)
 
     ind = map(lambda i: sum(w_seq_len[:i]), xrange(config.batch_size+1))
     decode_tags = []
@@ -155,26 +149,18 @@ def decode(config, train_set, rev_dict):
 
     return orig_tags, decode_tags
 
-    # from collections import Counter
+# from collections import Counter
+#
+# def decode_tags_only(config, train_set, reverse_dict):
+#     with tf.Session() as sess:
+#         model = get_model(sess, config)
+#         guesses = Counter()
+#         while(True):
+#             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
+#                 dp.get_batch(train_set, config.tag_vocabulary_size,
+#                         config.batch_size)
+#             predicted_tags = model.decode_one_tag(sess, w_seq_len, words)
+#             true_tags = np.squeeze(tags_pad[:,1:2], axis=1)
+#             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
+#             import pdb; pdb.set_trace()
     #
-    # def decode_tags_only(config, train_set, reverse_dict):
-    #     with tf.Session() as sess:
-    #         model = get_model(sess, config)
-    #         guesses = Counter()
-    #         while(True):
-    #             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
-    #                 dp.get_batch(train_set, config.tag_vocabulary_size,
-    #                         config.batch_size)
-    #             predicted_tags = decode_one_tag(sess, model, w_seq_len, words)
-    #             true_tags = np.squeeze(tags_pad[:,1:2], axis=1)
-    #             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
-    #             import pdb; pdb.set_trace()
-    #
-    # def decode_one_tag(sess, model, w_seq_len, words):
-    #     input_feed = {
-    #         model.word_inputs: words,
-    #         model.w_seq_lens: w_seq_len
-    #     }
-    #     output_feed = model.logits
-    #     results = sess.run(output_feed, input_feed)
-    #     return np.argmax(results, axis=1)
