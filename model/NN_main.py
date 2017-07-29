@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import NN_model as nnModel
-import beam_search as beam_search
+import beam.beam_search as beam_search
 import utils.data_preproc as dp
 import astar.search as ast
 

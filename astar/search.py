@@ -69,7 +69,6 @@ class TagNode(object):
         return False
 
 
-
 class Solver(AStar):
 
     class ClosedList(object):
@@ -135,26 +134,6 @@ class Solver(AStar):
         return False
 
 
-
-def toy_example(rank, tagsVal):
-    length = len(tagsVal)
-    tags = np.empty((rank, length), object)
-
-    tvals = np.random.rand(rank, length)
-    tvals /= -tvals.sum(axis=0)
-    tvals.sort(axis=0)
-    tvals = -tvals
-
-    pos_id = 0
-    for i in range(rank):
-        for j in range(length):
-            if i == 1:
-                tags[i][j] = Tag(tagsVal[j], tvals[i][j], pos_id)
-            else:
-                tags[i][j] = Tag('NP\\NNP+NNP', tvals[i][j], pos_id)
-            pos_id = tags[i][j].pos_id
-    return tvals, tags
-
 def convert_to_TagC(TagMat):
     length = len(TagMat)
     tags = []
@@ -169,11 +148,6 @@ def convert_to_TagC(TagMat):
 
 
 def solve_treeSearch(TagMat):
-    #tagsVal = 'NP+PRP S\NP\.+VP\NP+VBZ DT NP\PP+NP\DT+NN PP\NP+IN PRP$ NN NP\NP+NP\PRP$\NN+NN NP+NN .'.split()
-    # tagsVal = 'NP+PRP S\NP\.+VP\VP+VBD VP\NP\PP+VBN DT NP\PP+NP\DT\CC\NN\NN+NNS CC NN NN PP\NP+IN NP+NNP PP\NP+IN CD NP\CD+NNS .'.split()
-    # max_rank  = 2
-    # tvals, tags = toy_example(max_rank, tagsVal)
-
 
     tags = convert_to_TagC(TagMat)
     max_lid = len(TagMat)
@@ -185,4 +159,23 @@ def solve_treeSearch(TagMat):
         foundPath = list(foundPath)[-1]
         return zip(xrange(foundPath.idx[1]), foundPath.rank)
     return foundPath
-# solve_treeSearch()
+
+
+    # def toy_example(rank, tagsVal):
+    #     length = len(tagsVal)
+    #     tags = np.empty((rank, length), object)
+    #
+    #     tvals = np.random.rand(rank, length)
+    #     tvals /= -tvals.sum(axis=0)
+    #     tvals.sort(axis=0)
+    #     tvals = -tvals
+    #
+    #     pos_id = 0
+    #     for i in range(rank):
+    #         for j in range(length):
+    #             if i == 1:
+    #                 tags[i][j] = Tag(tagsVal[j], tvals[i][j], pos_id)
+    #             else:
+    #                 tags[i][j] = Tag('NP\\NNP+NNP', tvals[i][j], pos_id)
+    #             pos_id = tags[i][j].pos_id
+    #     return tvals, tags

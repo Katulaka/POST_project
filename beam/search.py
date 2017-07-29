@@ -55,6 +55,20 @@ class Hypothesis(object):
       return Hypothesis(self.tokens + [token], self.prob + [prob],
                         new_state, self.score * prob)
 
+# def Extend(self, token, prob, new_state):
+#   """Extend the hypothesis with result from latest step.
+#
+#     Args:
+#       token: latest token from decoding.
+#       log_prob: log prob of the latest decoded tokens.
+#       new_state: decoder output state. Fed to the decoder for next step.
+#     Returns:
+#       New Hypothesis with the results from latest step.
+#   """
+#     self.tokens += [token]
+#     self.prob += [prob]
+#     self.state = new_state
+
   @property
   def latest_token(self):
     return self.tokens[-1]
@@ -71,7 +85,7 @@ class BeamSearch(object):
     """Creates BeamSearch object.
 
     Args:
-      model: Seq2SeqAttentionModel.
+      model:
       beam_size: int.
       start_token: int, id of the token to start decoding with
       end_token: int, id of the token that completes an hypothesis
@@ -83,19 +97,8 @@ class BeamSearch(object):
     self._end_token = end_token
     self._max_steps = max_steps
 
-# def Extend(self, token, prob, new_state):
-#   """Extend the hypothesis with result from latest step.
-#
-#     Args:
-#       token: latest token from decoding.
-#       log_prob: log prob of the latest decoded tokens.
-#       new_state: decoder output state. Fed to the decoder for next step.
-#     Returns:
-#       New Hypothesis with the results from latest step.
-#   """
-#     self.tokens += [token]
-#     self.prob += [prob]
-#     self.state = new_state
+
+
   # def GreedyBeamSearch(self, sess, enc_inputs, enc_seqlen):
   #   """Performs beam search for decoding.
   #
@@ -191,6 +194,5 @@ class BeamSearch(object):
     Returns:
       hyps: A list of sorted hypothesis in reverse prod prob order.
     """
-    #This length normalization is only effective for the final results.
     hyp_sort = sorted(hyps, key=lambda h: h.score, reverse=True)
     return hyp_sort[:self._beam_size]

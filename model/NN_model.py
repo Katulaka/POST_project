@@ -6,9 +6,6 @@ import tensorflow as tf
 
 
 class NNModel(object):
-    #
-    # LSTM = tf.contrib.rnn.BasicLSTMCell
-    # LSTMStateTuple = tf.contrib.rnn.LSTMStateTuple
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
@@ -171,7 +168,6 @@ class NNModel(object):
                 np.expand_dims(np.zeros_like(i), axis=0))
                 for i in dec_init_states]
 
-    # def decode_topk(self, sess, latest_tokens, enc_top_states, dec_init_states):
     def decode_topk(self, sess, latest_tokens, dec_init_states, k):
         """Return the topK results and new decoder states."""
         input_feed = {

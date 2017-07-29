@@ -67,7 +67,7 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, reversePath=False):
+    def astar(self, start, goal, reversePath = False, verbose = 0):
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         for strt in  start:
@@ -78,8 +78,9 @@ class AStar:
             heappush(openSet, startNode)
         while openSet:
             current = heappop(openSet)
-            print "---------------------------------------------------"
-            print "current:", current.data.idx, current.data.rank, current.fscore
+            if (verbose == 1):
+                print "---------------------------------------------------"
+                print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
                 return self.reconstruct_path(current, reversePath)
             current.out_openset = True
@@ -95,22 +96,6 @@ class AStar:
                 if neighbor.out_openset:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
-                print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
+                if (verbose == 1):
+                    print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
         return None
-
-
-# def find_path(start, goal, neighbors_fnct, reversePath=False, heuristic_cost_estimate_fnct=lambda a, b: Infinite,
-# distance_between_fnct=lambda a, b: 1.0, is_goal_reached_fnct=lambda a, b: a == b):
-#    """A non-class version of the path finding algorithm"""
-#    class FindPath(AStar):
-#        def heuristic_cost_estimate(self, current, goal):
-#            return heuristic_cost_estimate_fnct(current, goal)
-#        def distance_between(self, n1, n2):
-#            return distance_between_fnct(n1, n2)
-#        def neighbors(self, node):
-#            return neighbors_fnct(node)
-#        def is_goal_reached(self, current, goal):
-#            return is_goal_reached_fnct(current, goal)
-#    return FindPath().astar(start, goal, reversePath)
-#
-# __all__ = ['AStar', 'find_path']
