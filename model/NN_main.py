@@ -3,6 +3,7 @@ from __future__ import print_function
 import NN_model as nnModel
 import beam_search as beam_search
 import utils.data_preproc as dp
+import astar.search as ast
 
 import math
 import time
@@ -89,11 +90,11 @@ def train(config, train_set, cp_path):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_pad, tags_in_1hot = \
                 dp.get_batch(train_set, config.tag_vocabulary_size,
                                                 config.batch_size)
             pred, step_loss, _  = model.step(sess, word_seq_len, tag_seq_len,
-                                            words_in, tags_in, tags_in_1hot)
+                                            words_in, tags_in_pad, tags_in_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             if moving_average_loss == 0:
@@ -140,11 +141,11 @@ def decode_tags_only(config, train_set, reverse_dict):
         model = restore_model(sess, config)
         guesses = Counter()
         while(True):
-            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
+            word_seq_len, tag_seq_len, words_in, tags_in, tags_in_pad, tags_in_1hot = \
                 dp.get_batch(train_set, config.tag_vocabulary_size,
                         config.batch_size)
             predicted_tags = decode_one_tag(sess, model, word_seq_len, words_in)
-            true_tags = np.squeeze(tags_in[:,1:2], axis=1)
+            true_tags = np.squeeze(tags_in_pad[:,1:2], axis=1)
             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
             import pdb; pdb.set_trace()
 
@@ -157,30 +158,51 @@ def decode_one_tag(sess, model, word_seq_len, words_in):
     results = sess.run(output_feed, input_feed)
     return np.argmax(results, axis=1)
 
-def decode(config, train_set):
-
-    if TAGS_ONLY:
-        decode_tags_only(config, train_set, reverse_dict)
-        return
-
-    word_seq_len, tag_seq_len, words_in, tags_in, tags_in_1hot = \
-    dp.get_batch(train_set, config.tag_vocabulary_size,
-    config.batch_size)
+def _run_beam(config, words_in, word_seq_len):
 
     with tf.Session() as sess:
         model = restore_model(sess, config)
-        # while(True):
-        # for i in xrange(config.decode_size):
-        bs = beam_search.BeamSearch(model, config.beam_size,
-                  1, #GO
-                  2, #EOS
-                  config.dec_timesteps)
+        bs = beam_search.BeamSearch(model,
+                                    config.beam_size,
+                                    1, #GO
+                                    2, #EOS
+                                    config.dec_timesteps)
 
         words_in_cp = copy.copy(words_in)
         word_seq_len_cp = copy.copy(word_seq_len)
         best_beam = bs.BeamSearch(sess, words_in_cp, word_seq_len_cp)
-        import pdb; pdb.set_trace()
-        print (best_beam)
+
+    return best_beam
 
 
-    return words_in, tags_in, best_beam
+def decode(config, train_set, rev_dict):
+
+    # if TAGS_ONLY:
+    #     decode_tags_only(config, train_set, reverse_dict)
+    #     return
+
+    word_seq_len, tag_seq_len, words_in, tags_in, _ , tags_in_1hot = \
+        dp.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
+
+    best_beams = _run_beam(config, words_in, word_seq_len)
+
+    best_beam_trans = map(lambda beam: map(lambda pair:
+        ('+'.join(map(lambda i: rev_dict[i], pair[0])), pair[1])
+            ,beam) ,best_beams)
+
+    real_tags_trans = map(lambda tag:
+            '+'.join(map(lambda i: rev_dict[i],tag)),tags_in)
+
+    ind = map(lambda i: sum(word_seq_len[:i]), xrange(config.batch_size+1))
+    decode_tags = []
+    orig_tags = []
+    for i in xrange(config.batch_size):
+        orig_tags.append(real_tags_trans[ind[i]:ind[i+1]])
+        beam_el = best_beam_trans[ind[i]:ind[i+1]]
+        path = ast.solve_treeSearch(beam_el)
+        if not path is None:
+            decode_tags.append(map(lambda p: beam_el[p[0]][p[1]][0], path))
+        else:
+            decode_tags.append([])
+
+    return orig_tags, decode_tags

@@ -145,4 +145,4 @@ def get_batch(train_data, tag_vocabulary_size, batch_size=32):
     data_padding(bv_t_go)
     bv_t_go = np.vstack([np.expand_dims(x, 0) for x in bv_t_go])
 
-    return seq_len_w, seq_len_t, bv_w, bv_t_go, bv_t_1hot
+    return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_go, bv_t_1hot

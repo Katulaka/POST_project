@@ -18,6 +18,7 @@ class Tag(object):
         tree = Tree()
         parent_id = None
         for t in [subTag.split('\\') for subTag in self.tag.split('+')]:
+        # for t in [subTag.split('\\') for subTag in self.tag]:
             tree.create_node(t[0], pos_id, parent = parent_id, data = Tag.nProp(False))
             parent_id = pos_id
             pos_id += 1
@@ -41,7 +42,6 @@ class TagNode(object):
             subtagtrees = tagtrees[ptr:ptr+2]
             roots = [t[t.root] for t in subtagtrees]
             leaves = [ [l for l in t.leaves(t.root) if l.data.miss] for t in subtagtrees]
-            # import pdb; pdb.set_trace()
             if roots[0].tag in map(lambda l: l.tag, leaves[1]) and \
             len(leaves[0]) == 0:
                 idm = map(lambda l: l.tag, leaves[1]).index(roots[0].tag)
@@ -97,7 +97,7 @@ class Solver(AStar):
             return [] if not lid in self.lindex else self.lindex[lid]
 
     def __init__(self, tags):
-        self.tags = tags
+        self.tags = np.array(tags)
         self.cl = Solver.ClosedList()
 
     def heuristic_cost(self, current, goal):
@@ -109,7 +109,6 @@ class Solver(AStar):
     def real_cost(self, current):
         idx_range = range(current.rid, current.lid)
         pos = zip(current.rank, idx_range)
-        #return .0 if not self.is_valid(current) else sum([self.tags[el].score for el in pos])
         return .0 if not current.is_valid(self.tags) else sum([self.tags[el].score for el in pos])
 
     def move_to_closed(self, current):
@@ -156,23 +155,34 @@ def toy_example(rank, tagsVal):
             pos_id = tags[i][j].pos_id
     return tvals, tags
 
+def convert_to_TagC(TagMat):
+    length = len(TagMat)
+    tags = []
+    pos_id = 0
+    for tm in TagMat:
+        tag_row = []
+        for el in tm:
+            tag_row.extend([Tag(el[0], el[1], pos_id)])
+            pos_id = tag_row[-1].pos_id
+        tags.append(tag_row)
+    return np.array(tags).T
 
-def solve_treeSearch():
+
+def solve_treeSearch(TagMat):
     #tagsVal = 'NP+PRP S\NP\.+VP\NP+VBZ DT NP\PP+NP\DT+NN PP\NP+IN PRP$ NN NP\NP+NP\PRP$\NN+NN NP+NN .'.split()
-    tagsVal = 'NP+PRP S\NP\.+VP\VP+VBD VP\NP\PP+VBN DT NP\PP+NP\DT\CC\NN\NN+NNS CC NN NN PP\NP+IN NP+NNP PP\NP+IN CD NP\CD+NNS .'.split()
-    max_lid = len(tagsVal)
-    max_rank  = 2
-    tvals, tags = toy_example(max_rank, tagsVal)
+    # tagsVal = 'NP+PRP S\NP\.+VP\VP+VBD VP\NP\PP+VBN DT NP\PP+NP\DT\CC\NN\NN+NNS CC NN NN PP\NP+IN NP+NNP PP\NP+IN CD NP\CD+NNS .'.split()
+    # max_rank  = 2
+    # tvals, tags = toy_example(max_rank, tagsVal)
 
+
+    tags = convert_to_TagC(TagMat)
+    max_lid = len(TagMat)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
-
     # let's solve it
     foundPath = Solver(tags).astar(start, goal)
     if not foundPath is None:
-        foundPath = list(foundPath)
-        print tvals
-        for fp in foundPath:
-            print fp.idx, fp.rank
-
-solve_treeSearch()
+        foundPath = list(foundPath)[-1]
+        return zip(xrange(foundPath.idx[1]), foundPath.rank)
+    return foundPath
+# solve_treeSearch()

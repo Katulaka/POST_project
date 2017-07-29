@@ -1,6 +1,6 @@
 class Config(object):
 
-    batch_size = 32
+    batch_size = 2
     word_embedding_size = 128
     tag_embedding_size = 128
     n_hidden_fw = 128

@@ -142,11 +142,11 @@ class BeamSearch(object):
             ordered by score
      """
     # Run the encoder and extract the outputs and final state.
-    dec_in_state = self._model.encode_top_state( sess, enc_inputs, enc_seqlen)
+    dec_in_state = self._model.encode_top_state(sess, enc_inputs, enc_seqlen)
     # Replicate the initial states K times for the first step.
     dec_res = []
     tot_i = len(dec_in_state)
-    for i,dec_in in enumerate(dec_in_state):
+    for i, dec_in in enumerate(dec_in_state):
       results = []
       hyps = [Hypothesis([self._start_token], [1.0], dec_in, 1.0)]
       for steps in xrange(self._max_steps):
@@ -164,7 +164,6 @@ class BeamSearch(object):
                             new_states))
           # Filter and collect any hypotheses that have the end token.
           hyps = []
-        #   import pdb; pdb.set_trace()
           for h in self._BestHyps(all_hyps):
               if h.latest_token == self._end_token:
                   # Pull the hypothesis off the beam if the end token is reached.
@@ -176,17 +175,12 @@ class BeamSearch(object):
                   # Otherwise continue to the extend the hypothesis.
                   hyps.append(h)
 
-      print ("Finished deocding %d / %d" %(i, tot_i))
-      dec_res.append(results)
-    return self._Transorm(dec_res, enc_seqlen)
-
-  def _Transorm(self, results, seqlen):
-
-      res = [[(h.tokens, h.score) for h in r]
-            for r in results]
-      ind = [sum(seqlen[:i]) for i in xrange(len(seqlen)+1)]
-      res = [res[ind[i]:ind[i+1]] for i in xrange(len(seqlen))]
-      return res
+      print ("Finished deocding %d / %d" %(i+1, tot_i))
+      #TODO verify with John results exceed beam size
+      dec_res.append(self._BestHyps(results))
+      beam_res = map(lambda res: map(lambda h: (h.tokens[1:-1], h.score),
+                                                                res), dec_res)
+    return beam_res
 
 
   def _BestHyps(self, hyps):
