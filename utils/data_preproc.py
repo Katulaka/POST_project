@@ -10,19 +10,11 @@ import numpy as np
 import shutil
 import copy
 
+from utils import *
 
-def read_file(fname):
-    with open(fname) as f:
-        text = f.read().splitlines()
-    return list(map(lambda x: x.split(), text))
-
-def flatten(list_):
-     for it in list_:
-        for element in it:
-            yield element
 
 def build_dictionary(words, vocabulary_size = -1):
-    count = [['PAD', -1],['SOS',-1],['EOS', -1], ['UNK', -1]]
+    count = [['PAD', -1],['GO', -1],['EOS', -1], ['UNK', -1]]
     if vocabulary_size == -1:
         count.extend(collections.Counter(words).most_common())
     else:
