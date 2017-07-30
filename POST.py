@@ -32,7 +32,6 @@ def main(_):
     else:
         print ("Found word data in %s \nFound tag data in %s" % (w_file, t_file))
 
-
     w_vocab, words = textfile_to_vocab(w_file)
     t_vocab, tags = textfile_to_vocab(t_file, is_tag=True)
 
@@ -45,11 +44,13 @@ def main(_):
                                             'checkpoints',
                                             args.tags_type)
 
+    batcher = Batcher(config.tag_vocabulary_size, config.batch_size)
+
     if (args.action == 'train'):
         NN_main.train(config, train_set, args.tags_type)
 
     elif (args.action == 'decode'):
-        orig_tags, decode_tags = NN_main.decode(config, train_set, t_vocab)
+        orig_tags, dec_tags = NN_main.decode(config, train_set, t_vocab, batcher)
         import pdb; pdb.set_trace()
 
     else:

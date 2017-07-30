@@ -64,9 +64,7 @@ def train(config, train_set, cp_path):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            w_len, t_len, words, _, tags_pad, tags_1hot = \
-                batcher.get_batch(train_set, config.tag_vocabulary_size,
-                                config.batch_size)
+            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.get_batch(train_set)
             pred, step_loss, _  = model.step(sess, w_len, t_len,
                                             words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
@@ -107,15 +105,12 @@ def train(config, train_set, cp_path):
                 sys.stdout.flush()
 
 
-def decode(config, train_set, vocab):
+def decode(config, train_set, vocab, batcher):
 
     with tf.Session() as sess:
         model = get_model(sess, config)
         while True:
-            w_len, t_len, words, tags, _ , _ = batcher.get_batch(
-                                                train_set,
-                                                config.tag_vocabulary_size,
-                                                config.batch_size)
+            w_len, t_len, words, tags, _ , _ = batcher.get_batch(train_set)
 
             bs = beam_search.BeamSearch(model,
                                         config.beam_size,
@@ -140,7 +135,7 @@ def decode(config, train_set, vocab):
                 path = ast.solve_treeSearch(beam_tag)
                 if not path is None:
                     decode_tags.append(map(lambda p:
-                                            beam_tag[p[0]][p[1]][0], path))
+                                        beam_tag[p[0]][p[1]][0], path))
                 else:
                     decode_tags.append([])
             import pdb; pdb.set_trace()

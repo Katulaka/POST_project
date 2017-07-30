@@ -73,18 +73,18 @@ def textfile_to_vocab(fname, vocab_size=0, is_tag=False):
 
     return Vocab(tokens_flat_, vocab_size), tokens
 
-def data_padding(data, mlen = 0, pad_sym = PAD[1]):
+def data_padding(data, mlen=0, pad_token=PAD[1]):
 
-    max_len = mlen if mlen>0 else len(max(data, key=len))
+    max_len = mlen if mlen > 0 else len(max(data, key=len))
     for i,el in enumerate(data):
         pad_len = max_len-len(el)
-        data[i] = np.lib.pad(el, (0, pad_len), 'constant', constant_values=(pad_sym))
+        data[i] = np.lib.pad(el, (0, pad_len), 'constant', constant_values=(pad_token))
     return data
 
-def add_go(data, start_token = GO[1]):
+def add_go(data, start_token=GO[1]):
     return map(lambda x: [start_token] + x, data)
 
-def add_eos(data, end_token = EOS[1]):
+def add_eos(data, end_token=EOS[1]):
     return map(lambda x: x + [end_token], data)
 
 def to_onehot(vec_in, max_len, size):
