@@ -130,7 +130,7 @@ class BeamSearch(object):
                     else:
                         # Otherwise continue to the extend the hypothesis.
                         hyps.append(h)
-            print ("Finished deocding %d / %d" % (i+1, dec_len))
+            print ("Finished beam search for %d / %d" % (i+1, dec_len))
             #TODO verify with John results exceed beam size
             decs.append(self.best_hyps(res))
 

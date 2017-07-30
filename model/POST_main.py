@@ -1,29 +1,28 @@
 from __future__ import print_function
 
-import math
-import time
-import sys
-import os
 import copy
-
+import math
+import os
+import sys
+import time
 import tensorflow as tf
 import numpy as np
 
-import POST_model as post
-import astar.search as ast
-import beam.search as beam
+from astar.search import solve_tree_search
+from beam.search import BeamSearch
+from POST_model import POSTModel
 
 
 def get_model(session, config, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
-    model = post.POSTModel(config.batch_size, config.word_embedding_size,
-                            config.tag_embedding_size, config.n_hidden_fw,
-                            config.n_hidden_bw, config.n_hidden_lstm,
-                            config.word_vocabulary_size,
-                            config.tag_vocabulary_size,config.learning_rate,
-                            config.learning_rate_decay_factor, mode)
+    model = POSTModel(config.batch_size, config.word_embedding_size,
+                        config.tag_embedding_size, config.n_hidden_fw,
+                        config.n_hidden_bw, config.n_hidden_lstm,
+                        config.word_vocabulary_size,
+                        config.tag_vocabulary_size,config.learning_rate,
+                        config.learning_rate_decay_factor, mode)
     model.build_graph()
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
@@ -52,7 +51,7 @@ def train(config, batcher, cp_path):
         # This is the training loop.
         step_time = 0.0
         loss = 0.0
-        moving_average_loss = 0.0 #TODO fix this moving_average_loss
+        moving_avg_loss = 0.0 #TODO fix this moving_avg_loss
         current_step = 0
         decay = 0.999
         prev_losses = []
@@ -68,11 +67,10 @@ def train(config, batcher, cp_path):
                                             words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
-            if moving_average_loss == 0:
-                moving_average_loss = step_loss
+            if moving_avg_loss == 0:
+                moving_avg_loss = step_loss
             else:
-                moving_average_loss = (moving_average_loss * decay
-                                        + (1 - decay)*loss)
+                moving_avg_loss = (moving_avg_loss * decay + (1 - decay)*loss)
             current_step += 1
 
             # Once in a while, we save checkpoint, print statistics, and run evals.
@@ -111,11 +109,11 @@ def decode(config, vocab, batcher):
         while True:
             w_len, _, words, tags, _, _ = batcher.next_batch()
 
-            bs = beam.BeamSearch(model,
-                                config.beam_size,
-                                vocab.token_to_id('GO'),
-                                vocab.token_to_id('EOS'),
-                                config.dec_timesteps)
+            bs = BeamSearch(model,
+                            config.beam_size,
+                            vocab.token_to_id('GO'),
+                            vocab.token_to_id('EOS'),
+                            config.dec_timesteps)
 
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
@@ -126,10 +124,12 @@ def decode(config, vocab, batcher):
 
             orig_tags = batcher.restore_batch(vocab.to_tokens(tags))
             decode_tags = []
-            for beam_tag in batcher.restore_batch(beam_tags):
-                path = ast.solve_treeSearch(beam_tag)
-                decode_tags.append(map(lambda p: beam_tag[p[0]][p[1]][0], path))
-
+            for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
+                path = solve_tree_search(beam_tag)
+                beam_tag = list(np.array(beam_tag)[path])
+                decode_tags.append(beam_tag)
+                print ("Finished astar search for %d / %d" % (i+1,
+                                            batcher.get_batch_size()))
             import pdb; pdb.set_trace()
 
     return orig_tags, decode_tags

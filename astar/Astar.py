@@ -33,8 +33,9 @@ class AStar:
 
     @abstractmethod
     def heuristic_cost(self, current, goal):
-        """Computes the estimated (rough) distance between a node and the goal, this method must be
-        implemented in a subclass. The second parameter is always the goal."""
+        """Computes the estimated (rough) distance between a node and the goal,
+        this method must be implemented in a subclass. The second parameter is
+        always the goal."""
         raise NotImplementedError
 
     @abstractmethod
@@ -43,8 +44,8 @@ class AStar:
 
     @abstractmethod
     def neighbors(self, node):
-        """For a given node, returns (or yields) the list of its neighbors. this method must be
-        implemented in a subclass"""
+        """For a given node, returns (or yields) the list of its neighbors.
+        this method must be implemented in a subclass"""
         raise NotImplementedError
 
     @abstractmethod
@@ -56,46 +57,46 @@ class AStar:
     def move_to_closed(self, current):
         raise NotImplementedError
 
-    def reconstruct_path(self, last, reversePath=False):
+    def reconstruct_path(self, last, reverse_path=False):
         def _gen():
             current = last
             while current:
                 yield current.data
                 current = current.came_from
-        if reversePath:
+        if reverse_path:
             return _gen()
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, reversePath = False, verbose = 0):
+    def astar(self, start, goal, reverse_path = False):
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         for strt in  start:
             if self.is_goal_reached(strt, goal):
                 return [strt]
-            startNode = searchNodes[strt] = AStar.SearchNode(
-               strt, fscore=self.real_cost(strt) + self.heuristic_cost(strt, goal))
+            cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
+            startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
         while openSet:
             current = heappop(openSet)
-            if (verbose == 1):
-                print "---------------------------------------------------"
-                print "current:", current.data.idx, current.data.rank, current.fscore
+            # if (verbose == 1):
+            #     print "---------------------------------------------------"
+            #     print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
-                return self.reconstruct_path(current, reversePath)
+                return self.reconstruct_path(current, reverse_path)
             current.out_openset = True
             current.closed = True
             self.move_to_closed(current.data)
             for neighbor in [searchNodes[n] for n in self.neighbors(current.data)]:
                 if neighbor.closed:
                     continue
-                neighbor.fscore = self.real_cost(neighbor.data) + \
-                        self.heuristic_cost(neighbor.data, goal)
+                neighbor.fscore = self.real_cost(neighbor.data) \
+                                    + self.heuristic_cost(neighbor.data, goal)
                 neighbor.came_from = current
 
                 if neighbor.out_openset:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
-                if (verbose == 1):
-                    print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
+                # if (verbose == 1):
+                #     print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
         return None

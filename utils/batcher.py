@@ -11,6 +11,9 @@ class Batcher(object):
         self._batch_size = batch_size
         self._data = data
 
+    def get_batch_size(self):
+        return self._batch_size
+
     def batch_valid(self, b_word, b_tag):
         #TODO fix data problem
         return all(map(lambda x, y: len(x)==len(y), b_word, b_tag))
