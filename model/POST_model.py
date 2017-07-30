@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 
-class NNModel(object):
+class POSTModel(object):
 
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,

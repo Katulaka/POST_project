@@ -9,17 +9,16 @@ import copy
 import tensorflow as tf
 import numpy as np
 
-import utils.batcher as batcher
-import NN_model as nnModel
+import POST_model as post
 import astar.search as ast
-import beam.search as beam_search
+import beam.search as beam
 
 
 def get_model(session, config, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
-    model = nnModel.NNModel(config.batch_size, config.word_embedding_size,
+    model = post.POSTModel(config.batch_size, config.word_embedding_size,
                             config.tag_embedding_size, config.n_hidden_fw,
                             config.n_hidden_bw, config.n_hidden_lstm,
                             config.word_vocabulary_size,
@@ -112,7 +111,7 @@ def decode(config, vocab, batcher):
         while True:
             w_len, _, words, tags, _, _ = batcher.next_batch()
 
-            bs = beam_search.BeamSearch(model,
+            bs = beam.BeamSearch(model,
                                         config.beam_size,
                                         vocab.token_to_id('GO'),
                                         vocab.token_to_id('EOS'),
