@@ -52,8 +52,8 @@ class Hypothesis(object):
         Returns:
           New Hypothesis with the results from latest step.
         """
-        return Hypothesis(self.tokens + [token], self.prob + [prob],
-                        new_state, self.score * prob)
+        return Hypothesis(self.tokens+[token], self.prob+[prob],
+                            new_state, self.score*prob)
 
     @property
     def latest_token(self):
@@ -98,46 +98,46 @@ class BeamSearch(object):
         # Run the encoder and extract the outputs and final state.
         dec_in_state = self._model.encode_top_state(sess, enc_inputs, enc_seqlen)
         # Replicate the initial states K times for the first step.
-        dec_res = []
+        decs = []
+        dec_len = len(dec_in_state)
         for i, dec_in in enumerate(dec_in_state):
-            results = []
+            res = []
             hyps = [Hypothesis([self._start_token], [1.0], dec_in, 1.0)]
             for steps in xrange(self._max_steps):
                 # Extend each hypothesis.
-                # The first step takes the best K results from first hyps. Following
-                # steps take the best K results from K*K hyps.
+                # The first step takes the best K results from first hyps.
+                # Following steps take the best K results from K*K hyps.
                 all_hyps = []
                 for hyp in hyps:
-                    latest_tokens = [[hyp.latest_token]]
+                    latest_token = [[hyp.latest_token]]
                     states = [hyp.state]
-                    topk_ids, topk_probs, new_states = self._model.decode_topk(
-                        sess, latest_tokens, states, self._beam_size)
-                    for bid in xrange(self._beam_size):
-                        all_hyps.append(hyp.extend_(topk_ids[bid], topk_probs[bid],
-                            new_states))
+                    ids, probs, new_state = self._model.decode_topk(sess,
+                                                                latest_token,
+                                                                states,
+                                                                self._beam_size)
+                    for j in xrange(self._beam_size):
+                        all_hyps.append(hyp.extend_(ids[j], probs[j], new_state))
                 # Filter and collect any hypotheses that have the end token.
                 hyps = []
                 for h in self.best_hyps(all_hyps):
                     if h.latest_token == self._end_token:
-                        # Pull the hypothesis off the beam if the end token is reached.
-                        results.append(h)
-                    elif len(results) >= self._beam_size \
-                            and h.score < min(map(lambda h: h.score, results)):
+                        # Pull the hypothesis off the beam
+                        #if the end token is reached.
+                        res.append(h)
+                    elif len(res) >= self._beam_size \
+                            and h.score < min(res, key=lambda h: h.score).score:
                         pass
                     else:
                         # Otherwise continue to the extend the hypothesis.
                         hyps.append(h)
-
-            print ("Finished deocding %d / %d" %(i+1, len(dec_in_state)))
+            print ("Finished deocding %d / %d" % (i+1, dec_len))
             #TODO verify with John results exceed beam size
-            dec_res.append(self.best_hyps(results))
+            decs.append(self.best_hyps(res))
 
-        beam_res = dict()
-        beam_res['tokens'] = map(lambda res:
-                                map(lambda h: h.tokens[1:-1], res),
-                                dec_res)
-        beam_res['scores'] = map(lambda res: map(lambda h: h.score, res), dec_res)
-        return beam_res
+        beams = dict()
+        beams['tokens'] = map(lambda r: map(lambda h: h.tokens[1:-1], r), decs)
+        beams['scores'] = map(lambda r: map(lambda h: h.score, r), decs)
+        return beams
 
 
     def best_hyps(self, hyps):
@@ -159,7 +159,7 @@ class BeamSearch(object):
 #       log_prob: log prob of the latest decoded tokens.
 #       new_state: decoder output state. Fed to the decoder for next step.
 #     Returns:
-#       New Hypothesis with the results from latest step.
+#       New Hypothesis with the res from latest step.
 #   """
 #     self.tokens += [token]
 #     self.prob += [prob]
