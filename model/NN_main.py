@@ -110,7 +110,7 @@ def decode(config, vocab, batcher):
     with tf.Session() as sess:
         model = get_model(sess, config)
         while True:
-            w_len, t_len, words, tags, _ , _ = batcher.next_batch()
+            w_len, _, words, tags, _, _ = batcher.next_batch()
 
             bs = beam_search.BeamSearch(model,
                                         config.beam_size,
@@ -124,21 +124,15 @@ def decode(config, vocab, batcher):
 
             beam_tags = map(lambda x, y: zip(vocab.to_tokens(x), y),
                             best_beams['tokens'], best_beams['scores'])
-            real_tags = vocab.to_tokens(tags)
 
-            ind = map(lambda i: sum(w_len[:i]), xrange(config.batch_size+1))
+            orig_tags = batcher.restore_batch(vocab.to_tokens(tags))
             decode_tags = []
-            orig_tags = []
-            for i in xrange(config.batch_size):
-                orig_tags.append(real_tags[ind[i]:ind[i+1]])
-                beam_tag = beam_tags[ind[i]:ind[i+1]]
+            for beam_tag in batcher.restore_batch(beam_tags):
                 path = ast.solve_treeSearch(beam_tag)
-                if not path is None:
-                    decode_tags.append(map(lambda p:
-                                        beam_tag[p[0]][p[1]][0], path))
-                else:
-                    decode_tags.append([])
+                decode_tags.append(map(lambda p: beam_tag[p[0]][p[1]][0], path))
+
             import pdb; pdb.set_trace()
+
     return orig_tags, decode_tags
 
 # from collections import Counter

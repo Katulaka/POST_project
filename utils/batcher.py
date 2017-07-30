@@ -50,6 +50,8 @@ class Batcher(object):
         bv_w = copy.copy(bv['word'])
         seq_len_w, bv_w = self.generate_in_data(bv_w)
 
+        self.seq_len = seq_len_w
+
         bv_t = copy.copy(bv['tag'])
         if arr_dim(bv_t.tolist()) == 3:
             bv_t = [x for y in bv_t for x in y]
@@ -58,9 +60,6 @@ class Batcher(object):
 
         return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_go, bv_t_1hot
 
-    
-
-        # def _generate_batch(self):
-        #     dn = np.array(self._data)
-        #     dn = np.array_split(dn, len(dn)/self._batch_size)
-        #     return dn
+    def restore_batch(self, batch):
+        it = iter(batch)
+        return [x for x in (list(islice(it, n)) for n in self.seq_len)]

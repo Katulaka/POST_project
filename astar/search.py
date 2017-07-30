@@ -155,10 +155,10 @@ def solve_treeSearch(TagMat):
     goal = TagNode(0, max_lid, [])
     # let's solve it
     foundPath = Solver(tags).astar(start, goal)
-    if not foundPath is None:
+    if foundPath is not None:
         foundPath = list(foundPath)[-1]
         return zip(xrange(foundPath.idx[1]), foundPath.rank)
-    return foundPath
+    return []
 
 
     # def toy_example(rank, tagsVal):
