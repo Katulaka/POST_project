@@ -12,6 +12,7 @@ class Batcher(object):
         self._data = data
 
     def batch_valid(self, b_word, b_tag):
+        #TODO fix data problem
         return all(map(lambda x, y: len(x)==len(y), b_word, b_tag))
 
     def generate_batch(self):

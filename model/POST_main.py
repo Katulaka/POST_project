@@ -112,14 +112,14 @@ def decode(config, vocab, batcher):
             w_len, _, words, tags, _, _ = batcher.next_batch()
 
             bs = beam.BeamSearch(model,
-                                        config.beam_size,
-                                        vocab.token_to_id('GO'),
-                                        vocab.token_to_id('EOS'),
-                                        config.dec_timesteps)
+                                config.beam_size,
+                                vocab.token_to_id('GO'),
+                                vocab.token_to_id('EOS'),
+                                config.dec_timesteps)
 
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
-            best_beams = bs.BeamSearch(sess, words_cp, w_len_cp)
+            best_beams = bs.beam_search(sess, words_cp, w_len_cp)
 
             beam_tags = map(lambda x, y: zip(vocab.to_tokens(x), y),
                             best_beams['tokens'], best_beams['scores'])
