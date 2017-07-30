@@ -44,13 +44,13 @@ def main(_):
                                             'checkpoints',
                                             args.tags_type)
 
-    batcher = Batcher(config.tag_vocabulary_size, config.batch_size)
+    batcher = Batcher(train_set, config.tag_vocabulary_size, config.batch_size)
 
     if (args.action == 'train'):
-        NN_main.train(config, train_set, args.tags_type)
+        NN_main.train(config, batcher, args.tags_type)
 
     elif (args.action == 'decode'):
-        orig_tags, dec_tags = NN_main.decode(config, train_set, t_vocab, batcher)
+        orig_tags, dec_tags = NN_main.decode(config, t_vocab, batcher)
         import pdb; pdb.set_trace()
 
     else:
