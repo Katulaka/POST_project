@@ -5,6 +5,7 @@ import os
 
 import utils.dataset as gd
 from utils.batcher import *
+from utils.data import *
 import utils.conf
 import model.NN_main as NN_main
 
@@ -13,7 +14,7 @@ def main(_):
     seed = int(time.time())
     np.random.seed(seed)
 
-    Config = utils.conf.Config
+    config = utils.conf.Config
 
     import argparse
     parser = argparse.ArgumentParser()
@@ -25,27 +26,32 @@ def main(_):
     data_dir = os.path.join(os.getcwd(), 'data')
     w_file = os.path.join(data_dir, 'words')
     t_file = os.path.join(data_dir, args.tags_type)
-    gen_tags_fn = gd.gen_tags if args.tags_type == 'tags' else gd.gen_stags
 
-    if not os.path.exists(t_file):
-        gd.generate_data_flat(Config.src_dir, data_dir, args.tags_type)
+    if not os.path.exists(t_file) or os.path.getsize(t_file) == 0:
+        gd.convert_data_flat(config.src_dir, w_file, t_file, args.tags_type)
+    else:
+        print ("Found word data in %s \nFound tag data in %s" % (w_file, t_file))
 
-    #TODO maybe fix gen_dataset to get config values
-    word_vocab, tag_vocab, train_set = gd.gen_dataset(w_file, t_file)
-    Config.tag_vocabulary_size = tag_vocab.vocab_size()
-    Config.word_vocabulary_size = word_vocab.vocab_size()
-    Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints',
+
+    w_vocab, words = textfile_to_vocab(w_file)
+    t_vocab, tags = textfile_to_vocab(t_file, is_tag=True)
+
+    train_set = gd.gen_dataset(words, w_vocab, tags, t_vocab)
+
+    config.batch_size = args.batch
+    config.tag_vocabulary_size = t_vocab.vocab_size()
+    config.word_vocabulary_size = w_vocab.vocab_size()
+    config.checkpoint_path = os.path.join(os.getcwd(),
+                                            'checkpoints',
                                             args.tags_type)
-    Config.batch_size = args.batch
 
     if (args.action == 'train'):
-        NN_main.train(Config, train_set, args.tags_type)
+        NN_main.train(config, train_set, args.tags_type)
 
     elif (args.action == 'decode'):
-        orig_tags, decode_tags = NN_main.decode(Config, train_set,
-                                            tag_vocab._id_to_token)
-
+        orig_tags, decode_tags = NN_main.decode(config, train_set, t_vocab)
         import pdb; pdb.set_trace()
+
     else:
         print("Nothing to do!!")
 

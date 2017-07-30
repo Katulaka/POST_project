@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import collections
 import numpy as np
+from itertools import *
 
 PAD = ['PAD', 0]
 GO = ['GO', 1]
@@ -10,7 +11,7 @@ UNK = ['UNK', 3]
 
 class Vocab(object):
 
-    def __init__(self, _text, _size = -1):
+    def __init__(self, _text, _size=0):
         self._token_to_id = dict()
         self._id_to_token = dict()
 
@@ -18,10 +19,10 @@ class Vocab(object):
         s_tokens_sort = sorted(special_tokens.items(), key=lambda x: x[1])
         self._count = map(lambda t: [t[0], -1], s_tokens_sort)
 
-        if _size == -1:
-            common_tokens = collections.Counter(_text).most_common()
-        else:
+        if _size > 0 :
             common_tokens = collections.Counter(_text).most_common(_size - 1)
+        else:
+            common_tokens = collections.Counter(_text).most_common()
         self._count.extend(common_tokens)
         for token, _ in self._count:
             self._token_to_id[token] = len(self._token_to_id)
@@ -46,17 +47,31 @@ class Vocab(object):
             return self._token_to_id[UNK[1]]
         return self._token_to_id[token]
 
+    def to_ids(self, sentences):
+        return map(lambda s: map(lambda w: self.token_to_id(w), s), sentences)
+
     def id_to_token(self, token_id):
         if token_id not in self._id_to_token:
             raise ValueError('id not found in vocab: %d.' % token_id)
         return self._id_to_token[token_id]
 
+    def to_tokens(self, ids):
+        return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
 
-def lookup_fn(sentences, vocab):
-    vector = []
-    for s in sentences:
-        vector.append(list(map(lambda w: vocab.token_to_id(w), s)))
-    return vector
+
+def textfile_to_vocab(fname, vocab_size=0, is_tag=False):
+
+    with open(fname) as f:
+        text = f.read().splitlines()
+    tokens = map(lambda x: x.split(), text)
+    tokens_flat_ = list(chain.from_iterable(tokens))
+    if is_tag:
+        tokens_flat = []
+        for t in tokens_flat_:
+            tokens_flat.extend(t.split('+'))
+        return Vocab(tokens_flat, vocab_size), tokens
+
+    return Vocab(tokens_flat_, vocab_size), tokens
 
 def data_padding(data, mlen = 0, pad_sym = PAD[1]):
 

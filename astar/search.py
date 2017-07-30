@@ -17,8 +17,8 @@ class Tag(object):
     def convert_to_tree(self, pos_id):
         tree = Tree()
         parent_id = None
-        for t in [subTag.split('\\') for subTag in self.tag.split('+')]:
-        # for t in [subTag.split('\\') for subTag in self.tag]:
+        # for t in [subTag.split('\\') for subTag in self.tag.split('+')]:
+        for t in [subTag.split('\\') for subTag in self.tag]:
             tree.create_node(t[0], pos_id, parent = parent_id, data = Tag.nProp(False))
             parent_id = pos_id
             pos_id += 1

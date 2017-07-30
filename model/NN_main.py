@@ -64,10 +64,10 @@ def train(config, train_set, cp_path):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
+            w_len, t_len, words, _, tags_pad, tags_1hot = \
                 batcher.get_batch(train_set, config.tag_vocabulary_size,
                                 config.batch_size)
-            pred, step_loss, _  = model.step(sess, w_seq_len, t_seq_len,
+            pred, step_loss, _  = model.step(sess, w_len, t_len,
                                             words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
@@ -106,49 +106,44 @@ def train(config, train_set, cp_path):
                 step_time, loss = 0.0, 0.0
                 sys.stdout.flush()
 
-def _run_beam(config, words, w_seq_len):
+
+def decode(config, train_set, vocab):
 
     with tf.Session() as sess:
         model = get_model(sess, config)
-        bs = beam_search.BeamSearch(model,
-                                    config.beam_size,
-                                    1, #GO
-                                    2, #EOS
-                                    config.dec_timesteps)
+        while True:
+            w_len, t_len, words, tags, _ , _ = batcher.get_batch(
+                                                train_set,
+                                                config.tag_vocabulary_size,
+                                                config.batch_size)
 
-        words_cp = copy.copy(words)
-        w_seq_len_cp = copy.copy(w_seq_len)
-        return bs.BeamSearch(sess, words_cp, w_seq_len_cp)
+            bs = beam_search.BeamSearch(model,
+                                        config.beam_size,
+                                        vocab.token_to_id('GO'),
+                                        vocab.token_to_id('EOS'),
+                                        config.dec_timesteps)
 
+            words_cp = copy.copy(words)
+            w_len_cp = copy.copy(w_len)
+            best_beams = bs.BeamSearch(sess, words_cp, w_len_cp)
 
-def decode(config, train_set, rev_dict):
+            beam_tags = map(lambda x, y: zip(vocab.to_tokens(x), y),
+                            best_beams['tokens'], best_beams['scores'])
+            real_tags = vocab.to_tokens(tags)
 
-    def _translate(seq, rev_dict):
-        return '+'.join(map(lambda i: rev_dict[i], seq))
-
-
-    w_seq_len, t_seq_len, words, tags_in, _ , tags_1hot = \
-        batcher.get_batch(train_set, config.tag_vocabulary_size, config.batch_size)
-
-    best_beams = _run_beam(config, words, w_seq_len)
-
-    best_beam_trans = map(lambda beam: map(lambda x:
-        (_translate(x[0], rev_dict), x[1]), beam) ,best_beams)
-
-    real_tags_trans = map(lambda tag: _translate(tag, rev_dict),tags_in)
-
-    ind = map(lambda i: sum(w_seq_len[:i]), xrange(config.batch_size+1))
-    decode_tags = []
-    orig_tags = []
-    for i in xrange(config.batch_size):
-        orig_tags.append(real_tags_trans[ind[i]:ind[i+1]])
-        beam_el = best_beam_trans[ind[i]:ind[i+1]]
-        path = ast.solve_treeSearch(beam_el)
-        if not path is None:
-            decode_tags.append(map(lambda p: beam_el[p[0]][p[1]][0], path))
-        else:
-            decode_tags.append([])
-
+            ind = map(lambda i: sum(w_len[:i]), xrange(config.batch_size+1))
+            decode_tags = []
+            orig_tags = []
+            for i in xrange(config.batch_size):
+                orig_tags.append(real_tags[ind[i]:ind[i+1]])
+                beam_tag = beam_tags[ind[i]:ind[i+1]]
+                path = ast.solve_treeSearch(beam_tag)
+                if not path is None:
+                    decode_tags.append(map(lambda p:
+                                            beam_tag[p[0]][p[1]][0], path))
+                else:
+                    decode_tags.append([])
+            import pdb; pdb.set_trace()
     return orig_tags, decode_tags
 
 # from collections import Counter
@@ -158,10 +153,10 @@ def decode(config, train_set, rev_dict):
 #         model = get_model(sess, config)
 #         guesses = Counter()
 #         while(True):
-#             w_seq_len, t_seq_len, words, tags_in, tags_pad, tags_1hot = \
+#             w_len, t_len, words, tags, tags_pad, tags_1hot = \
 #                 batcher.get_batch(train_set, config.tag_vocabulary_size,
 #                         config.batch_size)
-#             predicted_tags = model.decode_one_tag(sess, w_seq_len, words)
+#             predicted_tags = model.decode_one_tag(sess, w_len, words)
 #             true_tags = np.squeeze(tags_pad[:,1:2], axis=1)
 #             guesses += Counter(zip(predicted_tags, true_tags)) # Add counts of (predicted, true) pairs
 #             import pdb; pdb.set_trace()

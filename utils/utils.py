@@ -12,10 +12,10 @@ def make_dir(path_dir):
 def read_file(fname):
     with open(fname) as f:
         text = f.read().splitlines()
-    return list(map(lambda x: x.split(), text))
+    return map(lambda x: x.split(), text)
 
-def flatten(_list):
-     for it in _list:
+def flatten(list_):
+     for it in list_:
         for element in it:
             yield element
 
@@ -42,3 +42,6 @@ def read_balanced_line(fin):
             if is_balanced(s) and s != "":
                 yield s
                 s = ""
+
+def arr_dim(a):
+    return 1 + arr_dim(a[0]) if (type(a) == list) else 0

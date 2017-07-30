@@ -15,7 +15,7 @@ class Config(object):
     steps_per_checkpoint = 10
     train_dir = 'proc_data/'
     checkpoint_path = 'checkpoints/'
-    src_dir = 'raw_data/wsj/'
+    src_dir = 'raw_data/wsj'
     dest_dir = 'proc_data'
     beam_size = 5
     dec_timesteps = 20 #TODO

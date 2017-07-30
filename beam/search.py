@@ -181,8 +181,12 @@ class BeamSearch(object):
       print ("Finished deocding %d / %d" %(i+1, tot_i))
       #TODO verify with John results exceed beam size
       dec_res.append(self._BestHyps(results))
-      beam_res = map(lambda res: map(lambda h: (h.tokens[1:-1], h.score),
-                                                                res), dec_res)
+
+    beam_res = dict()
+    beam_res['tokens'] = map(lambda res:
+                            map(lambda h: h.tokens[1:-1], res),
+                            dec_res)
+    beam_res['scores'] = map(lambda res: map(lambda h: h.score, res), dec_res)
     return beam_res
 
 
