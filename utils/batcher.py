@@ -4,7 +4,7 @@ import copy
 import numpy as np
 from itertools import islice
 
-from data import pad, add_go, add_eos, to_onehot
+from vocab import pad, add_go, add_eos, to_onehot
 
 class Batcher(object):
 

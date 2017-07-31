@@ -4,7 +4,30 @@ import os
 import re
 from treelib import Node, Tree
 
-from utils import read_balanced_line
+
+def is_balanced(string):
+    iparens = iter('(){}[]<>')
+    parens = dict(zip(iparens, iparens))
+    closing = parens.values()
+    stack = []
+    for ch in string:
+        delim = parens.get(ch, None)
+        if delim:
+            stack.append(delim)
+        elif ch in closing:
+            if not stack or ch != stack.pop():
+                return False
+    return not stack
+
+def read_balanced_line(fin):
+    s = ""
+    lines = iter(open(fin, 'r'))
+    for line in lines:
+        if line.strip():
+            s = s + line.split('\n')[0]
+            if is_balanced(s) and s != "":
+                yield s
+                s = ""
 
 def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 

@@ -2,38 +2,24 @@ from __future__ import print_function
 
 import os
 import numpy as np
+from itertools import chain
+
+from vocab import Vocab
 from gen_tags import gen_stags, gen_tags
-from utils import make_dir
 
-def get_rawdata(data_path):
+def get_raw_data(data_path):
 
-    print("Getting RAW data from corpora")
-    make_dir(data_path)
-    if not os.path.exists(os.path.join(data_path, 'wsj')):
+    print("Getting raw data from corpora")
+    if not os.path.exists(data_path):
+        try:
+            os.makedirs(os.path.abspath(data_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
         scp_path = ("scp -r login.eecs.berkeley.edu:" +
-                    "/project/eecs/nlp/corpora/EnglishTreebank/wsj/ ")
+        "/project/eecs/nlp/corpora/EnglishTreebank/wsj/* ")
         os.system(scp_path + data_path)
-
-
-def convert_data_hier(src_dir, dest_dir, tag_type='stags'):
-
-    gen_tags_fn = gen_stags if tag_type == 'stags' else gen_tags
-    for sub_dir in os.listdir(src_dir):
-        out_path = os.path.join(dest_dir, sub_dir)
-        make_dir(os.path.join(out_path, "tags"))
-        make_dir(os.path.join(out_path, "words"))
-
-        for f_in in os.listdir(os.path.join(src_dir, sub_dir)):
-            data_in = os.path.join(src_dir, sub_dir, f_in)
-            tags_out = os.path.join(out_path, "tags", f_in+'.tg')
-            words_out = os.path.join(out_path, "words", f_in+'.wrd')
-
-            with open(tags_out, 'w') as t_file:
-                with open(words_out, 'w') as w_file:
-                    for s_tags, s_words in gen_tags_fn(data_in):
-                        print(s_tags, file=t_file)
-                        print(s_words, file=w_file)
-
 
 def convert_data_flat(src_dir, words_out, tags_out, tag_type='stags'):
     """ If src dir is empty or not a file will result in empty file """
@@ -48,3 +34,31 @@ def convert_data_flat(src_dir, words_out, tags_out, tag_type='stags'):
                     for s_tags, s_words in gen_tags_fn(data_in):
                         print(s_tags, file=t_file)
                         print(s_words, file=w_file)
+
+def textfile_to_vocab(fname, vocab_size=0, is_tag=False):
+
+    with open(fname) as f:
+        text = f.read().splitlines()
+    tokens = map(lambda x: x.split(), text)
+    tokens_flat_ = list(chain.from_iterable(tokens))
+    if is_tag:
+        tokens_flat = []
+        for t in tokens_flat_:
+            tokens_flat.extend(t.split('+'))
+        return Vocab(tokens_flat, vocab_size), tokens
+
+    return Vocab(tokens_flat_, vocab_size), tokens
+
+def gen_dataset(w_file, t_file, w_vocab_size=0, t_vocab_size=0, max_len=10):
+
+    w_vocab, words = textfile_to_vocab(w_file, w_vocab_size)
+    t_vocab, tags = textfile_to_vocab(t_file, t_vocab_size, True)
+
+    dataset = dict()
+    indeces = np.where(map(lambda w: len(w) <= max_len, words))[0]
+    words_ = np.array(words)[indeces] if max_len > 0 else words
+    tags_ = np.array(tags)[indeces] if max_len > 0 else tags
+    dataset['word'] = w_vocab.to_ids(words_)
+    dataset['tag'] = map(lambda x:
+    t_vocab.to_ids(map(lambda y: y.split('+'), x)), tags_)
+    return w_vocab, t_vocab, dataset
