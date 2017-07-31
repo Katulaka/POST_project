@@ -1,16 +1,17 @@
 from __future__ import print_function
 
 import os
+import numpy as np
 from gen_tags import gen_stags, gen_tags
-from utils import *
-from data import *
+from utils import make_dir
 
 def get_rawdata(data_path):
 
     print("Getting RAW data from corpora")
     make_dir(data_path)
     if not os.path.exists(os.path.join(data_path, 'wsj')):
-        scp_path = "scp -r login.eecs.berkeley.edu:/project/eecs/nlp/corpora/EnglishTreebank/wsj/ "
+        scp_path = ("scp -r login.eecs.berkeley.edu:" +
+                    "/project/eecs/nlp/corpora/EnglishTreebank/wsj/ ")
         os.system(scp_path + data_path)
 
 
@@ -47,16 +48,3 @@ def convert_data_flat(src_dir, words_out, tags_out, tag_type='stags'):
                     for s_tags, s_words in gen_tags_fn(data_in):
                         print(s_tags, file=t_file)
                         print(s_words, file=w_file)
-
-
-def gen_dataset(words, w_vocab, tags, t_vocab, max_len=10):
-
-    dataset = dict()
-    indeces = np.where(map(lambda w: len(w) <= max_len, words))[0]
-    words_ = np.array(words)[indeces] if max_len > 0 else words
-    tags_ = np.array(tags)[indeces] if max_len > 0 else tags
-    dataset['word'] = w_vocab.to_ids(words_)
-    dataset['tag'] = map(lambda x:
-                        t_vocab.to_ids(map(lambda y: y.split('+'), x)),
-                        tags_)
-    return dataset

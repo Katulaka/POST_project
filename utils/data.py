@@ -2,7 +2,8 @@ from __future__ import print_function
 
 import collections
 import numpy as np
-from itertools import *
+
+from itertools import chain
 
 PAD = ['PAD', 0]
 GO = ['GO', 1]
@@ -73,7 +74,19 @@ def textfile_to_vocab(fname, vocab_size=0, is_tag=False):
 
     return Vocab(tokens_flat_, vocab_size), tokens
 
-def data_padding(data, mlen=0, pad_token=PAD[1]):
+def gen_dataset(words, w_vocab, tags, t_vocab, max_len=10):
+
+    dataset = dict()
+    indeces = np.where(map(lambda w: len(w) <= max_len, words))[0]
+    words_ = np.array(words)[indeces] if max_len > 0 else words
+    tags_ = np.array(tags)[indeces] if max_len > 0 else tags
+    dataset['word'] = w_vocab.to_ids(words_)
+    dataset['tag'] = map(lambda x:
+    t_vocab.to_ids(map(lambda y: y.split('+'), x)),
+    tags_)
+    return dataset
+    
+def pad(data, mlen=0, pad_token=PAD[1]):
 
     max_len = mlen if mlen > 0 else len(max(data, key=len))
     for i,el in enumerate(data):

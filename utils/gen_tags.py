@@ -1,9 +1,10 @@
 from __future__ import print_function
+
+import os
+import re
 from treelib import Node, Tree
 
-import re
-import os
-from utils import * 
+from utils import read_balanced_line
 
 def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 

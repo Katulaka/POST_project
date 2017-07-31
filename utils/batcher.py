@@ -1,8 +1,10 @@
 from __future__ import print_function
 
-from data import *
 import copy
 import numpy as np
+from itertools import islice
+
+from data import pad, add_go, add_eos, to_onehot
 
 class Batcher(object):
 
@@ -35,7 +37,7 @@ class Batcher(object):
 
     def generate_in_data(self, batch_data):
         seq_len = map(lambda x: len(x), batch_data)
-        data_padding(batch_data)
+        pad(batch_data)
         batch_data = np.vstack([np.expand_dims(x, 0) for x in batch_data])
         return seq_len, batch_data
 

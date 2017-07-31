@@ -33,7 +33,7 @@ def main(_):
     w_vocab, words = textfile_to_vocab(w_file)
     t_vocab, tags = textfile_to_vocab(t_file, is_tag=True)
 
-    train_set = ds.gen_dataset(words, w_vocab, tags, t_vocab)
+    train_set = gen_dataset(words, w_vocab, tags, t_vocab)
 
     Config.batch_size = args.batch
     Config.tag_vocabulary_size = t_vocab.vocab_size()
