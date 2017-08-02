@@ -29,6 +29,12 @@ def read_balanced_line(fin):
                 yield s
                 s = ""
 
+class NRange(object):
+
+    def __init__(self, min_range, max_range):
+        self.n_range = (min_range, max_range)
+
+
 def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 
     # starts by ['(', 'pos']
@@ -39,7 +45,7 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
         pos_id = max_id
         max_id += 1
 
-    tree.create_node(pos_tag, pos_id, parent=parent_id, data=nRange(0,0))
+    tree.create_node(pos_tag, pos_id, parent_id, NRange(0,0))
 
     parent_id = pos_id
     total_offset = 2
@@ -48,7 +54,7 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
         # sub-tree is leaf
         # line[0:3] = ['(', 'pos', 'word', ')']
         word_tag = line[2]
-        tree.create_node(word_tag, leaf_id, parent=parent_id, data=nRange(0,0))
+        tree.create_node(word_tag, leaf_id, parent_id, NRange(0,0))
         return 4, max_id, leaf_id+1
 
     line = line[2:]
@@ -58,7 +64,7 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
         total_offset += offset
         line = line[offset:]
 
-    return total_offset + 1, max_id, leaf_id
+    return total_offset+1, max_id, leaf_id
 
 
 def get_trees(fin):
@@ -71,40 +77,39 @@ def get_trees(fin):
         while p.findall(line):
             line = re.sub(p, '', line)
 
-        max_id = len([w for w in re.compile('[\S]+\)').findall(line) if not w.endswith('))')]) + 1
+        # import pdb; pdb.set_trace()
+        #max_id is the number of words in line + 1
+        end_with_paren = re.compile('[\S]+\)').findall(line)
+        max_id = len([w for w in end_with_paren if not w.endswith('))')]) + 1
         line = line.replace('(', ' ( ').replace(')', ' ) ').split()[1:]
         get_tree(tree, line, max_id)
         yield tree
 
-
-class nRange(object):
-
-    def __init__(self, minRange, maxRange):
-        self.mRange = (minRange, maxRange)
-
-
-def genRange(tree, nid, minR, maxR):
+def gen_range(tree, nid, min_range, max_range):
 
     if tree[nid].is_leaf():
-        tree[nid].data.mRange = (minR, maxR)
-        return (maxR, maxR + 1)
+        tree[nid].data.n_range = (min_range, max_range)
+        return (max_range, max_range + 1)
 
     for child in tree.children(nid):
         cid = child.identifier
-        (minR, maxR) = genRange(tree, cid, minR, maxR)
+        (min_range, max_range) = gen_range(tree, cid, min_range, max_range)
 
-    tree[nid].data.mRange = (min(map(lambda child: child.data.mRange[0],
-                                tree.children(nid))),
-                             max(map(lambda child: child.data.mRange[1],
-                                tree.children(nid))))
-    return (minR, maxR)
+    _min_range = min(tree.children(nid),
+                    key=lambda c: c.data.n_range[0]).data.n_range[0]
+    _max_range = max(tree.children(nid),
+                    key=lambda c: c.data.n_range[1]).data.n_range[1]
+
+    tree[nid].data.n_range = (_min_range, _max_range)
+
+    return (min_range, max_range)
 
 
 def extend_path(tree, pid, leaf_id, path_dict):
 
     path_tag = tree.parent(pid).tag
     if tree.siblings(pid):
-        siblings = map(lambda sibling: sibling.tag ,  tree.siblings(pid))
+        siblings = map(lambda sibling: sibling.tag,  tree.siblings(pid))
         siblings.insert(0, path_tag)
         path_tag = "\\".join(siblings)
 
@@ -122,12 +127,12 @@ def gen_height_list(tree, tree_dep_dict):
             hieght_dict[lid] = tree.depth(leaf)
 
         else:
-            minR = min(tree[depid].data.mRange[0], tree[lid].data.mRange[0])
-            maxR = max(tree[depid].data.mRange[1], tree[lid].data.mRange[1])
+            min_range = min(tree[depid].data.n_range[0], tree[lid].data.n_range[0])
+            max_range = max(tree[depid].data.n_range[1], tree[lid].data.n_range[1])
             height = 0
             pid = tree.parent(lid).identifier
 
-            while tree[pid].data.mRange[0] > minR or tree[pid].data.mRange[1] < maxR:
+            while tree[pid].data.n_range[0] > min_range or tree[pid].data.n_range[1] < max_range:
                 height += 1
                 pid = tree.parent(pid).identifier
 
@@ -185,7 +190,7 @@ def gen_stags(fin):
     tree_dep_dict = gen_tree_dep_dict(fin)
 
     for i, tree in enumerate(get_trees(fin)):
-        genRange(tree, tree.root, 0, 1)
+        gen_range(tree, tree.root, 0, 1)
         try:
             height_dict = gen_height_list(tree, tree_dep_dict[i])
         except ValueError:
