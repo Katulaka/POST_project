@@ -130,12 +130,16 @@ def decode(config, vocab, batcher):
 
             orig_tags = batcher.restore_batch(vocab.to_tokens(tags))
             decode_tags = []
+            start_time = time.time()
             for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
-                path = solve_tree_search(beam_tag)
+                print ("Staring astar search for %d / %d [beam tag of length %d]"
+                % (i+1, batcher.get_batch_size(),len(beam_tag)))
+                path = solve_tree_search(beam_tag, 1)
                 beam_tag = list(np.array(beam_tag)[path])
                 decode_tags.append(beam_tag)
-                print ("Finished astar search for %d / %d" % (i+1,
-                                            batcher.get_batch_size()))
+                # print ("Finished astar search for %d / %d" % (i+1,
+                #                             batcher.get_batch_size()))
+            print ("Search time: %.2f" % (time.time() - start_time))
             import pdb; pdb.set_trace()
 
     return orig_tags, decode_tags

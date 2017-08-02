@@ -68,7 +68,7 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, reverse_path = False):
+    def astar(self, start, goal, reverse_path = False, verbose = 0):
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         for strt in  start:
@@ -79,9 +79,9 @@ class AStar:
             heappush(openSet, startNode)
         while openSet:
             current = heappop(openSet)
-            # if (verbose == 1):
-            #     print "---------------------------------------------------"
-            #     print "current:", current.data.idx, current.data.rank, current.fscore
+            if verbose > 0:
+                print "---------------------------------------------------"
+                print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
                 return self.reconstruct_path(current, reverse_path)
             current.out_openset = True
@@ -97,6 +97,7 @@ class AStar:
                 if neighbor.out_openset:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
-                # if (verbose == 1):
-                #     print "neighbor:",neighbor.data.idx, neighbor.data.rank, neighbor.fscore
+                if verbose > 1 :
+                    print ("neighbor:", neighbor.data.idx, neighbor.data.rank, 
+                                                                neighbor.fscore)
         return None

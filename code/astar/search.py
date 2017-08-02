@@ -162,16 +162,15 @@ def convert_to_TagTree(tag_matrix):
     return np.array(tags).T
 
 
-def solve_tree_search(tag_matrix):
+def solve_tree_search(tag_matrix, verbose):
 
     tags = convert_to_TagTree(tag_matrix)
     max_lid = len(tag_matrix)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    path = Solver(tags).astar(start, goal)
+    path = Solver(tags).astar(start, goal, verbose = verbose)
     if path is not None:
         path = list(path)[-1]
-        # import pdb; pdb.set_trace()
         return [range(path.idx[1]), path.rank, [0]*len(path.rank)]
     return []
