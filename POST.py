@@ -34,7 +34,7 @@ def main(_):
         print ("Words data in %s \nTags data in %s" % (w_file, t_file))
 
     # create vocabulary and array of dataset from train file
-    w_vocab, t_vocab, train_set = ds.gen_dataset(w_file, t_file)
+    w_vocab, t_vocab, train_set = ds.gen_dataset(w_file, t_file, max_len=0)
     batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
 
     Config.batch_size = args.batch

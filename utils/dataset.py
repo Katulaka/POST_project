@@ -55,9 +55,14 @@ def gen_dataset(w_file, t_file, w_vocab_size=0, t_vocab_size=0, max_len=10):
     t_vocab, tags = textfile_to_vocab(t_file, t_vocab_size, True)
 
     dataset = dict()
-    indeces = np.where(map(lambda w: len(w) <= max_len, words))[0]
-    words_ = np.array(words)[indeces] if max_len > 0 else words
-    tags_ = np.array(tags)[indeces] if max_len > 0 else tags
+    if max_len > 0:
+        indeces = np.where(map(lambda w: len(w) <= max_len, words))[0]
+        words_ = np.array(words)[indeces]
+        tags_ = np.array(tags)[indeces]
+    else:
+        words_ = words
+        tags_ = tags
+
     dataset['word'] = w_vocab.to_ids(words_)
     dataset['tag'] = map(lambda x:
     t_vocab.to_ids(map(lambda y: y.split('+'), x)), tags_)
