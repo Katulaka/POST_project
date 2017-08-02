@@ -97,6 +97,12 @@ def train(config, batcher, cp_path):
                 prev_losses.append(loss)
                 # Save checkpoint and zero timer and loss.
                 ckpt_path = os.path.join(config.checkpoint_path, cp_path)
+                if not os.path.exists(config.checkpoint_path):
+                    try:
+                        os.makedirs(os.path.abspath(config.checkpoint_path))
+                    except OSError as exc: # Guard against race condition
+                        if exc.errno != errno.EEXIST:
+                            raise
                 model.saver.save(sess, ckpt_path, global_step=model.global_step)
                 step_time, loss = 0.0, 0.0
                 sys.stdout.flush()
