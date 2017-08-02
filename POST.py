@@ -20,9 +20,9 @@ def main(_):
     parser.add_argument('--batch', type=int, default=32)
     args = parser.parse_args()
 
-    # Download raw data for training
-    if not os.path.exists(Config.src_dir):
-         ds.get_raw_data(Config.src_dir)
+    # # Download raw data for training #TODO
+    # if not os.path.exists(Config.src_dir):
+    #      ds.get_raw_data(Config.src_dir)
 
     data_dir = os.path.join(os.getcwd(), Config.train_dir)
     w_file = os.path.join(data_dir, 'words')
