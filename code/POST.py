@@ -19,6 +19,7 @@ def main(_):
     parser.add_argument('--tags_type', type=str, default='stags')
     parser.add_argument('--batch', type=int, default=32)
     parser.add_argument('--ds_len', type=int, default=0)
+    parser.add_argument('--beam', type=int, default=5)
     args = parser.parse_args()
 
     # # Download raw data for training #TODO
@@ -39,6 +40,7 @@ def main(_):
     batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
 
     Config.batch_size = args.batch
+    Config.beam_size = args.beam
     Config.tag_vocabulary_size = t_vocab.vocab_size()
     Config.word_vocabulary_size = w_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(),

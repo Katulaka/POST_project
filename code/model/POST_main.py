@@ -108,10 +108,11 @@ def train(config, batcher, cp_path, delim_tags):
                 sys.stdout.flush()
 
 
-def decode(config, w_vocab, t_vocab, batcher, delim_tags):
+def decode(config, w_vocab, t_vocab, batcher, delim_tags, beam_stat=True):
 
     with tf.Session() as sess:
         model = get_model(sess, config)
+        stat = []
         while True:
             w_len, _, words, tags, _, _ = batcher.next_batch(delim_tags)
 
@@ -124,24 +125,32 @@ def decode(config, w_vocab, t_vocab, batcher, delim_tags):
             w_len_cp = copy.copy(w_len)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp)
 
-            beam_tags = map(lambda x, y: zip(vocab.to_tokens(x), y),
-                            best_beams['tokens'], best_beams['scores'])
+            if beam_stat:
+                beam_rank = []
+                tags_cp = copy.copy(tags)
+                for dec_in, dec_res in zip(tags_cp, best_beams['tokens']):
+                    try:
+                        beam_rank.append(dec_res.index(dec_in) + 1)
+                    except ValueError:
+                        beam_rank.append(0)
+                stat.append(beam_rank)
+                import pdb; pdb.set_trace()
+            else:
+                beam_tags = map(lambda x, y: zip(t_vocab.to_tokens(x), y),
+                                best_beams['tokens'], best_beams['scores'])
+                orig_tags = batcher.restore_batch(t_vocab.to_tokens(tags))
+                decode_tags = []
+                start_time = time.time()
+                for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
+                    print ("Staring astar search for %d / %d [beam tag of length %d]"
+                    % (i+1, batcher.get_batch_size(),len(beam_tag)))
+                    path = solve_tree_search(beam_tag, 1)
+                    beam_tag = list(np.array(beam_tag)[path])
+                    decode_tags.append(beam_tag)
+                print ("Search time: %.2f" % (time.time() - start_time))
+                import pdb; pdb.set_trace()
 
-            orig_tags = batcher.restore_batch(vocab.to_tokens(tags))
-            decode_tags = []
-            start_time = time.time()
-            for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
-                print ("Staring astar search for %d / %d [beam tag of length %d]"
-                % (i+1, batcher.get_batch_size(),len(beam_tag)))
-                path = solve_tree_search(beam_tag, 1)
-                beam_tag = list(np.array(beam_tag)[path])
-                decode_tags.append(beam_tag)
-                # print ("Finished astar search for %d / %d" % (i+1,
-                #                             batcher.get_batch_size()))
-            print ("Search time: %.2f" % (time.time() - start_time))
-            import pdb; pdb.set_trace()
-
-    return orig_tags, decode_tags
+    return orig_tags, decode_tags, stat
 
 # from collections import Counter
 #
