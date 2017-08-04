@@ -4,7 +4,7 @@ import copy
 import numpy as np
 from itertools import islice
 
-from vocab import pad, add_go, add_eos, to_onehot
+from vocab import pad, add_go, add_eos, to_onehot, add_go_tag, add_eos_tag
 
 class Batcher(object):
 
@@ -35,37 +35,53 @@ class Batcher(object):
             b_valid = self.batch_valid(batch['word'], batch['tag'])
         return batch
 
+    def seq_len(self, batch_data):
+        return map(lambda x: len(x), batch_data)
+
     def generate_in_data(self, batch_data):
-        seq_len = map(lambda x: len(x), batch_data)
+        # seq_len = map(lambda x: len(x), batch_data)
         pad(batch_data)
         batch_data = np.vstack([np.expand_dims(x, 0) for x in batch_data])
-        return seq_len, batch_data
+        # return seq_len, batch_data
+        return batch_data
 
     def generate_targets(self, max_len, batch_data):
         batch_1hot = map(lambda x: to_onehot(x, max_len, self._vocab_size),
                             batch_data)
         return np.vstack([np.expand_dims(x, 0) for x in batch_1hot])
 
-    def next_batch(self):
+    def next_batch(self, add_delim = False):
 
-        def arr_dim(a):
-            return 1 + arr_dim(a[0]) if (type(a) == list) else 0
+        def arr_dim(arr):
+            return 1 + arr_dim(arr[0]) if (type(arr) == list) else 0
+
+        def flatten(arr):
+            return [x for y in arr for x in y]
 
         bv = self.get_batch()
 
         bv_w = copy.copy(bv['word'])
-        seq_len_w, bv_w = self.generate_in_data(bv_w)
+        self._seq_len = self.seq_len(bv_w)
 
-        self.seq_len = seq_len_w
+        bv_w_delim = add_eos(add_go(bv_w)) if add_delim else bv_w
+        seq_len_w = self.seq_len(bv_w_delim)
+        bv_w_pad = self.generate_in_data(bv_w_delim)
 
         bv_t = copy.copy(bv['tag'])
         if arr_dim(bv_t.tolist()) == 3:
-            bv_t = [x for y in bv_t for x in y]
-        seq_len_t, bv_t_go = self.generate_in_data(add_go(bv_t))
+            bv_t = flatten(bv_t)
+
+        if add_delim:
+            bv_t = flatten(add_eos_tag(add_go_tag(self.restore_batch(bv_t))))
+
+        bv_t_go = add_go(bv_t)
+        seq_len_t = self.seq_len(bv_t_go)
+        bv_t_pad = self.generate_in_data(bv_t_go)
         bv_t_1hot = self.generate_targets(max(seq_len_t), add_eos(bv_t))
 
-        return seq_len_w, seq_len_t, bv_w, bv_t, bv_t_go, bv_t_1hot
+        # import pdb; pdb.set_trace()
+        return seq_len_w, seq_len_t, bv_w_pad, bv_t, bv_t_pad, bv_t_1hot
 
     def restore_batch(self, batch):
         it = iter(batch)
-        return [x for x in (list(islice(it, n)) for n in self.seq_len)]
+        return [x for x in (list(islice(it, n)) for n in self._seq_len)]

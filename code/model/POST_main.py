@@ -43,7 +43,7 @@ def get_model(session, config, mode='decode'):
         return None
     return model
 
-def train(config, batcher, cp_path):
+def train(config, batcher, cp_path, delim_tags):
 
     with tf.Session() as sess:
         model = get_model(sess, config, 'train')
@@ -62,7 +62,7 @@ def train(config, batcher, cp_path):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch()
+            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch(delim_tags)
             pred, step_loss, _  = model.step(sess, w_len, t_len,
                                             words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
@@ -108,19 +108,18 @@ def train(config, batcher, cp_path):
                 sys.stdout.flush()
 
 
-def decode(config, vocab, batcher):
+def decode(config, w_vocab, t_vocab, batcher, delim_tags):
 
     with tf.Session() as sess:
         model = get_model(sess, config)
         while True:
-            w_len, _, words, tags, _, _ = batcher.next_batch()
+            w_len, _, words, tags, _, _ = batcher.next_batch(delim_tags)
 
             bs = BeamSearch(model,
                             config.beam_size,
-                            vocab.token_to_id('GO'),
-                            vocab.token_to_id('EOS'),
+                            t_vocab.token_to_id('GO'),
+                            t_vocab.token_to_id('EOS'),
                             config.dec_timesteps)
-
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp)

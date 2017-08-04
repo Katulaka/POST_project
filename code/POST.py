@@ -18,6 +18,7 @@ def main(_):
     parser.add_argument('--action', type=str, default='train')
     parser.add_argument('--tags_type', type=str, default='stags')
     parser.add_argument('--batch', type=int, default=32)
+    parser.add_argument('--ds_len', type=int, default=0)
     args = parser.parse_args()
 
     # # Download raw data for training #TODO
@@ -34,7 +35,7 @@ def main(_):
         print ("Words data in %s \nTags data in %s" % (w_file, t_file))
 
     # create vocabulary and array of dataset from train file
-    w_vocab, t_vocab, train_set = ds.gen_dataset(w_file, t_file, max_len=0)
+    w_vocab, t_vocab, train_set = ds.gen_dataset(w_file, t_file, max_len=args.ds_len)
     batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
 
     Config.batch_size = args.batch
@@ -44,10 +45,11 @@ def main(_):
                                             'checkpoints',
                                             args.tags_type)
 
+    delim_tags = True
     if (args.action == 'train'):
-        POST_main.train(Config, batcher, args.tags_type)
+        POST_main.train(Config, batcher, args.tags_type, delim_tags)
     elif (args.action == 'decode'):
-        orig_tags, dec_tags = POST_main.decode(Config, t_vocab, batcher)
+        orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab, batcher, delim_tags)
     else:
         print("Nothing to do!!")
 
