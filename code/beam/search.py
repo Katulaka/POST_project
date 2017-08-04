@@ -131,14 +131,12 @@ class BeamSearch(object):
                         # Otherwise continue to the extend the hypothesis.
                         hyps.append(h)
             print ("Finished beam search for %d / %d" % (i+1, dec_len))
-            #TODO verify with John results exceed beam size
             decs.append(self.best_hyps(res))
 
         beams = dict()
         beams['tokens'] = map(lambda r: map(lambda h: h.tokens[1:-1], r), decs)
         beams['scores'] = map(lambda r: map(lambda h: h.score, r), decs)
         return beams
-
 
     def best_hyps(self, hyps):
         """Sort the hyps based on probs.
