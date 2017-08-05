@@ -9,6 +9,12 @@ from utils.conf import Config
 from utils.batcher import Batcher
 
 
+PAD = ['PAD', 0]
+GO = ['GO', 1]
+EOS = ['EOS', 2]
+UNK = ['UNK', 3]
+
+
 def main(_):
     seed = int(time.time())
     np.random.seed(seed)
@@ -20,6 +26,7 @@ def main(_):
     parser.add_argument('--batch', type=int, default=32)
     parser.add_argument('--ds_len', type=int, default=0)
     parser.add_argument('--beam', type=int, default=5)
+    parser.add_argument('--delim', help='', action='store_true')
     args = parser.parse_args()
 
     # # Download raw data for training #TODO
@@ -47,11 +54,16 @@ def main(_):
                                             'checkpoints',
                                             args.tags_type)
 
-    delim_tags = True
+    delim_words = args.delim
+    print (delim_words)
+    special_tokens = w_vocab.get_ctrl_tokens()
     if (args.action == 'train'):
-        POST_main.train(Config, batcher, args.tags_type, delim_tags)
+        POST_main.train(Config, batcher, args.tags_type,
+                        delim_words, special_tokens)
     elif (args.action == 'decode'):
-        orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab, batcher, delim_tags)
+        orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
+                                                batcher, delim_words,
+                                                special_tokens)
     else:
         print("Nothing to do!!")
 

@@ -13,7 +13,7 @@ from beam.search import BeamSearch
 from POST_model import POSTModel
 
 
-def get_model(session, config, mode='decode'):
+def get_model(session, config, special_tokens, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
@@ -23,7 +23,7 @@ def get_model(session, config, mode='decode'):
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size,config.learning_rate,
                         config.learning_rate_decay_factor, mode)
-    model.build_graph()
+    model.build_graph(special_tokens)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
@@ -43,10 +43,10 @@ def get_model(session, config, mode='decode'):
         return None
     return model
 
-def train(config, batcher, cp_path, delim_tags):
+def train(config, batcher, cp_path, delim_words, special_tokens):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, 'train')
+        model = get_model(sess, config, special_tokens, 'train')
 
         # This is the training loop.
         step_time = 0.0
@@ -62,7 +62,7 @@ def train(config, batcher, cp_path, delim_tags):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch(delim_tags)
+            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch(delim_words)
             pred, step_loss, _  = model.step(sess, w_len, t_len,
                                             words, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
@@ -108,13 +108,13 @@ def train(config, batcher, cp_path, delim_tags):
                 sys.stdout.flush()
 
 
-def decode(config, w_vocab, t_vocab, batcher, delim_tags, beam_stat=True):
+def decode(config, w_vocab, t_vocab, batcher, delim_words, special_tokens, beam_stat=True):
 
     with tf.Session() as sess:
-        model = get_model(sess, config)
+        model = get_model(sess, config, special_tokens)
         stat = []
         while True:
-            w_len, _, words, tags, _, _ = batcher.next_batch(delim_tags)
+            w_len, _, words, tags, _, _ = batcher.next_batch(delim_words)
 
             bs = BeamSearch(model,
                             config.beam_size,
@@ -134,21 +134,18 @@ def decode(config, w_vocab, t_vocab, batcher, delim_tags, beam_stat=True):
                     except ValueError:
                         beam_rank.append(0)
                 stat.append(beam_rank)
-                import pdb; pdb.set_trace()
             else:
                 beam_tags = map(lambda x, y: zip(t_vocab.to_tokens(x), y),
                                 best_beams['tokens'], best_beams['scores'])
                 orig_tags = batcher.restore_batch(t_vocab.to_tokens(tags))
                 decode_tags = []
-                start_time = time.time()
                 for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
-                    print ("Staring astar search for %d / %d [beam tag of length %d]"
+                    print ("Staring astar search for word %d / %d [beam tag of length %d]"
                     % (i+1, batcher.get_batch_size(),len(beam_tag)))
                     path = solve_tree_search(beam_tag, 1)
                     beam_tag = list(np.array(beam_tag)[path])
                     decode_tags.append(beam_tag)
-                print ("Search time: %.2f" % (time.time() - start_time))
-                import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
 
     return orig_tags, decode_tags, stat
 

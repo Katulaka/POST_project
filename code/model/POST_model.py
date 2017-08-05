@@ -73,13 +73,20 @@ class POSTModel(object):
                                     sequence_length=self.w_seq_len,
                                     dtype=self.dtype)
 
-    def _add_bridge(self):
+    def _add_bridge(self, special_tokens):
         with tf.name_scope('Bridge'):
             # LSTM
             lstm_init = tf.concat(self.bidi_out, 2, name='lstm-init')
             lstm_init = tf.reshape(lstm_init, [-1, self.n_hidden_fw + self.n_hidden_bw])
             # remove padding:
-            mask = tf.not_equal(tf.reshape(self.w_in, [-1]), 0)
+            mask_pad = tf.not_equal(tf.reshape(self.w_in, [-1]),
+                                            special_tokens['PAD'])
+            mask_go = tf.not_equal(tf.reshape(self.w_in, [-1]),
+                                    special_tokens['GO'])
+            mask_eos = tf.not_equal(tf.reshape(self.w_in, [-1]),
+                                    special_tokens['EOS'])
+
+            mask = self.mask = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
             self.dec_init_state = tf.boolean_mask(lstm_init, mask)
 
     def _add_lstm_layer(self):
@@ -133,14 +140,14 @@ class POSTModel(object):
                 self.loss, global_step=self.global_step)
 
 
-    def build_graph(self):
+    def build_graph(self, special_tokens):
         """ Function builds the computation graph """
         with tf.variable_scope(self.scope_name):
             self.global_step = tf.Variable(0, trainable=False, name='g_step')
             self._add_placeholders()
             self._add_embeddings()
             self._add_bidi_lstm()
-            self._add_bridge()
+            self._add_bridge(special_tokens)
             self._add_lstm_layer()
             self._add_projection()
             if (self.mode == 'train'): self._add_train_op()

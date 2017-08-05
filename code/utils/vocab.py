@@ -8,8 +8,7 @@ PAD = ['PAD', 0]
 GO = ['GO', 1]
 EOS = ['EOS', 2]
 UNK = ['UNK', 3]
-GO_TAG = ['<GO>', 4]
-EOS_TAG = ['<EOS>', 5]
+
 
 class Vocab(object):
 
@@ -17,8 +16,8 @@ class Vocab(object):
         self._token_to_id = dict()
         self._id_to_token = dict()
 
-        special_tokens = dict([PAD, GO, EOS, UNK, GO_TAG, EOS_TAG])
-        s_tokens_sort = sorted(special_tokens.items(), key=lambda x: x[1])
+        self._special_tokens = dict([PAD, GO, EOS, UNK])
+        s_tokens_sort = sorted(self._special_tokens.items(), key=lambda x: x[1])
         self._count = map(lambda t: [t[0], -1], s_tokens_sort)
 
         if _size > 0 :
@@ -32,7 +31,7 @@ class Vocab(object):
         for token in _text:
             if token not in self._token_to_id:
                 unk_count += 1
-        self._count[special_tokens['UNK']][1] = unk_count
+        self._count[self._special_tokens['UNK']][1] = unk_count
         self._id_to_token = dict(zip(self._token_to_id.values(),
                                 self._token_to_id.keys()))
 
@@ -60,6 +59,9 @@ class Vocab(object):
     def to_tokens(self, ids):
         return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
 
+    def get_ctrl_tokens(self):
+        return self._special_tokens
+
 #TODO change pad function to avoid in place replacment
 def pad(data, mlen=0, pad_token=PAD[1]):
 
@@ -74,12 +76,6 @@ def add_go(data, start_token=GO[1]):
 
 def add_eos(data, end_token=EOS[1]):
     return map(lambda x: x + [end_token], data)
-
-def add_go_tag(data, start_token=GO_TAG[1]):
-    return map(lambda x: [[start_token]] + x, data)
-
-def add_eos_tag(data, end_token=EOS_TAG[1]):
-    return map(lambda x: x + [[end_token]], data)
 
 def to_onehot(vec_in, max_len, size):
     vec_out = np.zeros((max_len, size))
