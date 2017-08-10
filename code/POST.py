@@ -3,7 +3,7 @@ import tensorflow as tf
 import time
 import os
 
-import utils.dataset as ds
+from utils.dataset import gen_dataset
 import model.POST_main as POST_main
 from utils.conf import Config
 from utils.batcher import Batcher
@@ -24,27 +24,29 @@ def main(_):
     parser.add_argument('--action', type=str, default='train')
     parser.add_argument('--tags_type', type=str, default='stags')
     parser.add_argument('--batch', type=int, default=32)
-    parser.add_argument('--ds_len', type=int, default=0)
+    parser.add_argument('--ds_len', type=int, default=np.inf)
     parser.add_argument('--beam', type=int, default=5)
     parser.add_argument('--delim', help='', action='store_true')
+    parser.add_argument('--only_pos', help='', action='store_true')
+    parser.add_argument('--tag_split', help='', action='store_true')
+    parser.add_argument('--tag_sides', help='', action='store_true')
+
     args = parser.parse_args()
 
-    # # Download raw data for training #TODO
-    # if not os.path.exists(Config.src_dir):
-    #      ds.get_raw_data(Config.src_dir)
-
-    data_dir = os.path.join(os.getcwd(), Config.train_dir)
-    w_file = os.path.join(data_dir, 'words')
-    t_file = os.path.join(data_dir, args.tags_type)
-    # Convert raw data into words and tags files
-    if not os.path.exists(t_file) or os.path.getsize(t_file) == 0:
-        ds.convert_data_flat(Config.src_dir, w_file, t_file, args.tags_type)
-    else:
-        print ("Words data in %s \nTags data in %s" % (w_file, t_file))
-
+    data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.pkl')
+    # data_file = os.path.join(data_dir, 'data.pkl')
     # create vocabulary and array of dataset from train file
-    w_vocab, t_vocab, train_set = ds.gen_dataset(w_file, t_file, max_len=args.ds_len)
-    batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
+    print("Generating dataset and vocabulary")
+    start_time = time.time()
+
+    w_vocab, t_vocab, train_set = gen_dataset(Config.src_dir,
+                                            data_file,
+                                            (args.tag_split,
+                                            args.tag_sides,
+                                            args.only_pos),
+                                            max_len=args.ds_len)
+    print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
+    batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch, args.delim)
 
     Config.batch_size = args.batch
     Config.beam_size = args.beam
@@ -54,16 +56,14 @@ def main(_):
                                             'checkpoints',
                                             args.tags_type)
 
-    delim_words = args.delim
-    print (delim_words)
-    special_tokens = w_vocab.get_ctrl_tokens()
+    # special_tokens = w_vocab.get_ctrl_tokens()
     if (args.action == 'train'):
         POST_main.train(Config, batcher, args.tags_type,
-                        delim_words, special_tokens)
+                                        w_vocab.get_ctrl_tokens())
     elif (args.action == 'decode'):
         orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
-                                                batcher, delim_words,
-                                                special_tokens)
+                                                batcher,)
+                                                # special_tokens)
     else:
         print("Nothing to do!!")
 
