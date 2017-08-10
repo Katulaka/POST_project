@@ -3,6 +3,8 @@ from __future__ import print_function
 import collections
 import numpy as np
 
+from utils import operate_on_Narray
+
 
 PAD = ['PAD', 0]
 GO = ['GO', 1]
@@ -49,7 +51,8 @@ class Vocab(object):
         return self._token_to_id[token]
 
     def to_ids(self, sentences):
-        return map(lambda s: map(lambda w: self.token_to_id(w), s), sentences)
+        return operate_on_Narray(sentences, self.token_to_id)
+        # return map(lambda s: map(lambda w: self.token_to_id(w), s), sentences)
 
     def id_to_token(self, token_id):
         if token_id not in self._id_to_token:
@@ -57,10 +60,12 @@ class Vocab(object):
         return self._id_to_token[token_id]
 
     def to_tokens(self, ids):
-        return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
+        return operate_on_Narray(ids, self.id_to_token)
+        # return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
 
     def get_ctrl_tokens(self):
         return self._special_tokens
+
 
 #TODO change pad function to avoid in place replacment
 def pad(data, mlen=0, pad_token=PAD[1]):
