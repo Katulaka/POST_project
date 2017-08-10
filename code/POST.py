@@ -22,7 +22,7 @@ def main(_):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train')
-    parser.add_argument('--tags_type', type=str, default='stags')
+    parser.add_argument('--cp_dir', type=str, default='stags')
     parser.add_argument('--batch', type=int, default=32)
     parser.add_argument('--ds_len', type=int, default=np.inf)
     parser.add_argument('--beam', type=int, default=5)
@@ -54,11 +54,11 @@ def main(_):
     Config.word_vocabulary_size = w_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(),
                                             'checkpoints',
-                                            args.tags_type)
+                                            args.cp_dir)
 
     # special_tokens = w_vocab.get_ctrl_tokens()
     if (args.action == 'train'):
-        POST_main.train(Config, batcher, args.tags_type,
+        POST_main.train(Config, batcher, args.cp_dir,
                                         w_vocab.get_ctrl_tokens())
     elif (args.action == 'decode'):
         orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
