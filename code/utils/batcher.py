@@ -9,10 +9,11 @@ from vocab import pad, add_go, add_eos, to_onehot
 
 class Batcher(object):
 
-    def __init__(self, data, vocab_size, batch_size):
+    def __init__(self, data, vocab_size, batch_size, add_delim):
         self._vocab_size = vocab_size
         self._batch_size = batch_size
         self._data = data
+        self._add_delim = add_delim
 
     def get_batch_size(self):
         return self._batch_size
@@ -22,18 +23,18 @@ class Batcher(object):
         return all(map(lambda x, y: len(x)==len(y), b_word, b_tag))
 
     def generate_batch(self):
-        d_size = len(self._data['word'])
+        d_size = len(self._data['words'])
         d_index = np.random.randint(d_size, size=self._batch_size)
-        b_word = np.array(self._data['word'])[d_index]
-        b_tag = np.array(self._data['tag'])[d_index]
+        b_word = np.array(self._data['words'])[d_index]
+        b_tag = np.array(self._data['tags'])[d_index]
         return b_word, b_tag
 
     def get_batch(self):
         batch = dict()
-        b_valid = False
-        while not b_valid:
-            batch['word'], batch['tag'] = self.generate_batch()
-            b_valid = self.batch_valid(batch['word'], batch['tag'])
+        batch['words'], batch['tags'] = self.generate_batch()
+        while not self.batch_valid(batch['words'], batch['tags']):
+            batch['words'], batch['tags'] = self.generate_batch()
+            # b_valid = self.batch_valid(batch['word'], batch['tag'])
         return batch
 
     def seq_len(self, batch_data):
@@ -49,7 +50,7 @@ class Batcher(object):
                             batch_data)
         return np.vstack([np.expand_dims(x, 0) for x in batch_1hot])
 
-    def next_batch(self, add_delim = False):
+    def next_batch(self):
 
         def arr_dim(arr):
             return 1 + arr_dim(arr[0]) if (type(arr) == list) else 0
@@ -59,13 +60,13 @@ class Batcher(object):
 
         bv = self.get_batch()
 
-        bv_w = copy.copy(bv['word'])
+        bv_w = copy.copy(bv['words'])
         self._seq_len = self.seq_len(bv_w)
-        bv_w = add_eos(add_go(bv_w)) if add_delim else bv_w
+        bv_w = add_eos(add_go(bv_w)) if self._add_delim else bv_w
         seq_len_w = self.seq_len(bv_w)
         bv_w_pad = self.generate_in_data(bv_w)
 
-        bv_t = copy.copy(bv['tag'])
+        bv_t = copy.copy(bv['tags'])
         if arr_dim(bv_t.tolist()) == 3:
             bv_t = flatten(bv_t)
 
