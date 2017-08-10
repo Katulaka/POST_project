@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import re
 
 from treelib import Node, Tree
 
@@ -9,28 +10,29 @@ from astar import AStar
 class TagTree(object):
 
     class Miss(object):
-        def __init__(self, miss):
+        def __init__(self, miss, side=''):
             self.miss = miss
+            self.side = side
 
     def __init__(self, tag, score, pos_id=0):
         self.tag = tag
         self.score = score
         self.tree = Tree()
         parent_id = None
-        for tag_nodes in map(lambda sub_tag: sub_tag.split('\\'), self.tag):
+        t_list = [t.replace('\\', '|\\').replace('/', '|/').split('|')
+                                                        for t in self.tag]
+        for tag_nodes in t_list:
             self.tree.create_node(tag_nodes[0], pos_id,
                                     parent=parent_id,
                                     data=TagTree.Miss(False))
             parent_id = pos_id
             pos_id += 1
             for tag_node in tag_nodes[1:]:
-                self.tree.create_node(tag_node, pos_id,
+                self.tree.create_node(tag_node[1:], pos_id,
                                         parent=parent_id,
-                                        data=TagTree.Miss(True))
+                                        data=TagTree.Miss(True, tag_node[0]))
                 pos_id += 1
         self.max_pos_id = pos_id
-
-
 
 
 class TagNode(object):
@@ -40,7 +42,6 @@ class TagNode(object):
         self.lid = lid
         self.idx = (rid, lid)
         self.rank = rank
-
 
     def combine_trees(self, trees):
         ptr = 0
@@ -146,9 +147,8 @@ class Solver(AStar):
     def is_goal_reached(self, current, goal): #TODO
         if current.idx == goal.idx:
             ct = current.tree
-            return len([l for l in ct.leaves(ct.root) if l.data.miss]) == 0
+            return all([not l.data.miss for l in ct.leaves(ct.root)])
         return False
-
 
 def convert_to_TagTree(tag_matrix):
     tags = []
