@@ -18,23 +18,12 @@ class Batcher(object):
     def get_batch_size(self):
         return self._batch_size
 
-    def batch_valid(self, b_word, b_tag):
-        #TODO fix data problem
-        return all(map(lambda x, y: len(x)==len(y), b_word, b_tag))
-
-    def generate_batch(self):
-        d_size = len(self._data['words'])
-        d_index = np.random.randint(d_size, size=self._batch_size)
-        b_word = np.array(self._data['words'])[d_index]
-        b_tag = np.array(self._data['tags'])[d_index]
-        return b_word, b_tag
-
     def get_batch(self):
         batch = dict()
-        batch['words'], batch['tags'] = self.generate_batch()
-        while not self.batch_valid(batch['words'], batch['tags']):
-            batch['words'], batch['tags'] = self.generate_batch()
-            # b_valid = self.batch_valid(batch['word'], batch['tag'])
+        d_size = len(self._data['words'])
+        d_index = np.random.randint(d_size, size=self._batch_size)
+        batch['words'] = np.array(self._data['words'])[d_index]
+        batch['tags'] = np.array(self._data['tags'])[d_index]
         return batch
 
     def seq_len(self, batch_data):
