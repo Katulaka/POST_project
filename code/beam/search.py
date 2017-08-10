@@ -108,6 +108,7 @@ class BeamSearch(object):
                 # The first step takes the best K results from first hyps.
                 # Following steps take the best K results from K*K hyps.
                 all_hyps = []
+                #TODO maybe cube
                 for hyp in hyps:
                     latest_token = [[hyp.latest_token]]
                     states = [hyp.state]
@@ -115,10 +116,12 @@ class BeamSearch(object):
                                                                 latest_token,
                                                                 states,
                                                                 self._beam_size)
+                    # import pdb; pdb.set_trace()
                     for j in xrange(self._beam_size):
                         all_hyps.append(hyp.extend_(ids[j], probs[j], new_state))
                 # Filter and collect any hypotheses that have the end token.
                 hyps = []
+                #TODO keep the lowest res and update if res changes
                 for h in self.best_hyps(all_hyps):
                     if h.latest_token == self._end_token:
                         # Pull the hypothesis off the beam

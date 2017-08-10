@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import pickle
-import re
 from treelib import Node, Tree
 
 from utils import operate_on_Narray
