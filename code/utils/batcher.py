@@ -72,8 +72,8 @@ class Batcher(object):
             bv_pos_in = self.to_in_data_format(bv_pos)
             bv_t = flatten(bv_t)
 
-        bv_t_eos = flatten(self.to_in_data_format(add_eos(bv_t)).tolist())
-        # bv_t_eos = flatten(add_eos(bv_t))
+        # bv_t_eos = flatten(self.to_in_data_format(add_eos(bv_t)).tolist())
+        bv_t_eos = flatten(add_eos(bv_t))
         bv_t_go = add_go(bv_t)
         seq_len_t = self.seq_len(bv_t_go)
         bv_t_in = self.to_in_data_format(bv_t_go)

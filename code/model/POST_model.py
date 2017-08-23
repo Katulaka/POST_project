@@ -148,11 +148,11 @@ class POSTModel(object):
                         self.learning_rate * self.lr_decay_factor)
 
         with tf.name_scope("loss"):
-            # mask_pad = tf.not_equal(tf.reshape(self.t_in, [-1]),
-            #                         special_tokens['PAD'])
-            # proj = tf.boolean_mask(self.proj, mask_pad)
+            mask_pad = tf.not_equal(tf.reshape(self.t_in, [-1]),
+                                    special_tokens['PAD'])
+            proj = tf.boolean_mask(self.proj, mask_pad)
             cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                                        logits=self.proj, labels=self._targets)
+                                        logits=proj, labels=self._targets)
             # self.targets_flat = tf.reshape(self._targets, [-1, self.t_vocab_size])
             # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
             #                         logits=self.proj, labels=self.targets_flat)
@@ -191,8 +191,6 @@ class POSTModel(object):
             self._targets: targets}
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
-        # import pdb; pdb.set_trace()
-        # output_feed = [self.pred, self.loss, self.optimizer]
         output_feed = [self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
