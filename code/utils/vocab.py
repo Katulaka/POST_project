@@ -50,8 +50,12 @@ class Vocab(object):
             return self._token_to_id[UNK[1]]
         return self._token_to_id[token]
 
+    def tokens_to_ids(self, token_list):
+        return [self.token_to_id(el) for el in token_list]
+
     def to_ids(self, sentences):
-        return operate_on_Narray(sentences, self.token_to_id)
+        # return operate_on_Narray(sentences, self.token_to_id)
+        return operate_on_Narray(sentences, self.tokens_to_ids)
         # return map(lambda s: map(lambda w: self.token_to_id(w), s), sentences)
 
     def id_to_token(self, token_id):
@@ -59,8 +63,12 @@ class Vocab(object):
             raise ValueError('id not found in vocab: %d.' % token_id)
         return self._id_to_token[token_id]
 
+    def ids_to_tokens(self, token_id_list):
+        return [self.id_to_token(el) for el in token_id_list]
+
     def to_tokens(self, ids):
-        return operate_on_Narray(ids, self.id_to_token)
+        # return operate_on_Narray(ids, self.id_to_token)
+        return operate_on_Narray(ids, self.ids_to_tokens)
         # return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
 
     def get_ctrl_tokens(self):

@@ -1,11 +1,10 @@
 from __future__ import print_function
 
-import os
-import pickle
-from treelib import Node, Tree
-
-from utils import operate_on_Narray
 from nltk.corpus import BracketParseCorpusReader as reader
+import os
+from treelib import Node, Tree
+from utils import operate_on_Narray
+
 
 RIGHT = '/'
 LEFT = '\\'
@@ -201,34 +200,19 @@ def gen_tags(fin):
         yield (path.values(), [tree[key].tag for key in path.keys()])
 
 
-# def _gen_tags(fin):
-#
-#     rfin = fin.split('/')
-#     r = reader('/'.join(rfin[:-2]), '/'.join(rfin[-2:]))
-#     trees = simplify(remove_traces(list(r.parsed_sents())))
-#     for t in trees:
-#         res = [str("+ ".join(r)).split("+ ") for r in map(list, zip(*t.pos()))]
-#         yield res[::-1]
-#
-#     # for tree in get_trees(fin):
-#     #     rng = xrange(1, len(tree.leaves(tree.root))+1)
-#     #     words = ' '.join(map(lambda lid: tree[lid].tag, rng))
-#     #     tags = ' '.join(map(lambda lid: tree.parent(lid).tag, rng))
-#     #     yield (tags, words)
-
-
 class TagOp(object):
 
     def __init__(self, sub_split, direction, pos): #TODO
         self.sub_split = sub_split
         self.direction = direction
         self.pos = pos
-
+        # self.pos_sub_split = pos_sub_split
 
     def split_tag(self, tag, sym):
             return tag.replace(LEFT, sym+LEFT).replace(RIGHT, sym+RIGHT).split(sym)
 
-    def _split_fn(self, tag):
+    def modify_tag(self, tag):
+        # import pdb; pdb.set_trace()
         if self.pos: #if just pos no need to deal with the  whole sequence
             return [tag.split(UP)[-1]]
         if not self.direction: #if don't want to keep left/right indication.
@@ -236,10 +220,19 @@ class TagOp(object):
             tag = tag.replace(RIGHT, LEFT)
         if self.sub_split: #split on the individuale parts (including missing)
             return self.split_tag(tag, UP)
+
+        # if self.pos_sub_split: #split on the individuale parts (including missing)
+        #     _tag = self.split_tag(tag, UP)
+        #     return [list(_tag[:-1]),[_tag[-1]]]
         return tag.split(UP) #splip just between levels
 
+    def _split_fn(self, tag_list):
+        return [self.modify_tag(tag) for tag in tag_list]
+
     def split_fn(self, tags):
+        # return operate_on_Narray(tags, self.modify_tag)
         return operate_on_Narray(tags, self._split_fn)
+
 
     def combine_tag(self, tag):
         res = []
