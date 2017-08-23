@@ -13,7 +13,7 @@ from beam.search import BeamSearch
 from POST_model import POSTModel
 
 
-def get_model(session, config, special_tokens, mode='decode'):
+def get_model(session, config, special_tokens, split, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
@@ -22,7 +22,7 @@ def get_model(session, config, special_tokens, mode='decode'):
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size,config.learning_rate,
-                        config.learning_rate_decay_factor, mode)
+                        config.learning_rate_decay_factor, split, mode)
     model.build_graph(special_tokens)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
@@ -43,10 +43,10 @@ def get_model(session, config, special_tokens, mode='decode'):
         return None
     return model
 
-def train(config, batcher, cp_path, special_tokens):
+def train(config, batcher, cp_path, special_tokens, split):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, special_tokens, 'train')
+        model = get_model(sess, config, special_tokens, split, 'train')
 
         # This is the training loop.
         step_time = 0.0
@@ -62,9 +62,12 @@ def train(config, batcher, cp_path, special_tokens):
         while True:
             # Get a batch and make a step.
             start_time = time.time()
-            w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch()
+            bv = batcher.get_random_batch()
+            w_len, t_len, words, pos, _, tags_pad, tags_1hot = batcher.process_batch(bv)
+            # w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch()
+            # import pdb; pdb.set_trace()
             pred, step_loss, _  = model.step(sess, w_len, t_len,
-                                            words, tags_pad, tags_1hot)
+                                            words, pos, tags_pad, tags_1hot)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             if moving_avg_loss == 0:
@@ -108,22 +111,75 @@ def train(config, batcher, cp_path, special_tokens):
                 sys.stdout.flush()
 
 
-def decode(config, w_vocab, t_vocab, batcher, beam_stat=False):
+def decode(config, w_vocab, t_vocab, batcher, t_op, split):
 
     with tf.Session() as sess:
-        special_tokens = w_vocab.get_ctrl_tokens()
-        model = get_model(sess, config, special_tokens)
-        stat = []
-        def combine_fn(y):
-            res = []
-            for t in y:
-                if (t.startswith('\\') or t.startswith('/')) and res:
-                    res[-1] += t
-                else:
-                    res.append(t)
-            return res
-        while True:
-            w_len, _, words, tags, _, _ = batcher.next_batch()
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), split)
+
+        decoded_tags = []
+        orig_tags = []
+        for bv in batcher.get_batch():
+            w_len, _, words, pos, tags, _, _ = batcher.process_batch(bv)
+
+            bs = BeamSearch(model,
+                            config.beam_size,
+                            t_vocab.token_to_id('GO'),
+                            t_vocab.token_to_id('EOS'),
+                            config.dec_timesteps)
+            words_cp = copy.copy(words)
+            w_len_cp = copy.copy(w_len)
+            pos_cp = copy.copy(pos)
+            best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+            beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+            beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
+
+            for i, beam_tag in enumerate(batcher.restore(beam_pair)):
+                print ("Staring astar search for word %d / %d [tag length %d]"
+                % (i+1, batcher.get_batch_size(),len(beam_tag)))
+                path = solve_tree_search(beam_tag, 1)
+                beam_tag = list(np.array(beam_tag)[path])
+                decoded_tags.append(beam_tag)
+            import pdb; pdb.set_trace()
+            orig_tags.append(batcher.restore(t_op.combine_fn(t_vocab.to_tokens(tags))))
+
+    return orig_tags, decoded_tags
+
+def stats(config, w_vocab, t_vocab, batcher, t_op, split):
+
+    with tf.Session() as sess:
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), split)
+        beam_rank = []
+        for bv in batcher.get_batch():
+            w_len, _, words, pos, tags, _, _ = batcher.process_batch(bv)
+
+            bs = BeamSearch(model,
+                            config.beam_size,
+                            t_vocab.token_to_id('GO'),
+                            t_vocab.token_to_id('EOS'),
+                            config.dec_timesteps)
+            words_cp = copy.copy(words)
+            w_len_cp = copy.copy(w_len)
+            pos_cp = copy.copy(pos)
+            best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+
+            tags_cp = copy.copy(tags)
+            for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
+                try:
+                    beam_rank.append(beam_res.index(dec_in) + 1)
+                except ValueError:
+                    beam_rank.append(config.beam_size + 1)
+            import pdb; pdb.set_trace()
+    return np.mean(beam_rank)
+
+def verify(config, w_vocab, t_vocab, batcher, t_op):
+
+    with tf.Session() as sess:
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens())
+
+        decoded_tags = []
+        orig_tags = []
+        for bv in batcher.get_batch():
+            w_len, _, words, tags, _, _ = batcher.process_batch(bv)
 
             bs = BeamSearch(model,
                             config.beam_size,
@@ -133,39 +189,21 @@ def decode(config, w_vocab, t_vocab, batcher, beam_stat=False):
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp)
+            beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+            beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
 
-            if beam_stat:
-                beam_rank = []
-                tags_cp = copy.copy(tags)
-                for dec_in, dec_res in zip(tags_cp, best_beams['tokens']):
-                    try:
-                        beam_rank.append(dec_res.index(dec_in) + 1)
-                    except ValueError:
-                        beam_rank.append(0)
-                stat.append(beam_rank)
-                orig_tags = [combine_fn(y) for y in t_vocab.to_tokens(tags)]
-                import pdb; pdb.set_trace()
-            else:
-                #TODO change astar search or replace '//' with '\\'
-                # combined_tags = [[combine_fn(y) for y in x]
-                #             for x in t_vocab.to_tokens(best_beams['tokens'])]
+            for i, beam_tag in enumerate(batcher.restore(beam_pair)):
+                print ("Staring astar search for word %d / %d [tag length %d]"
+                % (i+1, batcher.get_batch_size(),len(beam_tag)))
+                path = solve_tree_search(beam_tag, 1)
+                beam_tag = list(np.array(beam_tag)[path])
+                decoded_tags.append(beam_tag)
+            import pdb; pdb.set_trace()
+            orig_tags.append(batcher.restore(t_op.combine_fn(t_vocab.to_tokens(tags))))
 
-                combined_tags = combine_fn(t_vocab.to_tokens(best_beams['tokens']))
-                beam_tags = map(lambda x, y: zip(x, y),
-                                combined_tags, best_beams['scores'])
-                orig_tags = batcher.restore_batch(t_vocab.to_tokens(tags))
-                # orig_tags = batcher.restore_batch(map(lambda x: combine_fn(x),
-                #                                     t_vocab.to_tokens(tags)))
-                decode_tags = []
-                for i, beam_tag in enumerate(batcher.restore_batch(beam_tags)):
-                    print ("Staring astar search for word %d / %d [beam tag of length %d]"
-                    % (i+1, batcher.get_batch_size(),len(beam_tag)))
-                    path = solve_tree_search(beam_tag, 1)
-                    beam_tag = list(np.array(beam_tag)[path])
-                    decode_tags.append(beam_tag)
-                import pdb; pdb.set_trace()
+    return orig_tags, decoded_tags
 
-    return orig_tags, decode_tags, stat
+
 
 # from collections import Counter
 #
