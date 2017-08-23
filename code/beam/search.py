@@ -83,7 +83,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, sess, enc_inputs, enc_seqlen):
+    def beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs):
         """Performs beam search for decoding.
 
          Args:
@@ -96,7 +96,10 @@ class BeamSearch(object):
                 ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        dec_in_state = self._model.encode_top_state(sess, enc_inputs, enc_seqlen)
+        dec_in_state = self._model.encode_top_state(sess,
+                                                    enc_inputs,
+                                                    enc_seqlen,
+                                                    enc_aux_inputs)
         # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(dec_in_state)
