@@ -169,7 +169,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, split):
                 except ValueError:
                     beam_rank.append(config.beam_size + 1)
             print(np.mean(beam_rank))
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
     return np.mean(beam_rank)
 
 def verify(config, w_vocab, t_vocab, batcher, t_op):
