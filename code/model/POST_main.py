@@ -13,7 +13,7 @@ from beam.search import BeamSearch
 from POST_model import POSTModel
 
 
-def get_model(session, config, special_tokens, split, mode='decode'):
+def get_model(session, config, special_tokens, add_pos_in, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
@@ -21,8 +21,8 @@ def get_model(session, config, special_tokens, split, mode='decode'):
                         config.tag_embedding_size, config.n_hidden_fw,
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
-                        config.tag_vocabulary_size,config.learning_rate,
-                        config.learning_rate_decay_factor, split, mode)
+                        config.tag_vocabulary_size, config.learning_rate,
+                        config.learning_rate_decay_factor, add_pos_in, mode)
     model.build_graph(special_tokens)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
@@ -43,10 +43,10 @@ def get_model(session, config, special_tokens, split, mode='decode'):
         return None
     return model
 
-def train(config, batcher, cp_path, special_tokens, split):
+def train(config, batcher, cp_path, special_tokens, add_pos_in):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, special_tokens, split, 'train')
+        model = get_model(sess, config, special_tokens, add_pos_in, 'train')
 
         # This is the training loop.
         step_time = 0.0
@@ -56,18 +56,12 @@ def train(config, batcher, cp_path, special_tokens, split):
         decay = 0.999
         prev_losses = []
 
-        # step_loss_summary = tf.Summary()
-        # writer = tf.summary.FileWriter("../logs/", sess.graph)
-
         while True:
             # Get a batch and make a step.
             start_time = time.time()
             bv = batcher.get_random_batch()
-            w_len, t_len, words, pos, _, tags_pad, tags_1hot = batcher.process_batch(bv)
-            # w_len, t_len, words, _, tags_pad, tags_1hot = batcher.next_batch()
-            # import pdb; pdb.set_trace()
-            pred, step_loss, _  = model.step(sess, w_len, t_len,
-                                            words, pos, tags_pad, tags_1hot)
+            w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
+            step_loss, _  = model.step(sess, w_len, t_len, words, pos, tags, targets)
             step_time += (time.time() - start_time) / config.steps_per_checkpoint
             loss += step_loss / config.steps_per_checkpoint
             if moving_avg_loss == 0:
@@ -78,11 +72,6 @@ def train(config, batcher, cp_path, special_tokens, split):
 
             # Once in a while, we save checkpoint, print statistics, and run evals.
             if current_step % config.steps_per_checkpoint == 0:
-
-                # bucket_value = step_loss_summary.value.add()
-                # bucket_value.tag = "loss"
-                # bucket_value.simple_value = float(loss)
-                # writer.add_summary(step_loss_summary, current_step)
 
                 # Print statistics for the previous epoch.
                 perplex = math.exp(loss) if loss < 300 else float('inf')
@@ -111,15 +100,15 @@ def train(config, batcher, cp_path, special_tokens, split):
                 sys.stdout.flush()
 
 
-def decode(config, w_vocab, t_vocab, batcher, t_op, split):
+def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), split)
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in)
 
         decoded_tags = []
         orig_tags = []
         for bv in batcher.get_batch():
-            w_len, _, words, pos, tags, _, _ = batcher.process_batch(bv)
+            w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
                             config.beam_size,
@@ -144,15 +133,15 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, split):
 
     return orig_tags, decoded_tags
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, split):
+def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), split)
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in)
         beam_rank = []
         batch_list = batcher.get_batch()
         len_batch_list = len(batch_list)
         for i, bv in enumerate(batch_list):
-            w_len, _, words, pos, tags, _, _ = batcher.process_batch(bv)
+            w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
                             config.beam_size,
@@ -172,7 +161,6 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, split):
                     beam_rank.append(config.beam_size + 1)
             print ("Finished batch %d/%d: Mean beam rank so for is %f" \
              %(i+1, len_batch_list, np.mean(beam_rank)))
-            # import pdb; pdb.set_trace()
     return np.mean(beam_rank)
 
 def verify(config, w_vocab, t_vocab, batcher, t_op):
@@ -183,7 +171,7 @@ def verify(config, w_vocab, t_vocab, batcher, t_op):
         decoded_tags = []
         orig_tags = []
         for bv in batcher.get_batch():
-            w_len, _, words, tags, _, _ = batcher.process_batch(bv)
+            w_len, _, words, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
                             config.beam_size,
