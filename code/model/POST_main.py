@@ -149,7 +149,9 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, split):
     with tf.Session() as sess:
         model = get_model(sess, config, w_vocab.get_ctrl_tokens(), split)
         beam_rank = []
-        for bv in batcher.get_batch():
+        batch_list = batcher.get_batch()
+        len_batch_list = len(batch_list)
+        for i, bv in enumerate(batch_list):
             w_len, _, words, pos, tags, _, _ = batcher.process_batch(bv)
 
             bs = BeamSearch(model,
@@ -168,7 +170,8 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, split):
                     beam_rank.append(beam_res.index(dec_in) + 1)
                 except ValueError:
                     beam_rank.append(config.beam_size + 1)
-            print(np.mean(beam_rank))
+            print ("Finished batch %d/%d: Mean beam rank so for is %f" \
+             %(i+1, len_batch_list, np.mean(beam_rank)))
             # import pdb; pdb.set_trace()
     return np.mean(beam_rank)
 

@@ -65,9 +65,6 @@ class Batcher(object):
                 bv_pos = add_eos(add_go(bv_pos)) if self._add_delim else bv_pos
                 bv_pos_pad = self.generate_in_data(bv_pos)
             bv_t = flatten(bv_t)
-        # import pdb; pdb.set_trace()
-        # if self._split_tag_pos:
-            # bv_t = [b[:-1] for b in bv_t]
         return bv_t, bv_pos
 
     def process_tag_batch(self, bv_tags):
