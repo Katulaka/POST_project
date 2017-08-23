@@ -10,11 +10,13 @@ class POSTModel(object):
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
                 tag_vocabulary_size, learning_rate,learning_rate_decay_factor,
-                mode, dtype=tf.float32, scope_name='nn_model'):
+                split, mode, dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
         self.w_embed_size = word_embedding_size
         self.t_embed_size = tag_embedding_size
+        self.pos_embed_size = tag_embedding_size
+        self.pos_vocab_size = tag_vocabulary_size
         self.w_vocab_size = word_vocabulary_size
         self.t_vocab_size = tag_vocabulary_size
         self.n_hidden_fw = n_hidden_fw
@@ -25,6 +27,7 @@ class POSTModel(object):
         self.lr_decay_factor = learning_rate_decay_factor
         self.dtype = dtype
         self.mode = mode
+        self.split = split
 
     def _add_placeholders(self):
         """Inputs to be fed to the graph."""
@@ -35,6 +38,8 @@ class POSTModel(object):
         self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
 
         self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
+
+        self.pos_in = tf.placeholder(tf.int32, [None, None], 'pos-input')
 
         self.targets = tf.placeholder(tf.int32, [None, None, None], 'targets')
 
@@ -59,6 +64,22 @@ class POSTModel(object):
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                         self.t_in, name='tag-embed')
 
+            pos_embed_mat_init = tf.random_uniform(
+                [self.pos_vocab_size, self.pos_embed_size], -1.0, 1.0)
+
+            pos_embed_mat = tf.Variable(pos_embed_mat_init,
+                                            name='pos-embeddings')
+
+            self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
+                                        self.pos_in, name='pos-embed')
+
+    def _add_bidi_bridge(self):
+        with tf.name_scope('BiDi-Bridge'):
+            bidi_split = tf.concat([self.word_embed, self.pos_embed],
+                                        2, 'bidi-in')
+            self.bidi_in = bidi_split if self.split else self.word_embed
+            self.bidi_in_seq_len = self.w_seq_len
+
     def _add_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.name_scope('bidirectional-LSTM-Layer'):
@@ -69,15 +90,19 @@ class POSTModel(object):
                                     forget_bias=1.0, state_is_tuple=True)
             # Get lstm cell output
             self.bidi_out, self.bidi_states = tf.nn.bidirectional_dynamic_rnn(
-                                    lstm_fw_cell, lstm_bw_cell, self.word_embed,
-                                    sequence_length=self.w_seq_len,
+                                    lstm_fw_cell, lstm_bw_cell,
+                                    # self.word_embed,
+                                    # sequence_length=self.w_seq_len,
+                                    self.bidi_in,
+                                    sequence_length=self.bidi_in_seq_len,
                                     dtype=self.dtype)
 
     def _add_bridge(self, special_tokens):
         with tf.name_scope('Bridge'):
             # LSTM
             lstm_init = tf.concat(self.bidi_out, 2, name='lstm-init')
-            lstm_init = tf.reshape(lstm_init, [-1, self.n_hidden_fw + self.n_hidden_bw])
+            lstm_init = tf.reshape(lstm_init,
+                                [-1, self.n_hidden_fw + self.n_hidden_bw])
             # remove padding:
             mask_pad = tf.not_equal(tf.reshape(self.w_in, [-1]),
                                             special_tokens['PAD'])
@@ -86,7 +111,7 @@ class POSTModel(object):
             mask_eos = tf.not_equal(tf.reshape(self.w_in, [-1]),
                                     special_tokens['EOS'])
 
-            mask = self.mask = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
+            mask = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
             self.dec_init_state = tf.boolean_mask(lstm_init, mask)
 
     def _add_lstm_layer(self):
@@ -114,8 +139,8 @@ class POSTModel(object):
             self.b_out = b_out = tf.Variable(
                             tf.zeros([self.t_vocab_size]), name='b-out')
 
-            outputs_reshape = tf.reshape(self.lstm_out, [-1, self.n_hidden_lstm])
-            self.proj = tf.matmul(outputs_reshape, w_out) + b_out
+            outs_reshape = tf.reshape(self.lstm_out, [-1, self.n_hidden_lstm])
+            self.proj = tf.matmul(outs_reshape, w_out) + b_out
 
             lstm_out_sahpe = tf.shape(self.lstm_out)
             self.logits = tf.reshape(self.proj,
@@ -146,6 +171,7 @@ class POSTModel(object):
             self.global_step = tf.Variable(0, trainable=False, name='g_step')
             self._add_placeholders()
             self._add_embeddings()
+            self._add_bidi_bridge()
             self._add_bidi_lstm()
             self._add_bridge(special_tokens)
             self._add_lstm_layer()
@@ -156,7 +182,7 @@ class POSTModel(object):
         self.saver = tf.train.Saver(all_variables)
 
 
-    def step(self, session, w_seq_len, t_seq_len, w_in, t_in, targets):
+    def step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
         """ Training step, returns the prediction, loss"""
         input_feed = {
             self.w_seq_len: w_seq_len,
@@ -164,15 +190,18 @@ class POSTModel(object):
             self.w_in: w_in,
             self.t_in: t_in,
             self.targets: targets}
+        if self.split:
+            input_feed[self.pos_in] = pos_in
         output_feed = [self.pred, self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
-
-    def encode_top_state(self, session, enc_inputs, enc_len):
+    def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs):
         """Return the top states from encoder for decoder."""
         input_feed = {
             self.w_in: enc_inputs,
             self.w_seq_len: enc_len}
+        if self.split:
+            input_feed[self.pos_in] = enc_aux_inputs
         output_feed = self.dec_init_state
         dec_init_states = session.run(output_feed, input_feed)
         return [tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),

@@ -21,49 +21,58 @@ def main(_):
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--action', type=str, default='train')
-    parser.add_argument('--cp_dir', type=str, default='stags')
-    parser.add_argument('--batch', type=int, default=32)
-    parser.add_argument('--ds_len', type=int, default=np.inf)
-    parser.add_argument('--beam', type=int, default=5)
-    parser.add_argument('--delim', help='', action='store_true')
-    parser.add_argument('--only_pos', help='', action='store_true')
-    parser.add_argument('--tag_split', help='', action='store_true')
-    parser.add_argument('--tag_sides', help='', action='store_true')
+    parser.add_argument('--action', type=str, default='train', help='')
+    parser.add_argument('--cp_dir', type=str, default='stags', help='')
+    parser.add_argument('--batch', type=int, default=32, help='')
+    parser.add_argument('--ds_len', type=int, default=np.inf, help='')
+    parser.add_argument('--beam', type=int, default=5, help='')
+    parser.add_argument('--delim', action='store_true', help='')
+    parser.add_argument('--only_pos', action='store_true', help='')
+    parser.add_argument('--tag_split', action='store_true', help='')
+    parser.add_argument('--split_tag_pos', action='store_true', help='')
+    parser.add_argument('--tag_sides', action='store_true', help='')
+
 
     args = parser.parse_args()
 
-    data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.pkl')
-    # data_file = os.path.join(data_dir, 'data.pkl')
+    data_file = os.path.join(os.getcwd(), Config.train_dir, 'udata.txt')
+    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
+
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
 
-    w_vocab, t_vocab, train_set = gen_dataset(Config.src_dir,
+    w_vocab, t_vocab, train_set, t_op = gen_dataset(Config.src_dir,
                                             data_file,
                                             (args.tag_split,
                                             args.tag_sides,
                                             args.only_pos),
+                                            # args.pos_tag_split),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
-    batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch, args.delim)
+    batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch, args.delim,
+                        args.split_tag_pos)
 
     Config.batch_size = args.batch
     Config.beam_size = args.beam
     Config.tag_vocabulary_size = t_vocab.vocab_size()
     Config.word_vocabulary_size = w_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(),
-                                            'checkpoints',
-                                            args.cp_dir)
+                                        'checkpoints',
+                                        args.cp_dir)
 
-    # special_tokens = w_vocab.get_ctrl_tokens()
     if (args.action == 'train'):
         POST_main.train(Config, batcher, args.cp_dir,
-                                        w_vocab.get_ctrl_tokens())
+                                        w_vocab.get_ctrl_tokens(),
+                                        args.split_tag_pos)
     elif (args.action == 'decode'):
         orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
-                                                batcher,)
-                                                # special_tokens)
+                                                batcher, t_op,
+                                                args.split_tag_pos)
+    elif(args.action == 'stats'):
+        stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
+                                args.split_tag_pos)
+        import pdb; pdb.set_trace()
     else:
         print("Nothing to do!!")
 
