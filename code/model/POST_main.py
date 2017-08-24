@@ -166,37 +166,37 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
              %(i+1, len_batch_list, np.mean(beam_rank)))
     return np.mean(beam_rank)
 
-def verify(config, w_vocab, t_vocab, batcher, t_op):
-
-    with tf.Session() as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens())
-
-        decoded_tags = []
-        orig_tags = []
-        for bv in batcher.get_batch():
-            w_len, _, words, tags, _, _ = batcher.process(bv)
-
-            bs = BeamSearch(model,
-                            config.beam_size,
-                            t_vocab.token_to_id('GO'),
-                            t_vocab.token_to_id('EOS'),
-                            config.dec_timesteps)
-            words_cp = copy.copy(words)
-            w_len_cp = copy.copy(w_len)
-            best_beams = bs.beam_search(sess, words_cp, w_len_cp)
-            beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
-            beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
-
-            for i, beam_tag in enumerate(batcher.restore(beam_pair)):
-                print ("Staring astar search for word %d / %d [tag length %d]"
-                % (i+1, batcher.get_batch_size(),len(beam_tag)))
-                path = solve_tree_search(beam_tag, 1)
-                beam_tag = list(np.array(beam_tag)[path])
-                decoded_tags.append(beam_tag)
-            import pdb; pdb.set_trace()
-            orig_tags.append(batcher.restore(t_op.combine_fn(t_vocab.to_tokens(tags))))
-
-    return orig_tags, decoded_tags
+# def verify(config, w_vocab, t_vocab, batcher, t_op):
+#
+#     with tf.Session() as sess:
+#         model = get_model(sess, config, w_vocab.get_ctrl_tokens())
+#
+#         decoded_tags = []
+#         orig_tags = []
+#         for bv in batcher.get_batch():
+#             w_len, _, words, tags, _, _ = batcher.process(bv)
+#
+#             bs = BeamSearch(model,
+#                             config.beam_size,
+#                             t_vocab.token_to_id('GO'),
+#                             t_vocab.token_to_id('EOS'),
+#                             config.dec_timesteps)
+#             words_cp = copy.copy(words)
+#             w_len_cp = copy.copy(w_len)
+#             best_beams = bs.beam_search(sess, words_cp, w_len_cp)
+#             beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+#             beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
+#
+#             for i, beam_tag in enumerate(batcher.restore(beam_pair)):
+#                 print ("Staring astar search for word %d / %d [tag length %d]"
+#                 % (i+1, batcher.get_batch_size(),len(beam_tag)))
+#                 path = solve_tree_search(beam_tag, 1)
+#                 beam_tag = list(np.array(beam_tag)[path])
+#                 decoded_tags.append(beam_tag)
+#             import pdb; pdb.set_trace()
+#             orig_tags.append(batcher.restore(t_op.combine_fn(t_vocab.to_tokens(tags))))
+#
+#     return orig_tags, decoded_tags
 
 
 

@@ -68,7 +68,6 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
     print ("Time to get word data %f" % (time.time()-start_time))
     t_op = TagOp(*tags_type)
     tags = data['tags']
-    # import pdb; pdb.set_trace()
     _tags = t_op.split_fn(tags)
     print ("Time for tag split %f" % (time.time()-start_time))
     t_vocab = Vocab(flatten3d(_tags), t_vocab_size)
