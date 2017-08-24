@@ -23,29 +23,31 @@ def main(_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
     parser.add_argument('--cp_dir', type=str, default='stags', help='')
-    parser.add_argument('--stat_file', type=str, default='stats', help='')    
+    parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--add_pos_in', action='store_true', help='')
     parser.add_argument('--ds_len', type=int, default=np.inf, help='')
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
+    parser.add_argument('--keep_direction', action='store_true', help='')
     parser.add_argument('--tag_split', action='store_true', help='')
-    parser.add_argument('--tag_sides', action='store_true', help='')
+    parser.add_argument('--slash_split', action='store_true', help='')
     # parser.add_argument('--delim', action='store_true', help='')
 
     args = parser.parse_args()
 
-    data_file = os.path.join(os.getcwd(), Config.train_dir, 'udata.txt')
-    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
+    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'udata.txt')
+    data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
 
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
     w_vocab, t_vocab, train_set, t_op = gen_dataset(Config.src_dir,
                                             data_file,
-                                            (args.tag_split,
-                                            args.tag_sides,
-                                            args.only_pos),
+                                            (args.only_pos,
+                                            args.keep_direction,
+                                            args.tag_split,
+                                            args.slash_split),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
     # initializing batcher class

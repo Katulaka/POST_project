@@ -202,28 +202,31 @@ def gen_tags(fin):
 
 class TagOp(object):
 
-    def __init__(self, sub_split, direction, pos): #TODO
+    def __init__(self, pos, direction, sub_split, slash_split): #TODO
         self.sub_split = sub_split
         self.direction = direction
         self.pos = pos
-        # self.pos_sub_split = pos_sub_split
+        self.slash_split = slash_split
 
-    def split_tag(self, tag, sym):
-            return tag.replace(LEFT, sym+LEFT).replace(RIGHT, sym+RIGHT).split(sym)
+    def _tag_split(self, tag, sym):
+        return tag.replace(LEFT, sym+LEFT).replace(RIGHT, sym+RIGHT).split(sym)
+
+    def _slash_split(self, tag, sym):
+        return tag.replace(LEFT, sym+LEFT+sym).replace(RIGHT, sym+RIGHT+sym).split(sym)
+
+
 
     def modify_tag(self, tag):
-        # import pdb; pdb.set_trace()
         if self.pos: #if just pos no need to deal with the  whole sequence
             return [tag.split(UP)[-1]]
         if not self.direction: #if don't want to keep left/right indication.
                                 # default: all left
             tag = tag.replace(RIGHT, LEFT)
         if self.sub_split: #split on the individuale parts (including missing)
-            return self.split_tag(tag, UP)
+            return self._tag_split(tag, UP)
+        if self.slash_split: #split on individuale pars and directionality symbols
+            return self._slash_split(tag, UP)
 
-        # if self.pos_sub_split: #split on the individuale parts (including missing)
-        #     _tag = self.split_tag(tag, UP)
-        #     return [list(_tag[:-1]),[_tag[-1]]]
         return tag.split(UP) #splip just between levels
 
     def _split_fn(self, tag_list):
@@ -237,7 +240,9 @@ class TagOp(object):
     def combine_tag(self, tag):
         res = []
         for t in tag:
-            if (t.startswith(LEFT) or t.startswith(RIGHT)) and res:
+            if res and (res[-1].endswith(LEFT) or res[-1].endswith(RIGHT)):
+                res[-1] += t
+            elif res and (t.startswith(LEFT) or t.startswith(RIGHT)):
                 res[-1] += t
             else:
                 res.append(t)
