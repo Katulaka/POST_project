@@ -10,8 +10,9 @@ from vocab import pad, add_go, add_eos, to_onehot
 class Batcher(object):
 
     # def __init__(self, data, vocab_size, batch_size, add_delim):
-    def __init__(self, data, vocab_size, batch_size):
-        self._vocab_size = vocab_size
+    # def __init__(self, data, vocab_size, batch_size):
+    def __init__(self, data, batch_size):
+        # self._vocab_size = vocab_size
         self._batch_size = batch_size
         self._data = data
         # self._add_delim = add_delim

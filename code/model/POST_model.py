@@ -36,8 +36,8 @@ class POSTModel(object):
         self.w_seq_len = tf.placeholder(tf.int32, [None], 'word-sequence-length')
         self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
         self.t_seq_len = tf.placeholder(tf.int32, [None], 'tag-sequence-length')
-        self.targets = tf.placeholder(tf.int32, [None, None, None], 'targets')
-        self._targets = tf.placeholder(tf.int32, [None], '_targets')
+        # self.targets = tf.placeholder(tf.int32, [None, None, None], 'targets')
+        self.targets = tf.placeholder(tf.int32, [None], 'targets')
 
 
     def _add_embeddings(self):
@@ -151,11 +151,11 @@ class POSTModel(object):
             mask_pad = tf.not_equal(tf.reshape(self.t_in, [-1]),
                                     special_tokens['PAD'])
             proj = tf.boolean_mask(self.proj, mask_pad)
-            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                                        logits=proj, labels=self._targets)
-            # self.targets_flat = tf.reshape(self._targets, [-1, self.t_vocab_size])
-            # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            #                         logits=self.proj, labels=self.targets_flat)
+            # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            #                             logits=proj, labels=self.targets)
+            targets_1hot = tf.one_hot(self.targets, self.t_vocab_size)
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                                    logits=proj, labels=targets_1hot)
             self.loss = tf.reduce_mean(cross_entropy)
 
         self.optimizer = tf.train.AdamOptimizer(
@@ -188,7 +188,7 @@ class POSTModel(object):
             self.t_seq_len: t_seq_len,
             self.w_in: w_in,
             self.t_in: t_in,
-            self._targets: targets}
+            self.targets: targets}
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
         output_feed = [self.loss, self.optimizer]
