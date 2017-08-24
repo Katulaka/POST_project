@@ -9,13 +9,10 @@ from vocab import pad, add_go, add_eos, to_onehot
 
 class Batcher(object):
 
-    # def __init__(self, data, vocab_size, batch_size, add_delim):
-    # def __init__(self, data, vocab_size, batch_size):
-    def __init__(self, data, batch_size):
-        # self._vocab_size = vocab_size
+    def __init__(self, data, batch_size, reverse):
         self._batch_size = batch_size
         self._data = data
-        # self._add_delim = add_delim
+        self._revese = reverse
 
     def get_batch_size(self):
         return self._batch_size
@@ -58,7 +55,6 @@ class Batcher(object):
         #Process words input batch
         bv_w = copy.copy(bv['words'])
         self._seq_len = self.seq_len(bv_w)
-        # bv_w = add_eos(add_go(bv_w)) if self._add_delim else bv_w
         bv_w = add_eos(add_go(bv_w))
         seq_len_w = self.seq_len(bv_w)
         bv_w_in = self.to_in_data_format(bv_w)
@@ -67,13 +63,12 @@ class Batcher(object):
         bv_t = copy.copy(bv['tags'])
         bv_pos = []
         if arr_dim(bv_t.tolist()) == 3:
-            bv_pos = [[tag[-1] for tag in tags] for tags in bv_t]
-            # bv_pos = add_eos(add_go(bv_pos)) if self._add_delim else bv_pos
+            pos_id = 0 if self._revese else -1
+            bv_pos = [[tag[pos_id] for tag in tags] for tags in bv_t]
             bv_pos = add_eos(add_go(bv_pos))
             bv_pos_in = self.to_in_data_format(bv_pos)
             bv_t = flatten(bv_t)
 
-        # bv_t_eos = flatten(self.to_in_data_format(add_eos(bv_t)).tolist())
         bv_t_eos = flatten(add_eos(bv_t))
         bv_t_go = add_go(bv_t)
         seq_len_t = self.seq_len(bv_t_go)

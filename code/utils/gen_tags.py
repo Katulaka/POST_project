@@ -202,11 +202,12 @@ def gen_tags(fin):
 
 class TagOp(object):
 
-    def __init__(self, pos, direction, sub_split, slash_split): #TODO
+    def __init__(self, pos, direction, sub_split, slash_split, reverse):
         self.sub_split = sub_split
         self.direction = direction
         self.pos = pos
         self.slash_split = slash_split
+        self.reverse = reverse
 
     def _tag_split(self, tag, sym):
         return tag.replace(LEFT, sym+LEFT).replace(RIGHT, sym+RIGHT).split(sym)
@@ -214,7 +215,8 @@ class TagOp(object):
     def _slash_split(self, tag, sym):
         return tag.replace(LEFT, sym+LEFT+sym).replace(RIGHT, sym+RIGHT+sym).split(sym)
 
-
+    def _revese(self, tag):
+        return UP.join(tag.split(UP)[::-1])
 
     def modify_tag(self, tag):
         if self.pos: #if just pos no need to deal with the  whole sequence
@@ -222,6 +224,8 @@ class TagOp(object):
         if not self.direction: #if don't want to keep left/right indication.
                                 # default: all left
             tag = tag.replace(RIGHT, LEFT)
+        if self.reverse:
+            tag = self._revese(tag)
         if self.sub_split: #split on the individuale parts (including missing)
             return self._tag_split(tag, UP)
         if self.slash_split: #split on individuale pars and directionality symbols

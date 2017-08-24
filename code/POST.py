@@ -30,6 +30,7 @@ def main(_):
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
+    parser.add_argument('--reverse', action='store_true', help='')
     parser.add_argument('--tag_split', action='store_true', help='')
     parser.add_argument('--slash_split', action='store_true', help='')
     # parser.add_argument('--delim', action='store_true', help='')
@@ -47,12 +48,12 @@ def main(_):
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.tag_split,
-                                            args.slash_split),
+                                            args.slash_split,
+                                            args.reverse),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
     # initializing batcher class
-    # batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
-    batcher = Batcher(train_set, args.batch)
+    batcher = Batcher(train_set, args.batch, args.reverse)
 
     # Update config variables
     Config.batch_size = args.batch
