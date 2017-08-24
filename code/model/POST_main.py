@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import copy
+import json
 import math
 import os
 import sys
@@ -133,7 +134,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
 
     return orig_tags, decoded_tags
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
+def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
 
     with tf.Session() as sess:
         model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in)
@@ -159,6 +160,8 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
                     beam_rank.append(beam_res.index(dec_in) + 1)
                 except ValueError:
                     beam_rank.append(config.beam_size + 1)
+            with open(data_file, 'w') as outfile:
+                json.dump(beam_rank, outfile)
             print ("Finished batch %d/%d: Mean beam rank so for is %f" \
              %(i+1, len_batch_list, np.mean(beam_rank)))
     return np.mean(beam_rank)

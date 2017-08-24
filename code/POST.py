@@ -23,6 +23,7 @@ def main(_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
     parser.add_argument('--cp_dir', type=str, default='stags', help='')
+    parser.add_argument('--stat_file', type=str, default='stats', help='')    
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--add_pos_in', action='store_true', help='')
     parser.add_argument('--ds_len', type=int, default=np.inf, help='')
@@ -48,7 +49,8 @@ def main(_):
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
     # initializing batcher class
-    batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
+    # batcher = Batcher(train_set, t_vocab.vocab_size(), args.batch)
+    batcher = Batcher(train_set, args.batch)
 
     # Update config variables
     Config.batch_size = args.batch
@@ -66,7 +68,7 @@ def main(_):
                                                 args.add_pos_in)
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
-                                args.add_pos_in)
+                                args.add_pos_in, args.stat_file)
         import pdb; pdb.set_trace()
     else:
         print("Nothing to do!!")
