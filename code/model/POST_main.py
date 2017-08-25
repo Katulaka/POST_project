@@ -153,7 +153,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
-
+            import pdb; pdb.set_trace()
             tags_cp = copy.copy(tags)
             for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
                 try:

@@ -34,7 +34,6 @@ def main(_):
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--tag_split', action='store_true', help='')
     parser.add_argument('--slash_split', action='store_true', help='')
-    # parser.add_argument('--delim', action='store_true', help='')
 
     args = parser.parse_args()
 
