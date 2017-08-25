@@ -120,9 +120,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+            #TODO fix reverse
             beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
             beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
-
             for i, beam_tag in enumerate(batcher.restore(beam_pair)):
                 print ("Staring astar search for word %d / %d [tag length %d]"
                 % (i+1, batcher.get_batch_size(),len(beam_tag)))
@@ -153,7 +153,6 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
-            import pdb; pdb.set_trace()
             tags_cp = copy.copy(tags)
             for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
                 try:
