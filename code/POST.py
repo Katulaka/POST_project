@@ -31,6 +31,7 @@ def main(_):
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
+    parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--tag_split', action='store_true', help='')
     parser.add_argument('--slash_split', action='store_true', help='')
     # parser.add_argument('--delim', action='store_true', help='')
@@ -49,7 +50,8 @@ def main(_):
                                             args.keep_direction,
                                             args.tag_split,
                                             args.slash_split,
-                                            args.reverse),
+                                            args.reverse,
+                                            args.no_val_gap),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
     # initializing batcher class

@@ -6,10 +6,11 @@ from treelib import Node, Tree
 from utils import operate_on_Narray
 
 
-RIGHT = '/'
-LEFT = '\\'
+R = '/'
+L = '\\'
 UP = '+'
-NONE = '|'
+NA = '|'
+ANY = '*'
 
 def remove_traces(ts): # Remove traces and null elements
     for t in ts:
@@ -159,7 +160,7 @@ def extend_path(tree, current_id, leaf_id, path_dict):
 
     path_tag = tree.parent(current_id).tag
     if tree.siblings(current_id):
-        siblings = [RIGHT+s.tag if s.identifier > current_id else LEFT+s.tag for s in tree.siblings(current_id)]
+        siblings = [R+s.tag if s.identifier > current_id else L+s.tag for s in tree.siblings(current_id)]
         siblings.insert(0, path_tag)
         path_tag = "".join(siblings)
 
@@ -202,35 +203,47 @@ def gen_tags(fin):
 
 class TagOp(object):
 
-    def __init__(self, pos, direction, sub_split, slash_split, reverse):
+    def __init__(self, pos, direction, sub_split, slash_split, reverse, no_val_gap):
         self.sub_split = sub_split
         self.direction = direction
         self.pos = pos
         self.slash_split = slash_split
         self.reverse = reverse
+        self.no_val_gap = no_val_gap
 
-    def _tag_split(self, tag, sym):
-        return tag.replace(LEFT, sym+LEFT).replace(RIGHT, sym+RIGHT).split(sym)
+    def _mod_tag(self, tag, l_sym, r_sym):
+        return tag.replace(L, l_sym+L+r_sym).replace(R, l_sym+R+r_sym)
 
-    def _slash_split(self, tag, sym):
-        return tag.replace(LEFT, sym+LEFT+sym).replace(RIGHT, sym+RIGHT+sym).split(sym)
+    def _tag_split(self, tag):
+        return self._mod_tag(tag, UP, '').split(UP)
+        # tag.replace(L, UP+L).replace(R, UP+R).split(UP)
+
+    def _slash_split(self, tag):
+        return self._mod_tag(tag, UP, UP).split(UP)
+        # tag.replace(L, UP+L+UP).replace(R, UP+R+UP).split(UP)
 
     def _revese(self, tag):
         return UP.join(tag.split(UP)[::-1])
 
+    def _remove_val_gap(self, tag):
+        return self._mod_tag(tag, '', ANY+NA).split(NA)[0]
+        # t.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0]
+
+
     def modify_tag(self, tag):
         if self.pos: #if just pos no need to deal with the  whole sequence
             return [tag.split(UP)[-1]]
-        if not self.direction: #if don't want to keep left/right indication.
-                                # default: all left
-            tag = tag.replace(RIGHT, LEFT)
+        if not self.direction: #if don't want to keep left/R indication.
+            tag = tag.replace(R, L)   # default: all left
         if self.reverse:
             tag = self._revese(tag)
         if self.sub_split: #split on the individuale parts (including missing)
-            return self._tag_split(tag, UP)
+            _tag = self._tag_split(tag)
+            if self.no_val_gap:
+                return [self._remove_val_gap(t) for t in _tag]
+            return _tag
         if self.slash_split: #split on individuale pars and directionality symbols
-            return self._slash_split(tag, UP)
-
+            return self._slash_split(tag)
         return tag.split(UP) #splip just between levels
 
     def _split_fn(self, tag_list):
@@ -244,9 +257,9 @@ class TagOp(object):
     def combine_tag(self, tag):
         res = []
         for t in tag:
-            if res and (res[-1].endswith(LEFT) or res[-1].endswith(RIGHT)):
+            if res and (res[-1].endswith(L) or res[-1].endswith(R)):
                 res[-1] += t
-            elif res and (t.startswith(LEFT) or t.startswith(RIGHT)):
+            elif res and (t.startswith(L) or t.startswith(R)):
                 res[-1] += t
             else:
                 res.append(t)
@@ -256,7 +269,7 @@ class TagOp(object):
         return operate_on_Narray(tags, self.combine_tag)
 
     def add_right(self, tag):
-        return RIGHT + tag
+        return R + tag
 
     def add_left(self, tag):
-        return LEFT + tag
+        return L + tag
