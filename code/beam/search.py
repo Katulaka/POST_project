@@ -119,7 +119,6 @@ class BeamSearch(object):
                                                                 latest_token,
                                                                 states,
                                                                 self._beam_size)
-                    # import pdb; pdb.set_trace()
                     for j in xrange(self._beam_size):
                         all_hyps.append(hyp.extend_(ids[j], probs[j], new_state))
                 # Filter and collect any hypotheses that have the end token.

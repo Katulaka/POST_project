@@ -3,11 +3,15 @@ from __future__ import print_function
 from nltk.corpus import BracketParseCorpusReader as reader
 import os
 from treelib import Node, Tree
-from utils import operate_on_Narray
+from utils import operate_on_Narray, _operate_on_Narray
+import copy as copy
 
-
-R = '/'
-L = '\\'
+# R = '/'
+# L = '\\'
+R = '}'
+L = '{'
+CR = '>'
+CL = '<'
 UP = '+'
 NA = '|'
 ANY = '*'
@@ -25,12 +29,11 @@ def remove_traces(ts): # Remove traces and null elements
                 del t[postn]
     return ts
 
-def simplify(ts):# Simplify tags
+def simplify(ts): # Simplify tags
     for t in ts:
         for s in t.subtrees():
             tag = s.label()
             if tag not in ['-LRB-', '-RRB-', '-NONE-']:
-                #  and '-' in tag:
                 if '-' in tag or '=' in tag or '|' in tag:
                     simple = tag.split('-')[0].split('=')[0].split('|')[0]
                     s.set_label(simple)
@@ -39,9 +42,9 @@ def simplify(ts):# Simplify tags
 
 class TreeAux(object):
 
-    def __init__(self, min_range=0, max_range=0, height=0):
-        self.n_range = (min_range, max_range)
+    def __init__(self, height=0, lids=[]):
         self.height = height
+        self.leaves = lids
 
 def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
     # starts by ['(', 'pos']
@@ -73,37 +76,11 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 
     return total_offset+1, max_id, leaf_id
 
-def gen_range(tree, nid, min_range, max_range):
-
-    if tree[nid].is_leaf():
-        tree[nid].data.n_range = (min_range, max_range)
-        return (max_range, max_range + 1)
-
-    for child in tree.children(nid):
-        cid = child.identifier
-        (min_range, max_range) = gen_range(tree, cid, min_range, max_range)
-
-    _min_range = min(tree.children(nid),
-                    key=lambda c: c.data.n_range[0]).data.n_range[0]
-    _max_range = max(tree.children(nid),
-                    key=lambda c: c.data.n_range[1]).data.n_range[1]
-
-    tree[nid].data.n_range = (_min_range, _max_range)
-
-    return (min_range, max_range)
-
 def penn_converter(fin, penn_path='code/utils/pennconverter.jar'):
 
     dep_dict_file = []
     dep_dict_tree = {}
-
-    # try:
-    lines = os.popen("java -jar "+penn_path+"< "+fin).read().split('\n')
-    # except Exception as ex:
-    #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    #     message = template.format(type(ex).__name__, ex.args)
-    #     import pdb; pdb.set_trace()
-    #     print message
+    lines = os.popen("java -jar "+penn_path+"< "+fin+" -splitSlash=false").read().split('\n')
 
     for line in lines:
         words = line.split()
@@ -117,32 +94,44 @@ def penn_converter(fin, penn_path='code/utils/pennconverter.jar'):
 
 def gen_height(tree, tree_dep):
 
-    for leaf in tree.leaves(tree.root):
+    for n in tree.all_nodes():
+        n.data.leaves = []
+
+    for leaf in tree.leaves():
         lid = leaf.identifier
-        depid = tree_dep[lid]
-        if depid == tree.root:
-            tree[lid].data.height = tree.depth(leaf)
+        hid = tree_dep[lid]
+        if hid == tree.root:
+            tree[lid].data.height = tree.depth(tree[lid])
+            for cid in [p for p in tree.paths_to_leaves() if lid in p][0]:
+                tree[cid].data.leaves += [lid]
         else:
-            min_range = min(tree[depid].data.n_range[0], tree[lid].data.n_range[0])
-            max_range = max(tree[depid].data.n_range[1], tree[lid].data.n_range[1])
-            height = 0
-            pid = tree.parent(lid).identifier
-
-            while tree[pid].data.n_range[0] > min_range or tree[pid].data.n_range[1] < max_range:
+            height = -1
+            cid = lid
+            cond = True
+            while cond:
+                tree[cid].data.leaves += [lid]
                 height += 1
-                pid = tree.parent(pid).identifier
-
+                cid = tree.parent(cid).identifier
+                cid_leaves = [l.identifier for l in tree.leaves(cid)]
+                cid_l_dep = [tree_dep[l] for l in cid_leaves if l != lid]
+                cond = set(cid_l_dep).issubset(set(cid_leaves))
             tree[lid].data.height = height
+
+    x_nodes = [n.identifier for n in tree.all_nodes() if n.data.leaves == []]
+    for x_node in x_nodes[::-1]:
+        min_id = min(tree.children(x_node), key=lambda c: c.data.height)
+        _lid = min_id.data.leaves[0]
+        tree[_lid].data.height += 1
+        tree[x_node].data.leaves += [_lid]
+
     return True
 
 def get_trees(fin):
-
     tree_deps = penn_converter(fin)
 
     rfin = fin.split('/')
     r = reader('/'.join(rfin[:-2]), '/'.join(rfin[-2:]))
     trees = simplify(remove_traces(list(r.parsed_sents())))
-
     for i, t in enumerate(trees):
         line = str(t.pformat().replace('\n', ''))
         line = line.replace('(', ' ( ').replace(')', ' ) ').split()
@@ -151,64 +140,88 @@ def get_trees(fin):
         # This is index kept in order to number words from 1 to num of words
         max_id = len(t.leaves()) + 1
         get_tree(tree, line, max_id)
-        gen_range(tree, tree.root, 0, 1)
         gen_height(tree, tree_deps[i])
         yield tree
 
 
-def extend_path(tree, current_id, leaf_id, path_dict):
-
-    path_tag = tree.parent(current_id).tag
-    if tree.siblings(current_id):
-        siblings = [R+s.tag if s.identifier > current_id else L+s.tag for s in tree.siblings(current_id)]
-        siblings.insert(0, path_tag)
-        path_tag = "".join(siblings)
-
-    path_dict[leaf_id] = UP.join([path_tag, path_dict[leaf_id]])
-
+def extend_path(tree, path):
+    tags = []
+    for p in path:
+        _res = []
+        _p = copy.copy(p)
+        if _p[0] in [CL, CR]:
+            _res.append(_p[0])
+            _p = _p[1:]
+        while _p[:-1]:
+            el_p = _p.pop(0)
+            _res.append(tree[el_p].tag)
+            for c in tree.children(el_p):
+                if c.identifier != _p[0]:
+                    _res.append(R+c.tag if c.identifier > _p[0] else L+c.tag)
+        _res.append(tree[_p[0]].tag)
+        tags.append(_res)
+    return tags
 
 def gen_tag(tree, nid, path):
 
     # Stop condition
     if tree[nid].is_leaf():
-
-        pid = tree.parent(nid).identifier
-        path[nid] = tree[pid].tag
-
-        if tree[nid].data.height > 1 :
-            extend_path(tree, pid, nid, path)
-
-        return nid, tree[nid].data.height - 1
+        path[nid] = []
+        return nid, tree[nid].data.height
 
     # Recursion
+    flag = CR
     for child in tree.children(nid):
         cid = child.identifier
         leaf_id, height = gen_tag(tree, cid, path)
 
-    if height == 1:
-        return None, 1
+        if (height == 0):
+            # Reached end of path can add flag
+            path[leaf_id].insert(0, flag)
+            # path[leaf_id].append(flag)
 
-    elif height > 1:
-        pid = tree.parent(nid).identifier
-        extend_path(tree, pid, leaf_id, path)
+        if height > 0:
+            path[leaf_id].insert(0, nid)
+            # only single child will have height>0
+            # and its value will be the one that is returned
+            # to the parent
+            ret_leaf_id, ret_height = leaf_id, height-1
 
-    return leaf_id, height - 1
+            # once we reached a height>0, it means that
+            # this path includes the parent, and thus flag
+            # direction should flip
+            flag = CL
+
+    return ret_leaf_id, ret_height
+
 
 def gen_tags(fin):
-    for tree in get_trees(fin):
+    print ("gen_tags")
+
+    for i, tree in enumerate(get_trees(fin)):
         path = {}
-        gen_tag(tree, tree.root, path)
-        yield (path.values(), [tree[key].tag for key in path.keys()])
+        try:
+            gen_tag(tree, tree.root, path)
+            # tst = extend_path(tree, path.values())
+            # res = [t[0] for t in tst if t[0] in ['>', '<']]
+            # if len(res) != len(tst) - 1:
+            #     import pdb; pdb.set_trace()
+            yield (extend_path(tree, path.values()),
+                            [tree[key].tag for key in path.keys()])
+        except:
+            # import pdb; pdb.set_trace()
+            print ("Wrong tree %d in %s" % (i, fin))
 
 
 class TagOp(object):
 
-    def __init__(self, pos, direction, sub_split, slash_split, reverse, no_val_gap):
-        self.sub_split = sub_split
+    # def __init__(self, pos, direction, sub_split, slash_split, reverse, no_val_gap):
+    def __init__(self, pos, direction, no_val_gap):
+        # self.sub_split = sub_split
         self.direction = direction
         self.pos = pos
-        self.slash_split = slash_split
-        self.reverse = reverse
+        # self.slash_split = slash_split
+        # self.reverse = reverse
         self.no_val_gap = no_val_gap
 
     def _mod_tag(self, tag, l_sym, r_sym):
@@ -220,50 +233,73 @@ class TagOp(object):
 
     def _slash_split(self, tag):
         return self._mod_tag(tag, UP, UP).split(UP)
-        # tag.replace(L, UP+L+UP).replace(R, UP+R+UP).split(UP)
 
     def _revese(self, tag):
         return UP.join(tag.split(UP)[::-1])
 
     def _remove_val_gap(self, tag):
         return self._mod_tag(tag, '', ANY+NA).split(NA)[0]
-        # t.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0]
 
 
     def modify_tag(self, tag):
-        if self.pos: #if just pos no need to deal with the  whole sequence
-            return [tag.split(UP)[-1]]
-        if not self.direction: #if don't want to keep left/R indication.
-            tag = tag.replace(R, L)   # default: all left
-        if self.reverse:
-            tag = self._revese(tag)
-        if self.sub_split: #split on the individuale parts (including missing)
-            _tag = self._tag_split(tag)
-            if self.no_val_gap:
-                return [self._remove_val_gap(t) for t in _tag]
-            return _tag
-        if self.slash_split: #split on individuale pars and directionality symbols
-            return self._slash_split(tag)
-        return tag.split(UP) #splip just between levels
 
-    def _split_fn(self, tag_list):
+        # if self.pos: #if just pos no need to deal with the  whole sequence
+        #     return [tag.split(UP)[-1]]
+
+        if not self.direction: #if don't want to keep left/right indication.
+            tag = tag.replace(R, L)   # default: all left
+
+        if self.no_val_gap:
+            tag = tag.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0]
+
+
+        # if self.sub_split: #split on the individuale parts (including missing)
+        #     # _tag = self._tag_split(tag)
+        #     _tag = tag.replace(L, UP+L).replace(R, UP+R).split(UP)
+        #     if self.no_val_gap:
+        #         _tag = [e.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0]
+        #          for e in _tag]
+        #     return _tag
+        # if self.reverse:
+        #     tag = self._revese(tag)
+        # if self.slash_split: #split on individuale pars and directionality symbols
+        #     return self._slash_split(tag)
+        # return tag.split(UP) #splip just between levels
+        return tag
+
+    def _modify_fn(self, tag_list):
         return [self.modify_tag(tag) for tag in tag_list]
 
-    def split_fn(self, tags):
-        # return operate_on_Narray(tags, self.modify_tag)
-        return operate_on_Narray(tags, self._split_fn)
-
+    def modify_fn(self, tags):
+        return _operate_on_Narray(tags, self.modify_tag)
+        # return operate_on_Narray(tags, self._modify_fn)
 
     def combine_tag(self, tag):
         res = []
-        for t in tag:
-            if res and (res[-1].endswith(L) or res[-1].endswith(R)):
-                res[-1] += t
+        _tag = tag
+        if tag[0] in [CL, CR]:
+            res.append(tag[:2])
+            _tag = tag[2:]
+        for t in _tag:
+            if res and (res[-1][-1].endswith(L) or res[-1][-1].endswith(R)):
+                res[-1] += [t]
             elif res and (t.startswith(L) or t.startswith(R)):
-                res[-1] += t
+                res[-1] += [t]
             else:
-                res.append(t)
+                res.append([t])
         return res
+
+
+    # def combine_tag(self, tag):
+    #     res = []
+    #     for t in tag:
+    #         if res and (res[-1].endswith(L) or res[-1].endswith(R)):
+    #             res[-1] += t
+    #         elif res and (t.startswith(L) or t.startswith(R)):
+    #             res[-1] += t
+    #         else:
+    #             res.append(t)
+    #     return res
 
     def combine_fn(self, tags):
         return operate_on_Narray(tags, self.combine_tag)
@@ -273,3 +309,11 @@ class TagOp(object):
 
     def add_left(self, tag):
         return L + tag
+
+# print ("start")
+# # fin = '/Users/katia.patkin/Berkeley/Research/Tagger/POST/tmp.mrg'
+# fin = '/Users/katia.patkin/Berkeley/Research/Tagger/raw_data/wsj/14/wsj_1493.mrg'
+# res = gen_tags(fin)
+# for i, r in enumerate(res):
+#     ri = r
+#     print (i)

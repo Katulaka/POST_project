@@ -98,6 +98,6 @@ class AStar:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
                 if verbose > 1 :
-                    print ("neighbor:", neighbor.data.idx, neighbor.data.rank, 
+                    print ("neighbor:", neighbor.data.idx, neighbor.data.rank,
                                                                 neighbor.fscore)
         return None

@@ -8,6 +8,7 @@ import time
 
 from vocab import Vocab
 from gen_tags import gen_tags, TagOp
+from utils import flatten2list
 
 def get_raw_data(data_path):
 
@@ -43,13 +44,15 @@ def convert_data_flat(src_dir, data_file):
     with open(data_file, 'w') as outfile:
         json.dump(data, outfile)
 
+    return data
+
 
 def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
                 max_len=np.inf):
 
     start_time = time.time()
     if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
-        convert_data_flat(src_dir, data_file)
+        data = convert_data_flat(src_dir, data_file)
     else:
         print ("Data file used: %s" % data_file)
         with open (data_file, 'r') as outfile:
@@ -57,21 +60,18 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
     print("Total time to load data: %f" % (time.time()-start_time))
     dataset = dict()
 
-    flatten3d = lambda x: list(chain.from_iterable(chain.from_iterable(x)))
-    flatten2d = lambda x: list(chain.from_iterable(x))
     _select = lambda A, i: list(np.array(A)[i])
-
     words = data['words']
-    w_vocab = Vocab(flatten2d(words), w_vocab_size)
+    w_vocab = Vocab(flatten2list(words), w_vocab_size)
     indeces = [len(w) <= max_len for w in words]
     dataset['words'] = w_vocab.to_ids(_select(words, indeces))
     print ("Time to get word data %f" % (time.time()-start_time))
     t_op = TagOp(*tags_type)
-    tags = data['tags']
-    _tags = t_op.split_fn(tags)
-    print ("Time for tag split %f" % (time.time()-start_time))
-    t_vocab = Vocab(flatten3d(_tags), t_vocab_size)
+    tags = _select(data['tags'], indeces)
+    _tags = t_op.modify_fn(data['tags'])
+    print ("Time to modify tags %f" % (time.time()-start_time))
+    t_vocab = Vocab(flatten2list(_tags), t_vocab_size)
     print ("Time for tag vocab %f" % (time.time()-start_time))
     dataset['tags'] = t_vocab.to_ids(_select(_tags, indeces))
     print ("Time to get tag data %f" % (time.time()-start_time))
-    return w_vocab, t_vocab, dataset, t_op
+    return w_vocab, t_vocab, dataset, t_op, tags
