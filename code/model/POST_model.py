@@ -130,7 +130,11 @@ class POSTModel(object):
             _lstm_out = tf.concat([self.lstm_out, score_reshape], 2)
 
             mask_pad = tf.not_equal(self.t_in, special_tokens['PAD'])
-            _lstm_out_mod = tf.boolean_mask(_lstm_out, mask_pad)
+            mask_go = tf.not_equal(self.t_in, special_tokens['GO'])
+            mask_eos = tf.not_equal(self.t_in, special_tokens['EOS'])
+
+            mask_all = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
+            _lstm_out_mod = tf.boolean_mask(_lstm_out, mask_all)
 
             w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
                                                     self.n_hidden_lstm],
