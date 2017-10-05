@@ -30,26 +30,28 @@ def main(_):
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
-    parser.add_argument('--reverse', action='store_true', help='')
     parser.add_argument('--no_val_gap', action='store_true', help='')
-    parser.add_argument('--tag_split', action='store_true', help='')
-    parser.add_argument('--slash_split', action='store_true', help='')
+    parser.add_argument('--reverse', action='store_true', help='')
+    # parser.add_argument('--tag_split', action='store_true', help='')
+    # parser.add_argument('--slash_split', action='store_true', help='')
 
     args = parser.parse_args()
 
     # data_file = os.path.join(os.getcwd(), Config.train_dir, 'udata.txt')
-    data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
+    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
+    # data_file = os.path.join(os.getcwd(), Config.train_dir, '_data.txt')
+    data_file = os.path.join(os.getcwd(), Config.train_dir, 'new_data.txt')
 
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
-    w_vocab, t_vocab, train_set, t_op = gen_dataset(Config.src_dir,
+    w_vocab, t_vocab, train_set, t_op, tags = gen_dataset(Config.src_dir,
                                             data_file,
                                             (args.only_pos,
                                             args.keep_direction,
-                                            args.tag_split,
-                                            args.slash_split,
-                                            args.reverse,
+                                            # args.tag_split,
+                                            # args.slash_split,
+                                            # args.reverse,
                                             args.no_val_gap),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
@@ -69,10 +71,20 @@ def main(_):
     elif (args.action == 'decode'):
         orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
                                                 batcher, t_op,
-                                                args.add_pos_in)
+                                                args.add_pos_in, tags)
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
                                 args.add_pos_in, args.stat_file)
+        #import pdb; pdb.set_trace()
+    elif(args.action == 'verify'):
+        verify_tags = POST_main.verify(t_vocab, batcher, t_op)
+        import collections
+        compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+        res = map(lambda to, tn: all(map(lambda x,y: compare(x,y), to, tn)), tags, verify_tags)
+        idx = np.where(np.logical_not(res))[0]
+        verif_tags_miss = np.array(tags)[idx]
+        if verif_tags_miss == []:
+            print ("Search function works")
         import pdb; pdb.set_trace()
     else:
         print("Nothing to do!!")
