@@ -105,12 +105,13 @@ class POSTModel(object):
                                         tf.zeros_like(self.dec_init_state))
 
             lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_lstm,
-                                    forget_bias=1.0, state_is_tuple=True)
+                                                    forget_bias=1.0,
+                                                    state_is_tuple=True)
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
-                                    self.tag_embed,
-                                    initial_state=self.lstm_init,
-                                    sequence_length=self.t_seq_len,
-                                    dtype=self.dtype)
+                                                self.tag_embed,
+                                                initial_state=self.lstm_init,
+                                                sequence_length=self.t_seq_len,
+                                                dtype=self.dtype)
 
     def _add_attention(self, special_tokens):
         with tf.name_scope('Attention'):
@@ -211,11 +212,12 @@ class POSTModel(object):
             self.w_seq_len: enc_len}
         if self.add_pos_in:
             input_feed[self.pos_in] = enc_aux_inputs
-        output_feed = self.dec_init_state
-        dec_init_states = session.run(output_feed, input_feed)
-        return [tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),
-                np.expand_dims(np.zeros_like(i), axis=0))
-                for i in dec_init_states]
+        output_feed = [self.dec_init_state, self.atten_state]
+        dec_init_states, atten_state = session.run(output_feed, input_feed)
+        # return ([tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),
+        #         np.expand_dims(np.zeros_like(i), axis=0))
+        #         for i in dec_init_states], atten_state)
+        return atten_state
 
     def decode_topk(self, session, latest_tokens, dec_init_states, atten_state, k):
         """Return the topK results and new decoder states."""
@@ -224,6 +226,7 @@ class POSTModel(object):
             self.t_in: np.array(latest_tokens),
             self.t_seq_len: np.ones(1, np.int32)}
         output_feed = [self.lstm_out, self.lstm_state, self.pred]
+        # import pdb; pdb.set_trace()
         atten_key, states = session.run(output_feed[:2], input_feed)
         input_feed[self.atten_key] = atten_key
         input_feed[self.atten_state] =  atten_state
