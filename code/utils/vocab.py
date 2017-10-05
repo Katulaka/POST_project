@@ -3,7 +3,7 @@ from __future__ import print_function
 import collections
 import numpy as np
 
-from utils import operate_on_Narray
+from utils import operate_on_Narray, _operate_on_Narray
 
 
 PAD = ['PAD', 0]
@@ -54,9 +54,8 @@ class Vocab(object):
         return [self.token_to_id(el) for el in token_list]
 
     def to_ids(self, sentences):
-        # return operate_on_Narray(sentences, self.token_to_id)
-        return operate_on_Narray(sentences, self.tokens_to_ids)
-        # return map(lambda s: map(lambda w: self.token_to_id(w), s), sentences)
+        return _operate_on_Narray(sentences, self.token_to_id)
+        # return operate_on_Narray(sentences, self.tokens_to_ids)
 
     def id_to_token(self, token_id):
         if token_id not in self._id_to_token:
@@ -69,26 +68,29 @@ class Vocab(object):
     def to_tokens(self, ids):
         # return operate_on_Narray(ids, self.id_to_token)
         return operate_on_Narray(ids, self.ids_to_tokens)
-        # return map(lambda s: map(lambda w: self.id_to_token(w), s), ids)
 
     def get_ctrl_tokens(self):
         return self._special_tokens
 
 
-#TODO change pad function to avoid in place replacment
-def pad(data, mlen=0, pad_token=PAD[1]):
+def _pad(data, max_len, pad_token):
+    pad_len = max_len-len(data)
+    return np.lib.pad(data, (0, pad_len), 'constant', constant_values=(pad_token)).tolist()
 
-    max_len = mlen if mlen > 0 else len(max(data, key=len))
-    for i,el in enumerate(data):
-        pad_len = max_len-len(el)
-        data[i] = np.lib.pad(el, (0, pad_len), 'constant', constant_values=(pad_token))
-    return data
+def pad(data, max_len, pad_token=PAD[1]):
+    return operate_on_Narray(data, _pad, max_len, pad_token)
 
-def add_go(data, start_token=GO[1]):
-    return map(lambda x: [start_token] + x, data)
+def _add_go(data, go_token):
+    return [go_token] + data
 
-def add_eos(data, end_token=EOS[1]):
-    return map(lambda x: x + [end_token], data)
+def add_go(data, go_token=GO[1]):
+    return operate_on_Narray(data, _add_go, go_token)
+
+def _add_eos(data, eos_token):
+    return data+[eos_token]
+
+def add_eos(data, eos_token=EOS[1]):
+    return operate_on_Narray(data, _add_eos, eos_token)
 
 def to_onehot(vec_in, max_len, size):
     vec_out = np.zeros((max_len, size))

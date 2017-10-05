@@ -36,9 +36,7 @@ class POSTModel(object):
         self.w_seq_len = tf.placeholder(tf.int32, [None], 'word-sequence-length')
         self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
         self.t_seq_len = tf.placeholder(tf.int32, [None], 'tag-sequence-length')
-        # self.targets = tf.placeholder(tf.int32, [None, None, None], 'targets')
         self.targets = tf.placeholder(tf.int32, [None], 'targets')
-
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -89,22 +87,15 @@ class POSTModel(object):
                                     sequence_length=self.bidi_in_seq_len,
                                     dtype=self.dtype)
 
-    def _add_bridge(self, special_tokens):
+    def _add_bridge(self):
         with tf.name_scope('Bridge'):
             # LSTM
-            lstm_init = tf.concat(self.bidi_out, 2, name='lstm-init')
-            lstm_init = tf.reshape(lstm_init,
-                                [-1, self.n_hidden_fw + self.n_hidden_bw])
-            # remove padding:
-            mask_pad = tf.not_equal(tf.reshape(self.w_in, [-1]),
-                                            special_tokens['PAD'])
-            mask_go = tf.not_equal(tf.reshape(self.w_in, [-1]),
-                                    special_tokens['GO'])
-            mask_eos = tf.not_equal(tf.reshape(self.w_in, [-1]),
-                                    special_tokens['EOS'])
+            self.atten_state = tf.concat(self.bidi_out, 2, name='lstm-init')
+            self.bo_shape = tf.shape(self.atten_state)
 
-            mask = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
-            self.dec_init_state = tf.boolean_mask(lstm_init, mask)
+            self.dec_init_state = tf.reshape(self.atten_state,
+                                    [-1, self.n_hidden_fw + self.n_hidden_bw])
+
 
     def _add_lstm_layer(self):
         """Generate sequences of tags"""
@@ -121,23 +112,43 @@ class POSTModel(object):
                                     sequence_length=self.t_seq_len,
                                     dtype=self.dtype)
 
+    def _add_attention(self, special_tokens):
+        with tf.name_scope('Attention'):
+            lo_shape = tf.shape(self.lstm_out)
+
+            atten_key = tf.reshape(self.lstm_out,
+                                [self.bo_shape[0], -1, lo_shape[-1]])
+
+            # TODO: add feed forward layer for atten_key
+
+            alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
+                                    atten_key, self.atten_state))
+            score = tf.einsum('aij,ajk->aik', alpha, self.atten_state)
+
+            score_reshape = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
+            _lstm_out = tf.concat([self.lstm_out, score_reshape], 2)
+
+            mask_pad = tf.not_equal(self.t_in, special_tokens['PAD'])
+            _lstm_out_mod = tf.boolean_mask(_lstm_out, mask_pad)
+
+            w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
+                                                    self.n_hidden_lstm],
+                                                    -1.0, 1.0)
+            w_att = tf.Variable(w_att_uniform_dist, name='W-att')
+            # b_att = tf.Variable(tf.zeros([self.n_hidden_lstm]), name='b-att')
+            self.lstm_att = tf.tanh(tf.matmul(_lstm_out_mod, w_att))
 
     def _add_projection(self):
         # compute softmax
         with tf.name_scope('predictions'):
+
             w_uniform_dist = tf.random_uniform([self.n_hidden_lstm,
                                                 self.t_vocab_size],
                                                 -1.0, 1.0)
-            self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-            self.b_out = b_out = tf.Variable(tf.zeros([self.t_vocab_size]),
-                                            name='b-out')
+            w_out = tf.Variable(w_uniform_dist, name='W-out')
+            b_out = tf.Variable(tf.zeros([self.t_vocab_size]), name='b-out')
 
-            outs_reshape = tf.reshape(self.lstm_out, [-1, self.n_hidden_lstm])
-            self.proj = tf.matmul(outs_reshape, w_out) + b_out
-
-            lstm_out_sahpe = tf.shape(self.lstm_out)
-            self.logits = tf.reshape(self.proj,
-                            [lstm_out_sahpe[0], lstm_out_sahpe[1], -1])
+            self.logits = tf.matmul(self.lstm_att, w_out) + b_out
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
     def _add_train_op(self, special_tokens):
@@ -148,14 +159,10 @@ class POSTModel(object):
                         self.learning_rate * self.lr_decay_factor)
 
         with tf.name_scope("loss"):
-            mask_pad = tf.not_equal(tf.reshape(self.t_in, [-1]),
-                                    special_tokens['PAD'])
-            proj = tf.boolean_mask(self.proj, mask_pad)
-            # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            #                             logits=proj, labels=self.targets)
             targets_1hot = tf.one_hot(self.targets, self.t_vocab_size)
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                                    logits=proj, labels=targets_1hot)
+                                                    logits=self.logits,
+                                                    labels=targets_1hot)
             self.loss = tf.reduce_mean(cross_entropy)
 
         self.optimizer = tf.train.AdamOptimizer(
@@ -171,8 +178,9 @@ class POSTModel(object):
             self._add_embeddings()
             self._add_bidi_bridge()
             self._add_bidi_lstm()
-            self._add_bridge(special_tokens)
+            self._add_bridge()
             self._add_lstm_layer()
+            self._add_attention(special_tokens)
             self._add_projection()
             if (self.mode == 'train'):
                 self._add_train_op(special_tokens)
@@ -183,6 +191,7 @@ class POSTModel(object):
 
     def step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
         """ Training step, returns the prediction, loss"""
+
         input_feed = {
             self.w_seq_len: w_seq_len,
             self.t_seq_len: t_seq_len,
@@ -191,6 +200,7 @@ class POSTModel(object):
             self.targets: targets}
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
+
         output_feed = [self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 

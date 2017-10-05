@@ -5,20 +5,33 @@ import numpy as np
 from itertools import islice
 
 from vocab import pad, add_go, add_eos, to_onehot
+from utils import arr_dim, flattenNd, operate_on_Narray
 
 
 class Batcher(object):
 
     def __init__(self, data, batch_size, reverse):
-        self._batch_size = batch_size
         self._data = data
+        self._batch_size = batch_size
         self._revese = reverse
 
     def get_batch_size(self):
         return self._batch_size
 
+    # def seq_len(self, batch_data):
+    #     return map(lambda x: len(x), batch_data)
+
+    def _get_pos(self, data, pos_id):
+        return data[pos_id]
+
+    def get_pos(self, batch_data, pos_id):
+        return operate_on_Narray(batch_data, self._get_pos, pos_id)
+
     def seq_len(self, batch_data):
-        return map(lambda x: len(x), batch_data)
+        return operate_on_Narray(batch_data, len)
+
+    # def seq_max(self, seq_len):
+    #     return operate_on_Narray(batch_data, max)
 
     def get_random_batch(self):
         batch = dict()
@@ -46,33 +59,40 @@ class Batcher(object):
     #     return np.vstack([np.expand_dims(x, 0) for x in batch_1hot])
 
     def process(self, bv):
-        def arr_dim(arr):
-            return 1 + arr_dim(arr[0]) if (type(arr) == list) else 0
-
-        def flatten(arr):
-            return [x for y in arr for x in y]
-
         #Process words input batch
-        bv_w = copy.copy(bv['words'])
+        bv_w = copy.deepcopy(bv['words'].tolist())
         self._seq_len = self.seq_len(bv_w)
         bv_w = add_eos(add_go(bv_w))
         seq_len_w = self.seq_len(bv_w)
-        bv_w_in = self.to_in_data_format(bv_w)
+        max_len_w = max(flattenNd(seq_len_w, arr_dim(seq_len_w)-1))
+        bv_w_pad = pad(bv_w, max_len_w)
+        bv_w_in = np.vstack(bv_w_pad)
 
         #Process tags input batch
-        bv_t = copy.copy(bv['tags'])
-        bv_pos = []
-        if arr_dim(bv_t.tolist()) == 3:
-            pos_id = 0 if self._revese else -1
-            bv_pos = [[tag[pos_id] for tag in tags] for tags in bv_t]
-            bv_pos = add_eos(add_go(bv_pos))
-            bv_pos_in = self.to_in_data_format(bv_pos)
-            bv_t = flatten(bv_t)
-
-        bv_t_eos = flatten(add_eos(bv_t))
+        bv_t = copy.deepcopy(bv['tags'].tolist())
         bv_t_go = add_go(bv_t)
         seq_len_t = self.seq_len(bv_t_go)
-        bv_t_in = self.to_in_data_format(bv_t_go)
+        max_len_t = max(flattenNd(seq_len_t, arr_dim(seq_len_t)-1))
+        _bv_t_pad = pad(bv_t_go, max_len_t)
+
+        bv_t_pad = []
+        for _bv_t in _bv_t_pad:
+            _bv_t = np.array(_bv_t);
+            _bv_t.resize(max_len_w, max_len_t);
+            bv_t_pad.append(_bv_t.tolist())
+        bv_t_pad = flattenNd(bv_t_pad, 1)
+        bv_t_in = np.vstack([np.expand_dims(x, 0) for x in bv_t_pad])
+
+        pos_id = 0 if self._revese else -1
+        bv_pos = self.get_pos(bv_t, pos_id)
+        bv_pos = add_eos(add_go(bv_pos))
+        bv_pos_pad = pad(bv_pos, max_len_w)
+        bv_pos_in = np.vstack(bv_pos_pad)
+
+        bv_t_eos = flattenNd(add_eos(bv_t), 2)
+        seq_len_t = pad(seq_len_t, max_len_w)
+        seq_len_t = flattenNd(seq_len_t, arr_dim(seq_len_t)-1)
+        # import pdb; pdb.set_trace()
         return seq_len_w, seq_len_t, bv_w_in, bv_pos_in, bv_t, bv_t_in, bv_t_eos
 
 
