@@ -201,7 +201,7 @@ class POSTModel(object):
             self.targets: targets}
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
-
+        import pdb; pdb.set_trace()
         output_feed = [self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
@@ -224,13 +224,10 @@ class POSTModel(object):
         input_feed = {
             self.lstm_init : dec_init_states,
             self.t_in: np.array(latest_tokens),
+            self.atten_state : atten_state,
             self.t_seq_len: np.ones(1, np.int32)}
-        output_feed = [self.lstm_out, self.lstm_state, self.pred]
-        # import pdb; pdb.set_trace()
-        atten_key, states = session.run(output_feed[:2], input_feed)
-        input_feed[self.atten_key] = atten_key
-        input_feed[self.atten_state] =  atten_state
-        probs = session.run(output_feed[2], input_feed)
+        output_feed = [self.lstm_state, self.pred]
+        states, probs = session.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
