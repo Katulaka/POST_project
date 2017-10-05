@@ -116,13 +116,13 @@ class POSTModel(object):
         with tf.name_scope('Attention'):
             lo_shape = tf.shape(self.lstm_out)
 
-            atten_key = tf.reshape(self.lstm_out,
+            self.atten_key = atten_key = tf.reshape(self.lstm_out,
                                 [self.bo_shape[0], -1, lo_shape[-1]])
 
             # TODO: add feed forward layer for atten_key
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
-                                    atten_key, self.atten_state))
+                                    self.atten_key, self.atten_state))
             score = tf.einsum('aij,ajk->aik', alpha, self.atten_state)
 
             score_reshape = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
@@ -217,41 +217,17 @@ class POSTModel(object):
                 np.expand_dims(np.zeros_like(i), axis=0))
                 for i in dec_init_states]
 
-    def decode_topk(self, sess, latest_tokens, dec_init_states, k):
+    def decode_topk(self, session, latest_tokens, dec_init_states, atten_state, k):
         """Return the topK results and new decoder states."""
         input_feed = {
-            self.lstm_init: dec_init_states,
-            self.t_in: latest_tokens,
+            self.lstm_init : dec_init_states,
+            self.t_in: np.array(latest_tokens),
             self.t_seq_len: np.ones(1, np.int32)}
-        output_feed = [self.pred , self.lstm_state]
-        results = sess.run(output_feed, input_feed)
-        probs, states = results[0], results[1]
+        output_feed = [self.lstm_out, self.lstm_state, self.pred]
+        atten_key, states = session.run(output_feed[:2], input_feed)
+        input_feed[self.atten_key] = atten_key
+        input_feed[self.atten_state] =  atten_state
+        probs = session.run(output_feed[2], input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
-
-    # def decode_one_tag(sess, w_seq_len, words):
-    #     input_feed = {
-    #         self.word_inputs: words,
-    #         self.w_seq_lens: w_seq_len
-    #     }
-    #     output_feed = self.logits
-    #     results = sess.run(output_feed, input_feed)
-    #     return np.argmax(results, axis=1)
-
-    # def output_tags():
-    #     """Generate only the first tag"""
-    #     with tf.name_scope('predict-tags'):
-    #         w_uniform_dist = tf.random_uniform([n_hidden_fw + n_hidden_bw,
-    #                                             t_vocab_size], -1.0, 1.0)
-    #         self.w_out = w_out = tf.Variable(w_uniform_dist, name='W-out')
-    #         self.b_out = b_out = tf.Variable(
-    #                         tf.zeros([t_vocab_size]), name='b-out')
-    #         self.logits = tf.matmul(self.dec_init_state, w_out) + b_out
-    #         self.pred = tf.nn.softmax(self.logits, name='pred')
-    #
-    #     with tf.name_scope("loss"):
-    #         first_targets_only = tf.slice(self.targets, (0, 1, 0), (-1, 1, -1)) # Keep only the first real tag (not "go")
-    #         self.tag_targets = tag_targets = tf.squeeze(first_targets_only, axis=1)
-    #         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, targets=self.tag_targets)
-    #         self.loss = tf.reduce_mean(cross_entropy)

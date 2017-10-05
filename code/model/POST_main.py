@@ -126,7 +126,6 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, _tags):
                 print ("Staring astar search for sentence %d / %d [tag length %d]"
                 % (i+1, batcher.get_batch_size(),len(beam_tag)))
                 path, tree, new_tag = solve_tree_search(beam_tag, 1)
-                import pdb; pdb.set_trace()
                 decoded_tags.append(new_tag)
             # orig_tags.append(batcher.restore(t_op.combine_fn(t_vocab.to_tokens(_tags))))
 
@@ -152,7 +151,6 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
             tags_cp = copy.copy(tags)
-            import pdb; pdb.set_trace()
             for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
                 try:
                     beam_rank.append(beam_res.index(dec_in) + 1)
