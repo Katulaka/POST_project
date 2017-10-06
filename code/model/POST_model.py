@@ -117,31 +117,32 @@ class POSTModel(object):
         with tf.name_scope('Attention'):
             lo_shape = tf.shape(self.lstm_out)
 
-            self.atten_key = atten_key = tf.reshape(self.lstm_out,
+            self.atten_key = tf.reshape(self.lstm_out,
                                 [self.bo_shape[0], -1, lo_shape[-1]])
 
             # TODO: add feed forward layer for atten_key
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
-                                    self.atten_key, self.atten_state))
+                                            self.atten_key,
+                                            self.atten_state))
             score = tf.einsum('aij,ajk->aik', alpha, self.atten_state)
 
-            score_reshape = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
-            _lstm_out = tf.concat([self.lstm_out, score_reshape], 2)
-
-            mask_pad = tf.not_equal(self.t_in, special_tokens['PAD'])
-            mask_go = tf.not_equal(self.t_in, special_tokens['GO'])
-            mask_eos = tf.not_equal(self.t_in, special_tokens['EOS'])
-
-            mask_all = tf.logical_and(tf.logical_and(mask_pad, mask_go), mask_eos)
-            _lstm_out_mod = tf.boolean_mask(_lstm_out, mask_all)
+            score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
+            con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
 
             w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
                                                     self.n_hidden_lstm],
                                                     -1.0, 1.0)
             w_att = tf.Variable(w_att_uniform_dist, name='W-att')
             # b_att = tf.Variable(tf.zeros([self.n_hidden_lstm]), name='b-att')
-            self.lstm_att = tf.tanh(tf.matmul(_lstm_out_mod, w_att))
+
+            lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik',
+                                            con_lstm_score,
+                                            w_att))
+            # self.lstm_att_pad = lstm_att_pad = tf.tanh(tf.matmul(con_lstm_score_tag, w_att))
+
+            mask_t = tf.sequence_mask(self.t_seq_len)
+            self.lstm_att = tf.boolean_mask(lstm_att_pad, mask_t)
 
     def _add_projection(self):
         # compute softmax
@@ -205,7 +206,6 @@ class POSTModel(object):
             self.targets: targets}
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
-        import pdb; pdb.set_trace()
         output_feed = [self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
@@ -216,12 +216,8 @@ class POSTModel(object):
             self.w_seq_len: enc_len}
         if self.add_pos_in:
             input_feed[self.pos_in] = enc_aux_inputs
-        output_feed = [self.dec_init_state, self.atten_state]
-        dec_init_states, atten_state = session.run(output_feed, input_feed)
-        # return ([tf.contrib.rnn.LSTMStateTuple(np.expand_dims(i, axis=0),
-        #         np.expand_dims(np.zeros_like(i), axis=0))
-        #         for i in dec_init_states], atten_state)
-        return atten_state
+        output_feed = self.atten_state
+        return session.run(output_feed, input_feed)
 
     def decode_topk(self, session, latest_tokens, dec_init_states, atten_state, k):
         """Return the topK results and new decoder states."""

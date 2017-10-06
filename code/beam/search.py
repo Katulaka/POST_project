@@ -106,9 +106,8 @@ class BeamSearch(object):
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            # import pdb; pdb.set_trace()
-            atten_len = enc_seqlen[j]
-            for i, dec_in in enumerate(atten_state[:atten_len]):
+            atten_len = enc_seqlen[j] - 1
+            for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in), axis=0))
@@ -145,7 +144,7 @@ class BeamSearch(object):
                         else:
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
-                print ("Finished beam search for %d / %d" % (i+1, atten_len))
+                print ("Finished beam search for %d / %d" % (i+1, atten_len - 1))
                 decs.append(self.best_hyps(res))
 
         beams = dict()

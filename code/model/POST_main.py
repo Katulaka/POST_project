@@ -151,8 +151,8 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
             tags_cp = copy.copy(tags)
+            tags_cp = [t for tc in tags_cp for t in tc]
             for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
-                import pdb; pdb.set_trace()
                 try:
                     beam_rank.append(beam_res.index(dec_in) + 1)
                 except ValueError:
