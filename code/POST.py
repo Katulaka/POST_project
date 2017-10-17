@@ -37,9 +37,6 @@ def main(_):
 
     args = parser.parse_args()
 
-    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'udata.txt')
-    # data_file = os.path.join(os.getcwd(), Config.train_dir, 'data.txt')
-    # data_file = os.path.join(os.getcwd(), Config.train_dir, '_data.txt')
     data_file = os.path.join(os.getcwd(), Config.train_dir, 'new_data.txt')
 
     # create vocabulary and array of dataset from train file
@@ -69,9 +66,11 @@ def main(_):
         POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
                         args.add_pos_in)
     elif (args.action == 'decode'):
-        orig_tags, dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
-                                                batcher, t_op,
-                                                args.add_pos_in, tags)
+        dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
+                                    batcher, t_op,
+                                    args.add_pos_in)
+                                    # , tags)
+
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
                                 args.add_pos_in, args.stat_file)
