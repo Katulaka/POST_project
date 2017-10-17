@@ -128,7 +128,8 @@ class POSTModel(object):
             score = tf.einsum('aij,ajk->aik', alpha, self.atten_state)
 
             score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
-            con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
+            # con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
+            con_lstm_score = self.lstm_out
 
             w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
                                                     self.n_hidden_lstm],
@@ -139,7 +140,6 @@ class POSTModel(object):
             lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik',
                                             con_lstm_score,
                                             w_att))
-            # self.lstm_att_pad = lstm_att_pad = tf.tanh(tf.matmul(con_lstm_score_tag, w_att))
 
             mask_t = tf.sequence_mask(self.t_seq_len)
             self.lstm_att = tf.boolean_mask(lstm_att_pad, mask_t)
