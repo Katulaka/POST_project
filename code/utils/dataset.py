@@ -8,7 +8,7 @@ import time
 
 from vocab import Vocab
 from gen_tags import gen_tags, TagOp
-from utils import flatten2list
+from utils import flatten_to_1D
 
 def get_raw_data(data_path):
 
@@ -62,7 +62,7 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
 
     _select = lambda A, i: list(np.array(A)[i])
     words = data['words']
-    w_vocab = Vocab(flatten2list(words), w_vocab_size)
+    w_vocab = Vocab(flatten_to_1D(words), w_vocab_size)
     indeces = [len(w) <= max_len for w in words]
     dataset['words'] = w_vocab.to_ids(_select(words, indeces))
     print ("Time to get word data %f" % (time.time()-start_time))
@@ -70,7 +70,7 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
     tags = _select(data['tags'], indeces)
     _tags = t_op.modify_fn(data['tags'])
     print ("Time to modify tags %f" % (time.time()-start_time))
-    t_vocab = Vocab(flatten2list(_tags), t_vocab_size)
+    t_vocab = Vocab(flatten_to_1D(_tags), t_vocab_size)
     print ("Time for tag vocab %f" % (time.time()-start_time))
     dataset['tags'] = t_vocab.to_ids(_select(_tags, indeces))
     print ("Time to get tag data %f" % (time.time()-start_time))
