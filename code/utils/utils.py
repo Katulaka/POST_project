@@ -22,6 +22,6 @@ def flattenNd(A, n):
 def arr_dim(arr):
     return 1 + arr_dim(arr[0]) if (type(arr) == list) else 0
 
-def flatten2list(A):
+def flatten_to_1D(A):
     n =  arr_dim(A) - 1
     return flattenNd(A, n)
