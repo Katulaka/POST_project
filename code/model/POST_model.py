@@ -131,7 +131,8 @@ class POSTModel(object):
             # con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
             con_lstm_score = self.lstm_out
 
-            w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
+            # w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
+            w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm,
                                                     self.n_hidden_lstm],
                                                     -1.0, 1.0)
             w_att = tf.Variable(w_att_uniform_dist, name='W-att')
