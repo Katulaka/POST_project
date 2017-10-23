@@ -109,7 +109,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
         decoded_tags = []
         orig_tags = []
         for bv in batcher.get_batch():
-            w_len, _, words, pos, _, _, _ = batcher.process(bv)
+            w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
                             config.beam_size,
@@ -119,7 +119,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
             beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
             beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
@@ -150,6 +150,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+            # best_beams = bs.greedy_beam_search(sess, words_cp, w_len_cp, pos_cp)
             tags_cp = copy.copy(tags)
             tags_cp = [t for tc in tags_cp for t in tc]
             for dec_in, beam_res in zip(tags_cp, best_beams['tokens']):
@@ -161,6 +162,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
                 json.dump(beam_rank, outfile)
             print ("Finished batch %d/%d: Mean beam rank so for is %f" \
              %(i+1, len_batch_list, np.mean(beam_rank)))
+    import pdb; pdb.set_trace()
     return np.mean(beam_rank)
 
 def verify(t_vocab, batcher, t_op):

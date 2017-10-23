@@ -88,12 +88,13 @@ class BeamSearch(object):
 
          Args:
             sess: tf.Session, session
-            enc_inputs: ndarray of shape (enc_length, 1), the document ids to encode
+            enc_inputs: ndarray of shape (enc_length, 1),
+                        the document ids to encode
             enc_seqlen: ndarray of shape (1), the length of the sequnce
 
          Returns:
             hyps: list of Hypothesis, the best hypotheses found by beam search,
-                ordered by score
+                    ordered by score
          """
         # Run the encoder and extract the outputs and final state.
         # dec_in_state,
@@ -105,14 +106,19 @@ class BeamSearch(object):
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
+            # import pdb; pdb.set_trace()
             print ("Starting batch %d / %d" % (j+1, dec_len))
             atten_len = enc_seqlen[j] - 1
-            for i, dec_in in enumerate(atten_state[1:atten_len]):
+            # for i, dec_in in enumerate(atten_state[1:atten_len]):
+            for i, dec_in in enumerate(atten_state[:atten_len-1]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
-                                    np.expand_dims(np.zeros_like(dec_in), axis=0))
+                                    np.expand_dims(np.zeros_like(dec_in),
+                                                    axis=0))
                 res = []
-                hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
+                hyps = [Hypothesis([self._start_token],
+                        [1.0],
+                        dec_in_state, 1.0)]
                 for steps in xrange(self._max_steps):
                     # Extend each hypothesis.
                     # The first step takes the best K results from first hyps.
@@ -124,12 +130,14 @@ class BeamSearch(object):
                         # states = [hyp.state]
                         states = hyp.state
                         ids, probs, new_state = self._model.decode_topk(sess,
-                                                                    latest_token,
-                                                                    states,
-                                                                    [atten_state],
-                                                                    self._beam_size)
+                                                                latest_token,
+                                                                states,
+                                                                [atten_state],
+                                                                self._beam_size)
                         for j in xrange(self._beam_size):
-                            all_hyps.append(hyp.extend_(ids[j], probs[j], new_state))
+                            all_hyps.append(hyp.extend_(ids[j],
+                                            probs[j],
+                                            new_state))
                     # Filter and collect any hypotheses that have the end token.
                     hyps = []
                     #TODO keep the lowest res and update if res changes
@@ -139,7 +147,7 @@ class BeamSearch(object):
                             #if the end token is reached.
                             res.append(h)
                         elif len(res) >= self._beam_size \
-                                and h.score < min(res, key=lambda h: h.score).score:
+                            and h.score < min(res, key=lambda h: h.score).score:
                             pass
                         else:
                             # Otherwise continue to the extend the hypothesis.
@@ -177,35 +185,52 @@ class BeamSearch(object):
 #     self.prob += [prob]
 #     self.state = new_state
 
-  # def GreedyBeamSearch(self, sess, enc_inputs, enc_seqlen):
-  #   """Performs beam search for decoding.
-  #
-  #   Args:
-  #     sess: tf.Session, session
-  #     enc_inputs: ndarray of shape (enc_length, 1), the document ids to encode
-  #     enc_seqlen: ndarray of shape (1), the length of the sequnce
-  #
-  #   Returns:
-  #     hyps: list of Hypothesis, the best hypotheses found by beam search,
-  #         ordered by score
-  #   """
-  #   # Run the encoder and extract the outputs and final state.
-  #   dec_in_state = self._model.encode_top_state( sess, enc_inputs, enc_seqlen)
-  #   # Replicate the initial states K times for the first step.
-  #   results = []
-  #   for i,dec_in in enumerate(dec_in_state):
-  #       hyps = [Hypothesis([self._start_token], [1.0], dec_in)]
-  #       for steps in xrange(self._max_steps):
-  #           latest_tokens = [[hyp.latest_token for hyp in hyps]]
-  #           states = [hyp.state for hyp in hyps]
-  #
-  #           topk_ids, topk_probs, new_states = self._model.decode_topk(
-  #                     sess, latest_tokens, states)
-  #           top_id = np.argsort(np.squeeze(topk_ids))[-1]
-  #           top_prob = np.squeeze(topk_probs)[top_id]
-  #           hyps[0].Extend(top_id, top_prob, new_states)
-  #       results.extend(hyps)
-  #       print ("Finished deocding %d" %(i))
-  #   ind = [sum(enc_seqlen[:i]) for i in xrange(len(enc_seqlen)+1)]
-  #   res = [results[ind[i]:ind[i+1]] for i in xrange(len(enc_seqlen))]
-  #   return res
+    def greedy_beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs):
+        """Performs beam search for decoding.
+
+        Args:
+          sess: tf.Session, session
+          enc_inputs: ndarray of shape (enc_length, 1), the document ids to encode
+          enc_seqlen: ndarray of shape (1), the length of the sequnce
+
+        Returns:
+          hyps: list of Hypothesis, the best hypotheses found by beam search,
+              ordered by score
+        """
+    # Run the encoder and extract the outputs and final state.
+        atten_state_batch = self._model.encode_top_state(sess,
+                                                    enc_inputs,
+                                                    enc_seqlen,
+                                                    enc_aux_inputs)
+        # Replicate the initial states K times for the first step.
+        decs = []
+        dec_len = len(atten_state_batch)
+        for j, atten_state in enumerate(atten_state_batch):
+            print ("Starting batch %d / %d" % (j+1, dec_len))
+            atten_len = enc_seqlen[j] - 1
+            res = []
+            # for i, dec_in in enumerate(atten_state[1:atten_len]):
+            for i, dec_in in enumerate(atten_state[:atten_len-1]):
+                dec_in_state = tf.contrib.rnn.LSTMStateTuple(
+                                    np.expand_dims(dec_in, axis=0),
+                                    np.expand_dims(np.zeros_like(dec_in),
+                                                    axis=0))
+                hyp = Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)
+                for steps in xrange(self._max_steps):
+                    latest_token = [[hyp.latest_token]]
+                    if latest_token[0][0] == self._end_token:
+                        break
+                    states = hyp.state
+                    ids, probs, new_state = self._model.decode_topk(sess,
+                                                    latest_token,
+                                                    states,
+                                                    [atten_state],
+                                                    1)
+                    hyp = hyp.extend_(ids[0], probs[0], new_state)
+                res.append(hyp)
+            decs.append(res)
+        # import pdb; pdb.set_trace()
+        beams = dict()
+        beams['tokens'] = map(lambda r: map(lambda h: h.tokens[1:-1], r), decs)
+        beams['scores'] = map(lambda r: map(lambda h: h.score, r), decs)
+        return beams
