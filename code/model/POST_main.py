@@ -82,10 +82,14 @@ def train(config, batcher, cp_path, special_tokens, add_pos_in):
 
                 # Decrease learning rate if no improvement
                 # was seen over last 3 times.
-                if len(prev_losses) > 2 and loss > max(prev_losses[-3:]) :
+                # TODO simplify the learning rate update start with 0.1
+                # after 20 steps update to 0.01 and keep it
+                # if len(prev_losses) > 2 and loss > max(prev_losses[-3:]) :
+                #     sess.run(model.learning_rate_decay_op)
+                # if model.learning_rate.eval() < 0.000001:
+                #     sess.run(model.learning_rate.assign(0.1), [])
+                if current_step == 20:
                     sess.run(model.learning_rate_decay_op)
-                if model.learning_rate.eval() < 0.000001:
-                    sess.run(model.learning_rate.assign(0.1), [])
 
                 prev_losses.append(loss)
                 # Save checkpoint and zero timer and loss.

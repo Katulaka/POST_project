@@ -9,7 +9,7 @@ class Config(object):
     word_vocabulary_size = 48368
     tag_vocabulary_size = 11390
     learning_rate = 0.1
-    learning_rate_decay_factor = 0.5
+    learning_rate_decay_factor = 0.1
     steps_per_checkpoint = 10
     beam_size = 5
     dec_timesteps = 20 #TODO
