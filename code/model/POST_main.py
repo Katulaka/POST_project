@@ -90,7 +90,7 @@ def train(config, batcher, cp_path, special_tokens, add_pos_in, w_attn):
                 #     sess.run(model.learning_rate_decay_op)
                 # if model.learning_rate.eval() < 0.000001:
                 #     sess.run(model.learning_rate.assign(0.1), [])
-                if current_stepp == 20:
+                if current_step == 20:
                     sess.run(model.learning_rate_decay_op)
 
                 prev_losses.append(loss)
