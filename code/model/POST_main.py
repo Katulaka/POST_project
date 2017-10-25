@@ -90,7 +90,7 @@ def train(config, batcher, cp_path, special_tokens, add_pos_in, w_attn):
                 #     sess.run(model.learning_rate_decay_op)
                 # if model.learning_rate.eval() < 0.000001:
                 #     sess.run(model.learning_rate.assign(0.1), [])
-                if model.global_step == 20:
+                if current_stepp == 20:
                     sess.run(model.learning_rate_decay_op)
 
                 prev_losses.append(loss)
@@ -171,7 +171,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn, data_file
                 json.dump(beam_rank, outfile)
             print ("Finished batch %d/%d: Mean beam rank so for is %f" \
              %(i+1, len_batch_list, np.mean(beam_rank)))
-    import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
     return np.mean(beam_rank)
 
 def verify(t_vocab, batcher, t_op):
