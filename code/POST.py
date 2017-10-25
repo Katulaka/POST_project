@@ -26,12 +26,14 @@ def main(_):
     parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--add_pos_in', action='store_true', help='')
+    parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--ds_len', type=int, default=np.inf, help='')
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
+
     # parser.add_argument('--tag_split', action='store_true', help='')
     # parser.add_argument('--slash_split', action='store_true', help='')
 
@@ -64,17 +66,17 @@ def main(_):
 
     if (args.action == 'train'):
         POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
-                        args.add_pos_in)
+                        args.add_pos_in, args.attn)
     elif (args.action == 'decode'):
         dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
                                     batcher, t_op,
-                                    args.add_pos_in)
+                                    args.add_pos_in,
+                                    args.attn)
                                     # , tags)
 
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
-                                args.add_pos_in, args.stat_file)
-        #import pdb; pdb.set_trace()
+                                args.add_pos_in, args.attn, args.stat_file)
     elif(args.action == 'verify'):
         verify_tags = POST_main.verify(t_vocab, batcher, t_op)
         import collections

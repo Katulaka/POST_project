@@ -14,7 +14,8 @@ from beam.search import BeamSearch
 from POST_model import POSTModel
 
 
-def get_model(session, config, special_tokens, add_pos_in, mode='decode'):
+def get_model(session, config, special_tokens, add_pos_in,
+             w_attention=True, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
@@ -23,7 +24,8 @@ def get_model(session, config, special_tokens, add_pos_in, mode='decode'):
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size, config.learning_rate,
-                        config.learning_rate_decay_factor, add_pos_in, mode)
+                        config.learning_rate_decay_factor, add_pos_in, mode,
+                        w_attention)
     model.build_graph(special_tokens)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
@@ -44,10 +46,10 @@ def get_model(session, config, special_tokens, add_pos_in, mode='decode'):
         return None
     return model
 
-def train(config, batcher, cp_path, special_tokens, add_pos_in):
+def train(config, batcher, cp_path, special_tokens, add_pos_in, w_attn):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, special_tokens, add_pos_in, 'train')
+        model = get_model(sess, config, special_tokens, add_pos_in, w_attn, 'train')
 
         # This is the training loop.
         step_time = 0.0
@@ -106,9 +108,9 @@ def train(config, batcher, cp_path, special_tokens, add_pos_in):
 
 
 # def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, _tags):
-def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
+def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn):
     with tf.Session() as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in)
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in, w_attn)
 
         decoded_tags = []
         orig_tags = []
@@ -135,10 +137,11 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in):
 
     return decoded_tags
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, data_file):
+def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn, data_file):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in)
+        greedy = False
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in, w_attn)
         beam_rank = []
         batch_list = batcher.get_batch()
         len_batch_list = len(batch_list)

@@ -10,7 +10,8 @@ class POSTModel(object):
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
                 tag_vocabulary_size, learning_rate,learning_rate_decay_factor,
-                add_pos_in, mode, dtype=tf.float32, scope_name='nn_model'):
+                add_pos_in, mode, w_attention, dtype=tf.float32,
+                scope_name='nn_model'):
 
         self.scope_name = scope_name
         self.w_embed_size = word_embedding_size
@@ -28,6 +29,7 @@ class POSTModel(object):
         self.dtype = dtype
         self.mode = mode
         self.add_pos_in = add_pos_in
+        self.w_attn = w_attention
 
     def _add_placeholders(self):
         """Inputs to be fed to the graph."""
@@ -128,11 +130,13 @@ class POSTModel(object):
             score = tf.einsum('aij,ajk->aik', alpha, self.atten_state)
 
             score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
-            # con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
-            con_lstm_score = self.lstm_out
+            if self.w_attn:
+                con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
+            else:
+                con_lstm_score = self.lstm_out
 
-            # w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm * 2,
-            w_att_uniform_dist = tf.random_uniform([self.n_hidden_lstm,
+            w_attn_dim = self.n_hidden_lstm * 2 if self.w_attn else self.n_hidden_lstm
+            w_att_uniform_dist = tf.random_uniform([w_attn_dim,
                                                     self.n_hidden_lstm],
                                                     -1.0, 1.0)
             w_att = tf.Variable(w_att_uniform_dist, name='W-att')
