@@ -156,7 +156,9 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn, data_file
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
-            best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+            search_fn = bs.greedy_beam_search if greedy else bs.beam_search
+            best_beams = search_fn(sess, words_cp, w_len_cp, pos_cp)
+            # best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
             # best_beams = bs.greedy_beam_search(sess, words_cp, w_len_cp, pos_cp)
             tags_cp = copy.copy(tags)
             tags_cp = [t for tc in tags_cp for t in tc]
