@@ -3,7 +3,7 @@ import tensorflow as tf
 import time
 import os
 
-from utils.dataset import gen_dataset
+from utils.dataset import gen_dataset, split_dataset
 import model.POST_main as POST_main
 from utils.conf import Config
 from utils.batcher import Batcher
@@ -44,7 +44,7 @@ def main(_):
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
-    w_vocab, t_vocab, train_set, t_op, tags = gen_dataset(Config.src_dir,
+    w_vocab, t_vocab, dataset, t_op, tags = gen_dataset(Config.src_dir,
                                             data_file,
                                             (args.only_pos,
                                             args.keep_direction,
@@ -54,8 +54,13 @@ def main(_):
                                             args.no_val_gap),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
+    ratio = 0.1
+    train_set, test_set = split_dataset(dataset, ratio)
+    # import pdb; pdb.set_trace()
     # initializing batcher class
-    batcher = Batcher(train_set, args.batch, args.reverse)
+    batcher_train = Batcher(train_set, args.batch, args.reverse)
+    batcher_test = Batcher(test_set, args.batch, args.reverse)
+
 
     # Update config variables
     Config.batch_size = args.batch
@@ -68,11 +73,8 @@ def main(_):
         POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
                         args.add_pos_in, args.attn)
     elif (args.action == 'decode'):
-        dec_tags = POST_main.decode(Config, w_vocab, t_vocab,
-                                    batcher, t_op,
-                                    args.add_pos_in,
-                                    args.attn)
-                                    # , tags)
+        dec_tags = POST_main.decode(Config, w_vocab, t_vocab, batcher_test,
+                                    t_op, args.add_pos_in, args.attn)
 
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,

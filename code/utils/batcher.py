@@ -14,6 +14,7 @@ class Batcher(object):
         self._data = data
         self._batch_size = batch_size
         self._revese = reverse
+        self._d_size = len(data.values()[0])
 
     def get_batch_size(self):
         return self._batch_size
@@ -29,15 +30,30 @@ class Batcher(object):
 
     def get_random_batch(self):
         batch = dict()
-        d_size = len(self._data['words'])
-        d_index = np.random.randint(d_size, size=self._batch_size)
-        batch['words'] = np.array(self._data['words'])[d_index]
-        batch['tags'] = np.array(self._data['tags'])[d_index]
+        # d_size = len(self._data['words'])
+        d_index = np.random.randint(self._d_size, size=self._batch_size)
+        for k in self._data.keys():
+            batch[k] = np.array(self._data[k])[d_index]
+        # batch['words'] = np.array(self._data['words'])[d_index]
+        # batch['tags'] = np.array(self._data['tags'])[d_index]
         return batch
 
+    def get_permute_batch(self):
+        batch = dict()
+        num_batches = np.ceil(float(self._d_size)/self._batch_size)
+        batch_permute = np.random.permutation(int(num_batches))
+        batch = {k : np.array_split(self._data[k], num_batches)
+                    for k in self._data.keys()}
+        # res = [{k: batch[k][i] for k in self._data.keys()}
+        #             for i in batch_permute]
+        # import pdb; pdb.set_trace()
+        return [{k: batch[k][i] for k in self._data.keys()}
+                    for i in batch_permute]
+
+
     def get_batch(self):
-        d_size = len(self._data['words'])
-        num_batches = np.ceil(float(d_size)/self._batch_size)
+        # d_size = len(self._data['words'])
+        num_batches = np.ceil(float(self._d_size)/self._batch_size)
         words = np.array_split(self._data['words'], num_batches)
         tags = np.array_split(self._data['tags'], num_batches)
         return [dict(zip(('words','tags'),(w,t))) for w,t in zip(words, tags)]
