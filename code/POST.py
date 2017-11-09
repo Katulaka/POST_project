@@ -70,8 +70,12 @@ def main(_):
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
 
     if (args.action == 'train'):
-        POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
-                        args.add_pos_in, args.attn)
+        # POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
+        #                 args.add_pos_in, args.attn)
+        POST_main.stat_train(Config, w_vocab, t_vocab, batcher_train,
+                            batcher_test, t_op, args.cp_dir,
+                            w_vocab.get_ctrl_tokens(), args.add_pos_in,
+                            args.attn, args.stat_file)
     elif (args.action == 'decode'):
         dec_tags = POST_main.decode(Config, w_vocab, t_vocab, batcher_test,
                                     t_op, args.add_pos_in, args.attn)

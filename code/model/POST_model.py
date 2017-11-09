@@ -74,14 +74,18 @@ class POSTModel(object):
             self.bidi_in = bidi_w_pos if self.add_pos_in else self.word_embed
             self.bidi_in_seq_len = self.w_seq_len
 
+    # def _add_bidi_lstm(self, reuse):
     def _add_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.name_scope('bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
+
             lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
                                     forget_bias=1.0, state_is_tuple=True)
+                                    # ,reuse = reuse)
             lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
                                     forget_bias=1.0, state_is_tuple=True)
+                                    # ,reuse = reuse)
             # Get lstm cell output
             self.bidi_out, self.bidi_states = tf.nn.bidirectional_dynamic_rnn(
                                     lstm_fw_cell, lstm_bw_cell,
@@ -99,6 +103,7 @@ class POSTModel(object):
                                     [-1, self.n_hidden_fw + self.n_hidden_bw])
 
 
+    # def _add_lstm_layer(self, reuse):
     def _add_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.name_scope('LSTM-Layer'):
@@ -109,6 +114,7 @@ class POSTModel(object):
             lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_lstm,
                                                     forget_bias=1.0,
                                                     state_is_tuple=True)
+                                                    # ,reuse = reuse)
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
                                                 self.tag_embed,
                                                 initial_state=self.lstm_init,
@@ -176,28 +182,32 @@ class POSTModel(object):
                                                     labels=targets_1hot)
             self.loss = tf.reduce_mean(cross_entropy)
 
-        self.optimizer = tf.train.AdamOptimizer(
-            learning_rate=self.learning_rate).minimize(
-                self.loss, global_step=self.global_step)
+        self.optimizer = tf.train.GradientDescentOptimizer(
+                self.learning_rate).minimize(
+                        self.loss, global_step=self.global_step)
+        # self.optimizer = tf.train.AdamOptimizer(
+        #     learning_rate=self.learning_rate).minimize(
+        #         self.loss, global_step=self.global_step)
 
 
-    def build_graph(self, special_tokens):
+    def build_graph(self, graph, special_tokens):
         """ Function builds the computation graph """
-        with tf.variable_scope(self.scope_name):
-            self.global_step = tf.Variable(0, trainable=False, name='g_step')
-            self._add_placeholders()
-            self._add_embeddings()
-            self._add_bidi_bridge()
-            self._add_bidi_lstm()
-            self._add_bridge()
-            self._add_lstm_layer()
-            self._add_attention(special_tokens)
-            self._add_projection()
-            if (self.mode == 'train'):
-                self._add_train_op(special_tokens)
-        all_variables = [k for k in tf.global_variables()
-                        if k.name.startswith(self.scope_name)]
-        self.saver = tf.train.Saver(all_variables)
+        with graph.as_default():
+            with tf.variable_scope(self.scope_name):
+                self.global_step = tf.Variable(0, trainable=False, name='g_step')
+                self._add_placeholders()
+                self._add_embeddings()
+                self._add_bidi_bridge()
+                self._add_bidi_lstm()
+                self._add_bridge()
+                self._add_lstm_layer()
+                self._add_attention(special_tokens)
+                self._add_projection()
+                if (self.mode == 'train'):
+                    self._add_train_op(special_tokens)
+            all_variables = [k for k in tf.global_variables()
+                            if k.name.startswith(self.scope_name)]
+            self.saver = tf.train.Saver(all_variables)
 
 
     def step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
