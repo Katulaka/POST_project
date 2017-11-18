@@ -68,22 +68,27 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, reverse_path = False, verbose = 0):
+    def astar(self, start, goal, num_goals = 3, reverse_path = False, verbose = 0):
         searchNodes = AStar.SearchNodeDict()
         openSet = []
+        goals = []
         for strt in  start:
             if self.is_goal_reached(strt, goal):
-                return [strt]
+                # return [strt]
+                goals.append(strt)
             cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
             startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
-        while openSet:
+        # while openSet:
+        while openSet and len(goals) < num_goals:
+            pass
             current = heappop(openSet)
             if verbose > 0:
                 print "---------------------------------------------------"
                 print "current:", current.data.idx, current.data.rank, current.fscore
             if self.is_goal_reached(current.data, goal):
-                return self.reconstruct_path(current, reverse_path)
+                # return self.reconstruct_path(current, reverse_path)
+                goals.append(self.reconstruct_path(current, reverse_path))
             current.out_openset = True
             current.closed = True
             self.move_to_closed(current.data)
@@ -100,4 +105,5 @@ class AStar:
                 if verbose > 1 :
                     print ("neighbor:", neighbor.data.idx, neighbor.data.rank,
                                                                 neighbor.fscore)
-        return None
+        # return None
+        return goals

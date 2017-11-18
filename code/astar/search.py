@@ -233,14 +233,20 @@ def _find_tag(tree):
     return extend_path(tree, new_tag)
 
 def solve_tree_search(tag_matrix, verbose):
-
     tags = convert_to_TagTree(tag_matrix)
     max_lid = len(tag_matrix)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    path = Solver(tags).astar(start, goal, verbose = verbose)
-    if path is not None:
+    paths = Solver(tags).astar(start, goal, verbose = verbose)
+    # if path is not None:
+    # if paths != []:
+    trees_res = []
+    tags_res = []
+    for path in paths:
         path = list(path)[-1]
-        return (zip(range(path.idx[1]), path.rank, [0]*len(path.rank)), path.tree[0], _find_tag(path.tree[0]))
-    return [], [], []
+        trees_res.append(path.tree[0])
+        tags_res.append(_find_tag(path.tree[0]))
+        # return (zip(range(path.idx[1]), path.rank, [0]*len(path.rank)), path.tree[0], _find_tag(path.tree[0]))
+    # return [], [], []
+    return trees_res, tags_res
