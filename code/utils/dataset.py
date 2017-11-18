@@ -77,7 +77,6 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
     return w_vocab, t_vocab, dataset, t_op, tags
 
 def split_dataset(dataset, ratio):
-    # import pdb; pdb.set_trace()
     train_len = int(len(dataset[dataset.keys()[0]])*(1 - ratio))
     train = dict((k, v[:train_len]) for k, v in dataset.items())
     test = dict((k, v[train_len:]) for k, v in dataset.items())

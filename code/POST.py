@@ -56,7 +56,6 @@ def main(_):
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
     ratio = 0.1
     train_set, test_set = split_dataset(dataset, ratio)
-    # import pdb; pdb.set_trace()
     # initializing batcher class
     batcher_train = Batcher(train_set, args.batch, args.reverse)
     batcher_test = Batcher(test_set, args.batch, args.reverse)

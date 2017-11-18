@@ -268,7 +268,6 @@ def verify(t_vocab, batcher, t_op):
     decoded_tags = []
     for bv in batcher.get_batch():
         _, _, _, _, tags, _, _ = batcher.process(bv)
-        import pdb; pdb.set_trace()
         verify_tags = t_op.combine_fn(t_vocab.to_tokens(tags))
         verify_pair = [[pair] for pair in zip(verify_tags, [1.]*len(tags))]
         for verify_tag in batcher.restore(verify_pair):

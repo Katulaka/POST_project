@@ -46,7 +46,6 @@ class Batcher(object):
                     for k in self._data.keys()}
         # res = [{k: batch[k][i] for k in self._data.keys()}
         #             for i in batch_permute]
-        # import pdb; pdb.set_trace()
         return [{k: batch[k][i] for k in self._data.keys()}
                     for i in batch_permute]
 

@@ -205,11 +205,9 @@ def gen_tags(fin):
             # tst = extend_path(tree, path.values())
             # res = [t[0] for t in tst if t[0] in ['>', '<']]
             # if len(res) != len(tst) - 1:
-            #     import pdb; pdb.set_trace()
             yield (extend_path(tree, path.values()),
                             [tree[key].tag for key in path.keys()])
         except:
-            # import pdb; pdb.set_trace()
             print ("Wrong tree %d in %s" % (i, fin))
 
 

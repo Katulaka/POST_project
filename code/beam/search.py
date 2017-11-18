@@ -106,7 +106,6 @@ class BeamSearch(object):
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
-            # import pdb; pdb.set_trace()
             print ("Starting batch %d / %d" % (j+1, dec_len))
             atten_len = enc_seqlen[j] - 1
             # for i, dec_in in enumerate(atten_state[1:atten_len]):
@@ -229,7 +228,6 @@ class BeamSearch(object):
                     hyp = hyp.extend_(ids[0], probs[0], new_state)
                 res.append(hyp)
             decs.append(res)
-        # import pdb; pdb.set_trace()
         beams = dict()
         beams['tokens'] = map(lambda r: map(lambda h: h.tokens[1:-1], r), decs)
         beams['scores'] = map(lambda r: map(lambda h: h.score, r), decs)

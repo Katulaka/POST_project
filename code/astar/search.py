@@ -104,7 +104,6 @@ class TagNode(object):
         # for i in xrange(self.rid, self.lid):
         #      trees.append(tags[i][self.rank[i-self.rid]].tree)
         # ct = self.combine_trees(trees)
-        # import pdb; pdb.set_trace()
         ct = self.combine_trees(self.tree)
         if len(ct) == 1 :
             # self.tree = ct[0]
@@ -163,7 +162,6 @@ class Solver(AStar):
 
     def neighbors(self, node):
         neighbors = []
-        # import pdb; pdb.set_trace()
         for nb in self.cl.getr(node.lid):
             nb_node = TagNode(node.rid, nb.lid, node.rank+nb.rank, node.tree + nb.tree)
             if nb_node.is_valid(self.tags) and nb_node not in self.seen:
@@ -200,7 +198,6 @@ def convert_to_TagTree(tag_matrix):
     return tags
 
 def find_tag(tree):
-    import pdb; pdb.set_trace()
     sorted_nodes = sorted([t.identifier for t in tree.all_nodes()])
     new_tag = []
     while (sorted_nodes):
