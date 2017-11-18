@@ -24,7 +24,7 @@ class TagTree(object):
         for tag_nodes in self.tag:
             if tag_nodes[0] in [CL, CR]:
                 c_side = tag_nodes[0]
-                _tag_nodes = tag_nodes[1:]
+                _tag_nodes = tag_nodes[1:] if len(tag_nodes) > 1 else ['']
             else:
                 c_side = ''
                 _tag_nodes = tag_nodes
