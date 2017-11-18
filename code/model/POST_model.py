@@ -10,7 +10,7 @@ class POSTModel(object):
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
                 tag_vocabulary_size, learning_rate,learning_rate_decay_factor,
-                add_pos_in, mode, w_attention, dtype=tf.float32,
+                add_pos_in, add_w_pos_in, w_attention, mode, dtype=tf.float32,
                 scope_name='nn_model'):
 
         self.scope_name = scope_name
@@ -29,6 +29,7 @@ class POSTModel(object):
         self.dtype = dtype
         self.mode = mode
         self.add_pos_in = add_pos_in
+        self.add_w_pos_in = add_w_pos_in
         self.w_attn = w_attention
 
     def _add_placeholders(self):
@@ -69,9 +70,9 @@ class POSTModel(object):
 
     def _add_bidi_bridge(self):
         with tf.name_scope('BiDi-Bridge'):
-            bidi_w_pos = tf.concat([self.word_embed, self.pos_embed],
+            self.w_pos_embed = tf.concat([self.word_embed, self.pos_embed],
                                     2, 'bidi-in')
-            self.bidi_in = bidi_w_pos if self.add_pos_in else self.word_embed
+            self.bidi_in = self.w_pos_embed if self.add_pos_in else self.word_embed
             self.bidi_in_seq_len = self.w_seq_len
 
     # def _add_bidi_lstm(self, reuse):
@@ -96,11 +97,17 @@ class POSTModel(object):
     def _add_bridge(self):
         with tf.name_scope('Bridge'):
             # LSTM
-            self.atten_state = tf.concat(self.bidi_out, 2, name='lstm-init')
+            _bidi_out = tf.concat(self.bidi_out, 2, name='lstm-init')
+            bidi_out_w_pos = tf.concat([self.w_pos_embed, _bidi_out], 2)
+            self.atten_state = bidi_out_w_pos if self.add_w_pos_in else _bidi_out
+            # self.atten_state = tf.concat(self.bidi_out, 2, name='lstm-init')
             self.bo_shape = tf.shape(self.atten_state)
-
-            self.dec_init_state = tf.reshape(self.atten_state,
-                                    [-1, self.n_hidden_fw + self.n_hidden_bw])
+            if self.add_w_pos_in:
+                self.att_shape = self.w_embed_size + self.pos_embed_size + \
+                            self.n_hidden_fw + self.n_hidden_bw
+            else:
+                self.att_shape = self.n_hidden_fw + self.n_hidden_bw
+            self.dec_init_state = tf.reshape(self.atten_state, [-1, self.att_shape])
 
 
     # def _add_lstm_layer(self, reuse):
@@ -111,10 +118,10 @@ class POSTModel(object):
                                         self.dec_init_state,
                                         tf.zeros_like(self.dec_init_state))
 
-            lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_lstm,
+            lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.att_shape,
+            # self.n_hidden_lstm,
                                                     forget_bias=1.0,
                                                     state_is_tuple=True)
-                                                    # ,reuse = reuse)
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
                                                 self.tag_embed,
                                                 initial_state=self.lstm_init,
@@ -141,7 +148,8 @@ class POSTModel(object):
             else:
                 con_lstm_score = self.lstm_out
 
-            w_attn_dim = self.n_hidden_lstm * 2 if self.w_attn else self.n_hidden_lstm
+            # w_attn_dim = self.n_hidden_lstm * 2 if self.w_attn else self.n_hidden_lstm
+            w_attn_dim = self.att_shape * 2 if self.w_attn else self.att_shape
             w_att_uniform_dist = tf.random_uniform([w_attn_dim,
                                                     self.n_hidden_lstm],
                                                     -1.0, 1.0)

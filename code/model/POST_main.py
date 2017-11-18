@@ -14,7 +14,7 @@ from beam.search import BeamSearch
 from POST_model import POSTModel
 
 
-def get_model(session, config, special_tokens, add_pos_in,
+def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
               graph, w_attention=True, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
@@ -24,8 +24,8 @@ def get_model(session, config, special_tokens, add_pos_in,
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size, config.learning_rate,
-                        config.learning_rate_decay_factor, add_pos_in, mode,
-                        w_attention)
+                        config.learning_rate_decay_factor, add_pos_in,
+                        add_w_pos_in, w_attention, mode)
 
     model.build_graph(graph, special_tokens)
 
@@ -47,10 +47,17 @@ def get_model(session, config, special_tokens, add_pos_in,
         return None
     return model
 
-def train(config, batcher, cp_path, special_tokens, add_pos_in, w_attn):
+def train(config, batcher, cp_path, special_tokens, add_pos_in, add_w_pos_in,
+            w_attn):
 
     with tf.Session() as sess:
-        model = get_model(sess, config, special_tokens, add_pos_in, w_attn, 'train')
+        model = get_model(sess,
+                            config,
+                            special_tokens,
+                            add_pos_in,
+                            add_w_pos_in,
+                            w_attn,
+                            'train')
 
         # This is the training loop.
         step_time = 0.0
@@ -102,15 +109,22 @@ def train(config, batcher, cp_path, special_tokens, add_pos_in, w_attn):
                 sys.stdout.flush()
 
 
-def _train(config, special_tokens, add_pos_in, w_attn, batcher, cp_path):
+def _train(config, special_tokens, add_pos_in, add_w_pos_in, w_attn, batcher,
+            cp_path):
 
     step_time, loss = 0.0, 0.0
     num_epochs = 2
     train_graph = tf.Graph()
 
     with tf.Session(graph=train_graph) as sess:
-        model = get_model(sess, config, special_tokens, add_pos_in, train_graph,
-                            w_attn, 'train')
+        model = get_model(sess,
+                            config,
+                            special_tokens,
+                            add_pos_in,
+                            add_w_pos_in,
+                            train_graph,
+                            w_attn,
+                            'train')
 
         current_step =  model.global_step.eval()
         for i in range(num_epochs):
@@ -148,21 +162,60 @@ def _train(config, special_tokens, add_pos_in, w_attn, batcher, cp_path):
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
 
-def stat_train(config, w_vocab, t_vocab, batcher_train, batcher_test, t_op,
-                cp_path, special_tokens, add_pos_in, w_attn, data_file):
+def _eval(config, special_tokens, add_pos_in, add_w_pos_in, w_attn, batcher,
+            cp_path):
+
+    step_time, loss = 0.0, 0.0
+    eval_graph = tf.Graph()
+    current_step =  0
+
+    with tf.Session(graph=eval_graph) as sess:
+        model = get_model(sess,
+                            config,
+                            special_tokens,
+                            add_pos_in,
+                            add_w_pos_in,
+                            eval_graph,
+                            w_attn)
+        for bv in batcher.get_permute_batch():
+            start_time = time.time()
+            w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
+            step_loss = model.eval_step(sess, w_len, t_len, words, pos, tags,
+                                        targets)
+            step_time += (time.time() - start_time)\
+                             / config.steps_per_checkpoint
+            loss += step_loss / config.steps_per_checkpoint
+            current_step += 1
+            # Once in a while, we save checkpoint, print statistics
+            # if current_step % config.steps_per_checkpoint == 0:
+                # Print statistics for the previous epoch.
+            perplex = math.exp(loss) if loss < 300 else float('inf')
+            print ("global step %d step-time %.2f"
+                    " perplexity %.6f (loss %.6f)" %
+                   (current_step, step_time, perplex, loss))
+            sys.stdout.flush()
+        return loss
+
+
+
+def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
+                add_pos_in, add_w_pos_in, w_attn, th_loss):
 
     # This is the training loop.
-    beam_mean_rank_prev = config.beam_size + 1
-    beam_mean_rank = config.beam_size
-    while beam_mean_rank < beam_mean_rank_prev:
-        beam_mean_rank_prev = beam_mean_rank
-        _train(config, special_tokens, add_pos_in, w_attn, batcher_train,
-                cp_path)
+    eval_loss = np.inf
+    eval_losses = []
+    while eval_loss > th_loss:
+        _train(config, special_tokens, add_pos_in, add_w_pos_in, w_attn,
+                batcher_train, cp_path)
 
-        beam_mean_rank = stats(config, w_vocab, t_vocab, batcher_test,
-                                t_op, add_pos_in, w_attn, data_file)
+        eval_loss = _eval(config, special_tokens, add_pos_in, add_w_pos_in,
+                            w_attn, batcher_test, cp_path)
 
-def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn):
+        eval_losses.append(eval_loss)
+
+
+def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
+            w_attn):
 
     decode_graph = tf.Graph()
     with tf.Session(graph=decode_graph) as sess:
@@ -170,6 +223,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn):
                             config,
                             w_vocab.get_ctrl_tokens(),
                             add_pos_in,
+                            add_w_pos_in,
                             decode_graph,
                             w_attn)
 
@@ -228,12 +282,18 @@ def to_mrg(tree, v):
 
 
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, w_attn, data_file):
+def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
+            w_attn, data_file):
     stat_graph = tf.Graph()
     with tf.Session(graph=stat_graph) as sess:
         greedy = False
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in,
-                            stat_graph, w_attn)
+        model = get_model(sess,
+                            config,
+                            w_vocab.get_ctrl_tokens(),
+                            add_pos_in,
+                            add_w_pos_in,
+                            stat_graph,
+                            w_attn)
         beam_rank = []
         batch_list = batcher.get_batch()
         len_batch_list = len(batch_list)

@@ -26,6 +26,7 @@ def main(_):
     parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--add_pos_in', action='store_true', help='')
+    parser.add_argument('--add_w_pos_in', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--ds_len', type=int, default=np.inf, help='')
     parser.add_argument('--beam', type=int, default=5, help='')
@@ -71,27 +72,33 @@ def main(_):
     if (args.action == 'train'):
         # POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
         #                 args.add_pos_in, args.attn)
-        POST_main.stat_train(Config, w_vocab, t_vocab, batcher_train,
-                            batcher_test, t_op, args.cp_dir,
+        th_loss = 0.1
+        POST_main.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
                             w_vocab.get_ctrl_tokens(), args.add_pos_in,
-                            args.attn, args.stat_file)
+                            args.add_w_pos_in, args.attn, th_loss)
+
     elif (args.action == 'decode'):
-        dec_tags = POST_main.decode(Config, w_vocab, t_vocab, batcher_test,
-                                    t_op, args.add_pos_in, args.attn)
+        mrg_tags, decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
+                                                    batcher_test, t_op,
+                                                    args.add_pos_in,
+                                                    args.add_w_pos_in,
+                                                    args.attn)
+        import pdb; pdb.set_trace()
 
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
-                                args.add_pos_in, args.attn, args.stat_file)
+                                args.add_pos_in, args.add_w_pos_in,
+                                args.attn, args.stat_file)
     elif(args.action == 'verify'):
         verify_tags = POST_main.verify(t_vocab, batcher, t_op)
         import collections
         compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
-        res = map(lambda to, tn: all(map(lambda x,y: compare(x,y), to, tn)), tags, verify_tags)
+        res = map(lambda to, tn: all(map(lambda x,y: compare(x,y), to, tn)),
+                                        tags, verify_tags)
         idx = np.where(np.logical_not(res))[0]
         verif_tags_miss = np.array(tags)[idx]
         if verif_tags_miss == []:
             print ("Search function works")
-        import pdb; pdb.set_trace()
     else:
         print("Nothing to do!!")
 
