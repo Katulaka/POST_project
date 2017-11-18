@@ -176,12 +176,7 @@ class POSTModel(object):
             self.logits = tf.matmul(self.lstm_att, w_out) + b_out
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
-    def _add_train_op(self, special_tokens):
-
-        self.learning_rate = tf.Variable(float(self.lr),
-                                trainable=False, dtype=self.dtype)
-        self.learning_rate_decay_op = self.learning_rate.assign(
-                        self.learning_rate * self.lr_decay_factor)
+    def _add_loss(self):
 
         with tf.name_scope("loss"):
             targets_1hot = tf.one_hot(self.targets, self.t_vocab_size)
@@ -189,6 +184,14 @@ class POSTModel(object):
                                                     logits=self.logits,
                                                     labels=targets_1hot)
             self.loss = tf.reduce_mean(cross_entropy)
+
+
+    def _add_train_op(self, special_tokens):
+
+        self.learning_rate = tf.Variable(float(self.lr),
+                                trainable=False, dtype=self.dtype)
+        self.learning_rate_decay_op = self.learning_rate.assign(
+                        self.learning_rate * self.lr_decay_factor)
 
         self.optimizer = tf.train.GradientDescentOptimizer(
                 self.learning_rate).minimize(
@@ -211,6 +214,7 @@ class POSTModel(object):
                 self._add_lstm_layer()
                 self._add_attention(special_tokens)
                 self._add_projection()
+                self._add_loss()
                 if (self.mode == 'train'):
                     self._add_train_op(special_tokens)
             all_variables = [k for k in tf.global_variables()
@@ -230,6 +234,20 @@ class POSTModel(object):
         if self.add_pos_in:
             input_feed[self.pos_in] = pos_in
         output_feed = [self.loss, self.optimizer]
+        return session.run(output_feed, input_feed)
+
+    def eval_step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
+        """ Training step, returns the prediction, loss"""
+
+        input_feed = {
+            self.w_seq_len: w_seq_len,
+            self.t_seq_len: t_seq_len,
+            self.w_in: w_in,
+            self.t_in: t_in,
+            self.targets: targets}
+        if self.add_pos_in:
+            input_feed[self.pos_in] = pos_in
+        output_feed = self.loss
         return session.run(output_feed, input_feed)
 
     def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs):
