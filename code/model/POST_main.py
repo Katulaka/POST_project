@@ -216,7 +216,7 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
 
 def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
-            w_attn):
+            w_attn, num_goals):
 
     decode_graph = tf.Graph()
     with tf.Session(graph=decode_graph) as sess:
@@ -260,8 +260,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                 # path, tree, new_tag = solve_tree_search(beam_tag, 1)
                 # decoded_tags.append(new_tag)
                 _mrg_tags = []
-                trees, new_tags = solve_tree_search(beam_tag, 1)
+                trees, new_tags = solve_tree_search(beam_tag, num_goals, 1)
                 decoded_tags.append(new_tags)
+                import pdb; pdb.set_trace()
                 # if trees == []:
                 #     _mrg_tags.append([''])
                 for tree in trees:

@@ -34,6 +34,7 @@ def main(_):
     parser.add_argument('--keep_direction', action='store_true', help='')
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
+    parser.add_argument('--num_goals', type=int, default=1, help='')
 
     # parser.add_argument('--tag_split', action='store_true', help='')
     # parser.add_argument('--slash_split', action='store_true', help='')
@@ -82,7 +83,8 @@ def main(_):
                                                     batcher_test, t_op,
                                                     args.add_pos_in,
                                                     args.add_w_pos_in,
-                                                    args.attn)
+                                                    args.attn,
+                                                    args.num_goals)
         import pdb; pdb.set_trace()
 
     elif(args.action == 'stats'):

@@ -64,7 +64,7 @@ class TagNode(object):
             sub_tag_trees = trees_cp[ptr : ptr+2]
             roots = []
             for t, s in zip(sub_tag_trees, (CR, CL)):
-                #check if 1st tree combines to the right and 
+                #check if 1st tree combines to the right and
                 # 2nd tree combine combines to the left
                 #and also take trees that dont have missing nodes
                 if t[t.root].data.comb_side == s and \
@@ -240,13 +240,13 @@ def _find_tag(tree):
         new_tag.append(sub_tag)
     return extend_path(tree, new_tag)
 
-def solve_tree_search(tag_matrix, verbose):
+def solve_tree_search(tag_matrix, verbose, num_goals):
     tags = convert_to_TagTree(tag_matrix)
     max_lid = len(tag_matrix)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    paths = Solver(tags).astar(start, goal, verbose = verbose)
+    paths = Solver(tags).astar(start, goal, num_goals, verbose = verbose)
     # if path is not None:
     # if paths != []:
     trees_res = []
