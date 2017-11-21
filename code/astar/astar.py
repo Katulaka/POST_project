@@ -4,6 +4,7 @@
 from abc import ABCMeta, abstractmethod
 from heapq import heappush, heappop
 
+from utils.gen_tags import to_mrg
 
 class AStar:
     __metaclass__ = ABCMeta
@@ -86,6 +87,9 @@ class AStar:
             if verbose > 0:
                 print "---------------------------------------------------"
                 print "current:", current.data.idx, current.data.rank, current.fscore
+                v = {l.identifier: "" for l in current.data.tree[0].leaves()}
+                print "current:", to_mrg(current.data.tree[0], v)
+                # import pdb; pdb.set_trace()
             if self.is_goal_reached(current.data, goal):
                 # return self.reconstruct_path(current, reverse_path)
                 goals.append(self.reconstruct_path(current, reverse_path))

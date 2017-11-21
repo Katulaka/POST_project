@@ -210,6 +210,19 @@ def gen_tags(fin):
         except:
             print ("Wrong tree %d in %s" % (i, fin))
 
+def to_mrg(tree, v):
+
+    nid = tree.root
+    if tree[nid].is_leaf():
+        return  ' (' + tree[nid].tag + ' ' + v[nid] + ')'
+
+    res = ' (' + tree[nid].tag
+
+    for c_nid in sorted(tree.children(nid), key=lambda x: x.identifier):
+        res += to_mrg(tree.subtree(c_nid.identifier), v)
+
+    return res + ')'
+
 
 class TagOp(object):
 

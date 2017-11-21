@@ -12,6 +12,7 @@ import numpy as np
 from astar.search import solve_tree_search
 from beam.search import BeamSearch
 from POST_model import POSTModel
+from utils.gen_tags import to_mrg
 
 
 def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
@@ -273,19 +274,18 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                 mrg_tags.append(_mrg_tags)
     return mrg_tags, decoded_tags
 
-def to_mrg(tree, v):
-
-    nid = tree.root
-    if tree[nid].is_leaf():
-        return  ' (' + tree[nid].tag + ' ' + v[nid] + ')'
-
-    res = ' (' + tree[nid].tag
-
-    for c_nid in sorted(tree.children(nid), key=lambda x: x.identifier):
-        res += to_mrg(tree.subtree(c_nid.identifier), v)
-
-    return res + ')'
-
+# def to_mrg(tree, v):
+#
+#     nid = tree.root
+#     if tree[nid].is_leaf():
+#         return  ' (' + tree[nid].tag + ' ' + v[nid] + ')'
+#
+#     res = ' (' + tree[nid].tag
+#
+#     for c_nid in sorted(tree.children(nid), key=lambda x: x.identifier):
+#         res += to_mrg(tree.subtree(c_nid.identifier), v)
+#
+#     return res + ')'
 
 
 def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
