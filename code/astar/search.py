@@ -62,14 +62,22 @@ class TagNode(object):
         while ptr < len(trees_cp)-1:
             root_leave_id = []
             sub_tag_trees = trees_cp[ptr : ptr+2]
-            # roots = [t[t.root] for t in sub_tag_trees]
-            # leaves = [[l for l in t.leaves(t.root) if l.data.miss and l.data.side == s]
-                        # for t, s in zip(sub_tag_trees, (R, L)) ]
-            roots = [t[t.root] if t[t.root].data.comb_side == s else None
-                        for t,s in zip(sub_tag_trees, (CR, CL))]
+            roots = []
+            for t, s in zip(sub_tag_trees, (CR, CL)):
+                #check if 1st tree combines to the right and 
+                # 2nd tree combine combines to the left
+                #and also take trees that dont have missing nodes
+                if t[t.root].data.comb_side == s and \
+                    all([n.data.miss_side == '' for n in t.all_nodes()]):
+                    roots.append(t[t.root])
+                else:
+                    roots.append(None)
+
+            # roots = [t[t.root] if t[t.root].data.comb_side == s else None
+            #             for t,s in zip(sub_tag_trees, (CR, CL))]
+            #TODO roots that don't have missing nodes
             leaves = [[l for l in t.leaves(t.root) if l.data.miss_side == s]
                         for t, s in zip(sub_tag_trees, (R, L)) ]
-            #TODO add support for directions
             for r, ls in zip(roots, leaves[::-1]):
                 leaves_tags = map(lambda x: x.tag, ls)
                 if r is not None and ANY in leaves_tags:
