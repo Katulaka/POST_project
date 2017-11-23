@@ -82,7 +82,7 @@ class AStar:
             heappush(openSet, startNode)
         # while openSet:
         while openSet and len(goals) < num_goals:
-            pass
+            # pass
             current = heappop(openSet)
             if verbose > 0:
                 print "---------------------------------------------------"

@@ -55,11 +55,59 @@ class TagNode(object):
         #     return False
         return self.idx == other.idx and self.rank == other.rank
         # return self.__dict__ == other.__dict__
-
     def combine_trees(self, trees):
+        ptr = 0
+
+        trees_cp = copy.deepcopy(trees)
+        while ptr < len(trees_cp)-1:
+            combine = False
+            t_l = trees_cp[ptr]
+            t_r = trees_cp[ptr+1]
+            if t_l[t_l.root].data.comb_side == CR and \
+                all([n.data.miss_side == '' for n in t_l.all_nodes()]):
+                root = t_l[t_l.root]
+                leaves = [l for l in t_r.leaves(t_r.root) if l.data.miss_side == L]
+                if leaves:
+                    leaves_tags = map(lambda x: x.tag, leaves)
+                    if ANY in leaves_tags:
+                        root_leave_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
+                    elif root.tag in leaves_tags:
+                        root_leave_id = leaves_tags.index(root.tag)
+                    leave_id = leaves[root_leave_id].identifier
+                    # import pdb; pdb.set_trace()
+                    t_r.paste(leave_id, t_l)
+                    t_r.link_past_node(leave_id)
+                    del trees_cp[ptr]
+                    if ptr > 0: ptr -= 1
+                    combine = True
+
+            if not combine and t_r[t_r.root].data.comb_side == CL and \
+                all([n.data.miss_side == '' for n in t_r.all_nodes()]):
+                root = t_r[t_r.root]
+                leaves = [l for l in t_l.leaves(t_l.root) if l.data.miss_side == R]
+                if leaves:
+                    leaves_tags = map(lambda x: x.tag, leaves)
+                    if ANY in leaves_tags:
+                        root_leave_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
+                    elif root.tag in leaves_tags:
+                        root_leave_id = leaves_tags.index(root.tag)
+                    leave_id = leaves[root_leave_id].identifier
+                    t_l.paste(leave_id, t_r)
+                    t_l.link_past_node(leave_id)
+                    del trees_cp[ptr+1]
+                    if ptr > 0: ptr -= 1
+                    combine = True
+
+            if not combine:
+                ptr += 1
+        # import pdb; pdb.set_trace()
+        return trees_cp
+
+    def _combine_trees(self, trees):
         ptr = 0
         trees_cp = copy.deepcopy(trees)
         while ptr < len(trees_cp)-1:
+            import pdb; pdb.set_trace()
             root_leave_id = []
             sub_tag_trees = trees_cp[ptr : ptr+2]
             roots = []
@@ -72,7 +120,7 @@ class TagNode(object):
                     roots.append(t[t.root])
                 else:
                     roots.append(None)
-
+            #TODO skip rest of code if both roots are None
             # roots = [t[t.root] if t[t.root].data.comb_side == s else None
             #             for t,s in zip(sub_tag_trees, (CR, CL))]
             #TODO roots that don't have missing nodes

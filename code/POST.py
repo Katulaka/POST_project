@@ -40,6 +40,7 @@ def main(_):
     # parser.add_argument('--slash_split', action='store_true', help='')
 
     args = parser.parse_args()
+    # import pdb; pdb.set_trace()
 
     data_file = os.path.join(os.getcwd(), Config.train_dir, 'new_data.txt')
 
