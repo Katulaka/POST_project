@@ -51,10 +51,10 @@ class TagNode(object):
     def __eq__(self, other):
         return self.idx == other.idx and self.rank == other.rank
 
-    def _combine_trees(self, trees):
+    def combine_trees(self, trees):
         ptr = 0
 
-        trees_cp = copy.deepcopy(trees)
+        trees_cp = copy.copy(trees)
         while ptr < len(trees_cp)-1:
             combine = False
             t_l = trees_cp[ptr]
@@ -97,7 +97,7 @@ class TagNode(object):
                 ptr += 1
         return trees_cp
 
-    def combine_trees(self, trees):
+    def _combine_trees(self, trees):
         ptr = 0
         trees_cp = copy.deepcopy(trees)
         while ptr < len(trees_cp)-1:
