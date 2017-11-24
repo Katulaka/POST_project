@@ -49,11 +49,9 @@ class TagNode(object):
         self.tree = tree
 
     def __eq__(self, other):
-        # if self.__class__ != other.__class__:
-        #     return False
         return self.idx == other.idx and self.rank == other.rank
-        # return self.__dict__ == other.__dict__
-    def combine_trees(self, trees):
+
+    def _combine_trees(self, trees):
         ptr = 0
 
         trees_cp = copy.deepcopy(trees)
@@ -72,7 +70,6 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leave_id = leaves_tags.index(root.tag)
                     leave_id = leaves[root_leave_id].identifier
-                    # import pdb; pdb.set_trace()
                     t_r.paste(leave_id, t_l)
                     t_r.link_past_node(leave_id)
                     del trees_cp[ptr]
@@ -98,10 +95,9 @@ class TagNode(object):
 
             if not combine:
                 ptr += 1
-        # import pdb; pdb.set_trace()
         return trees_cp
 
-    def _combine_trees(self, trees):
+    def combine_trees(self, trees):
         ptr = 0
         trees_cp = copy.deepcopy(trees)
         while ptr < len(trees_cp)-1:
