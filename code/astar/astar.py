@@ -75,23 +75,18 @@ class AStar:
         goals = []
         for strt in  start:
             if self.is_goal_reached(strt, goal):
-                # return [strt]
                 goals.append(strt)
             cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
             startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
-        # while openSet:
         while openSet and len(goals) < num_goals:
-            # pass
             current = heappop(openSet)
             if verbose > 0:
                 print "---------------------------------------------------"
                 print "current:", current.data.idx, current.data.rank, current.fscore
                 v = {l.identifier: "" for l in current.data.tree[0].leaves()}
                 print "current:", to_mrg(current.data.tree[0], v)
-                # import pdb; pdb.set_trace()
             if self.is_goal_reached(current.data, goal):
-                # return self.reconstruct_path(current, reverse_path)
                 goals.append(self.reconstruct_path(current, reverse_path))
             current.out_openset = True
             current.closed = True
@@ -109,5 +104,4 @@ class AStar:
                 if verbose > 1 :
                     print ("neighbor:", neighbor.data.idx, neighbor.data.rank,
                                                                 neighbor.fscore)
-        # return None
         return goals

@@ -10,9 +10,7 @@ from utils.gen_tags import extend_path, R, L, CR, CL, ANY
 class TagTree(object):
 
     class Prop(object):
-        # def __init__(self, miss, miss_side='', comb_side=''):
         def __init__(self, miss_side='', comb_side=''):
-            # self.miss = miss
             self.miss_side = miss_side
             self.comb_side = comb_side
 
@@ -156,13 +154,8 @@ class TagNode(object):
             return True
         if len(self.tree) == 1:
             return True
-        # trees = []
-        # for i in xrange(self.rid, self.lid):
-        #      trees.append(tags[i][self.rank[i-self.rid]].tree)
-        # ct = self.combine_trees(trees)
         ct = self.combine_trees(self.tree)
         if len(ct) == 1 :
-            # self.tree = ct[0]
             self.tree = ct
             return True
         return False
@@ -238,7 +231,6 @@ class Solver(AStar):
     def is_goal_reached(self, current, goal):
         if current.idx == goal.idx and len(current.tree) == 1:
             ct = current.tree[0]
-            # return all([not l.data.miss for l in ct.leaves(ct.root)])
             return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
         return False
 
@@ -295,14 +287,10 @@ def solve_tree_search(tag_matrix, verbose, num_goals):
     goal = TagNode(0, max_lid, [])
     # let's solve it
     paths = Solver(tags).astar(start, goal, num_goals, verbose = verbose)
-    # if path is not None:
-    # if paths != []:
     trees_res = []
     tags_res = []
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
         tags_res.append(_find_tag(path.tree[0]))
-        # return (zip(range(path.idx[1]), path.rank, [0]*len(path.rank)), path.tree[0], _find_tag(path.tree[0]))
-    # return [], [], []
     return trees_res, tags_res
