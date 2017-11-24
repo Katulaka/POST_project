@@ -89,7 +89,7 @@ def main(_):
         s = StringIO.StringIO()
         sortby = 'cumulative'
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
+        ps.dump_stats('profile_stats.txt')
         print s.getvalue()
         import pdb; pdb.set_trace()
 
