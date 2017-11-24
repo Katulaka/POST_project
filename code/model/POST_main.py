@@ -264,7 +264,6 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                 _mrg_tags = []
                 trees, new_tags = solve_tree_search(beam_tag, num_goals, 1)
                 decoded_tags.append(new_tags)
-                import pdb; pdb.set_trace()
                 for tree in trees:
                     leaves_id = sorted([t.identifier for t in tree.leaves()])
                     w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
