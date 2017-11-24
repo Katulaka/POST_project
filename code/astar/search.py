@@ -70,7 +70,6 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
                     leaf_id = leaves[root_leaf_id].identifier
-                    import pdb; pdb.set_trace()
                     # t_r_cp = copy.deepcopy(t_r)
                     t_r_cp = Tree(t_r, True)
                     t_r_cp.paste(leaf_id, t_l)
