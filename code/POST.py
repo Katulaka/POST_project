@@ -7,7 +7,6 @@ from utils.dataset import gen_dataset, split_dataset
 import model.POST_main as POST_main
 from utils.conf import Config
 from utils.batcher import Batcher
-import cProfile
 
 PAD = ['PAD', 0]
 GO = ['GO', 1]
@@ -78,15 +77,20 @@ def main(_):
                             args.add_w_pos_in, args.attn, th_loss)
 
     elif (args.action == 'decode'):
-        mrg_tags, decoded_tags = cProfile.run('POST_main.decode(Config, \
-                                                                w_vocab, \
-                                                                t_vocab, \
-                                                                batcher_test, \
-                                                                t_op, \
-                                                                args.add_pos_in,\
-                                                                args.add_w_pos_in, \
-                                                                args.attn, \
-                                                                args.num_goals)')
+        import cProfile, pstats, StringIO
+        pr = cProfile.Profile()
+        pr.enable()
+        mrg_tags, decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
+                                                    batcher_test, t_op,
+                                                    args.add_pos_in,
+                                                    args.add_w_pos_in,
+                                                    args.attn, args.num_goals)
+        pr.enable()
+        s = StringIO.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print s.getvalue()
         import pdb; pdb.set_trace()
 
     elif(args.action == 'stats'):
