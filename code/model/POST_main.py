@@ -230,7 +230,10 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
         decoded_tags = []
         mrg_tags = []
-        for bv in batcher.get_batch():
+        bv = batcher.get_batch() #TODO
+        _bv = [bv[0]] #TODO
+        # for bv in batcher.get_batch(): #TODO
+        for bv in _bv: #TODO
             w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
@@ -252,23 +255,17 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
             word_tokens = w_vocab.to_tokens(words.tolist())
 
+
             for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
                 print ("Staring astar search for sentence %d /"
                         " %d [tag length %d]" %
                         (i+1, batcher.get_batch_size(), len(beam_tag)))
 
-                # path, tree, new_tag = solve_tree_search(beam_tag, 1)
-                # decoded_tags.append(new_tag)
                 _mrg_tags = []
                 trees, new_tags = solve_tree_search(beam_tag, num_goals, 1)
                 decoded_tags.append(new_tags)
                 import pdb; pdb.set_trace()
-                # if trees == []:
-                #     _mrg_tags.append([''])
                 for tree in trees:
-                    # if tree == []:
-                    #     mrg_tags.append('')
-                    # else:
                     leaves_id = sorted([t.identifier for t in tree.leaves()])
                     w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
                     _mrg_tags.append(to_mrg(tree, w_leaves))
