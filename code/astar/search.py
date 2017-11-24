@@ -49,7 +49,7 @@ class TagNode(object):
         self.tree = tree
 
     def __eq__(self, other):
-        return self.idx == other.idx and self.rank == other.rank
+        return self.rank == other.rank and self.idx == other.idx
 
     def combine_trees(self, trees):
         ptr = 0
