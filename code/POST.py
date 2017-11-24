@@ -78,13 +78,15 @@ def main(_):
                             args.add_w_pos_in, args.attn, th_loss)
 
     elif (args.action == 'decode'):
-        mrg_tags, decoded_tags = cProfile.run(POST_main.decode(Config, w_vocab,
-                                                    t_vocab,
-                                                    batcher_test, t_op,
-                                                    args.add_pos_in,
-                                                    args.add_w_pos_in,
-                                                    args.attn,
-                                                    args.num_goals))
+        mrg_tags, decoded_tags = cProfile.run('POST_main.decode(Config, \
+                                                                w_vocab, \
+                                                                t_vocab, \
+                                                                batcher_test, \
+                                                                t_op, \
+                                                                args.add_pos_in,\
+                                                                args.add_w_pos_in, \
+                                                                args.attn, \
+                                                                args.num_goals)')
         import pdb; pdb.set_trace()
 
     elif(args.action == 'stats'):
