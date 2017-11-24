@@ -85,7 +85,7 @@ def main(_):
                                                     args.add_pos_in,
                                                     args.add_w_pos_in,
                                                     args.attn, args.num_goals)
-        pr.enable()
+        pr.disable()
         s = StringIO.StringIO()
         sortby = 'cumulative'
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
