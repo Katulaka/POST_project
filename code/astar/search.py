@@ -70,7 +70,9 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
                     leaf_id = leaves[root_leaf_id].identifier
-                    t_r_cp = copy.deepcopy(t_r)
+                    import pdb; pdb.set_trace()
+                    # t_r_cp = copy.deepcopy(t_r)
+                    t_r_cp = Tree(t_r, True)
                     t_r_cp.paste(leaf_id, t_l)
                     t_r_cp.link_past_node(leaf_id)
                     trees_cp[ptr+1] = t_r_cp
@@ -89,7 +91,8 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
                     leaf_id = leaves[root_leaf_id].identifier
-                    t_l_cp = copy.deepcopy(t_l)
+                    # t_l_cp = copy.deepcopy(t_l)
+                    t_l_cp = Tree(t_l, True)
                     t_l_cp.paste(leaf_id, t_r)
                     t_l_cp.link_past_node(leaf_id)
                     trees_cp[ptr] = t_l_cp
@@ -98,52 +101,6 @@ class TagNode(object):
                     combine = True
 
             if not combine:
-                ptr += 1
-        return trees_cp
-
-    def _combine_trees(self, trees):
-        ptr = 0
-        trees_cp = copy.deepcopy(trees)
-        while ptr < len(trees_cp)-1:
-            root_leaf_id = []
-            sub_tag_trees = trees_cp[ptr : ptr+2]
-            roots = []
-            for t, s in zip(sub_tag_trees, (CR, CL)):
-                #check if 1st tree combines to the right and
-                # 2nd tree combine combines to the left
-                #and also take trees that dont have missing nodes
-                if t[t.root].data.comb_side == s and \
-                    all([n.data.miss_side == '' for n in t.all_nodes()]):
-                    roots.append(t[t.root])
-                else:
-                    roots.append(None)
-            #TODO skip rest of code if both roots are None
-            # roots = [t[t.root] if t[t.root].data.comb_side == s else None
-            #             for t,s in zip(sub_tag_trees, (CR, CL))]
-            #TODO roots that don't have missing nodes
-            leaves = [[l for l in t.leaves(t.root) if l.data.miss_side == s]
-                        for t, s in zip(sub_tag_trees, (R, L)) ]
-            for r, ls in zip(roots, leaves[::-1]):
-                leaves_tags = map(lambda x: x.tag, ls)
-                if r is not None and ANY in leaves_tags:
-                    root_leaf_id.append(len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1)
-                elif r is not None and r.tag in leaves_tags:
-                    root_leaf_id.append(leaves_tags.index(r.tag))
-                else:
-                    root_leaf_id.append(None)
-            if root_leaf_id[1] is not None:
-                leaf_id = leaves[0][root_leaf_id[1]].identifier
-                trees_cp[ptr].paste(leaf_id, trees_cp[ptr+1])
-                trees_cp[ptr].link_past_node(leaf_id)
-                del trees_cp[ptr+1]
-                if ptr > 0: ptr -= 1
-            elif root_leaf_id[0] is not None:
-                leaf_id = leaves[1][root_leaf_id[0]].identifier
-                trees_cp[ptr+1].paste(leaf_id, trees_cp[ptr])
-                trees_cp[ptr+1].link_past_node(leaf_id)
-                del trees_cp[ptr]
-                if ptr > 0: ptr -= 1
-            else:
                 ptr += 1
         return trees_cp
 
