@@ -72,8 +72,6 @@ def main(_):
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
 
     if (args.action == 'train'):
-        # POST_main.train(Config, batcher, args.cp_dir, w_vocab.get_ctrl_tokens(),
-        #                 args.add_pos_in, args.attn)
         th_loss = 0.1
         POST_main.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
                             w_vocab.get_ctrl_tokens(), args.add_pos_in,
