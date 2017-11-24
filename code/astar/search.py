@@ -66,12 +66,14 @@ class TagNode(object):
                 if leaves:
                     leaves_tags = map(lambda x: x.tag, leaves)
                     if ANY in leaves_tags:
-                        root_leave_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
+                        root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
-                        root_leave_id = leaves_tags.index(root.tag)
-                    leave_id = leaves[root_leave_id].identifier
-                    t_r.paste(leave_id, t_l)
-                    t_r.link_past_node(leave_id)
+                        root_leaf_id = leaves_tags.index(root.tag)
+                    leaf_id = leaves[root_leaf_id].identifier
+                    t_r_cp = copy.deepcopy(t_r)
+                    t_r_cp.paste(leaf_id, t_l)
+                    t_r_cp.link_past_node(leaf_id)
+                    trees_cp[ptr+1] = t_r_cp
                     del trees_cp[ptr]
                     if ptr > 0: ptr -= 1
                     combine = True
@@ -83,12 +85,14 @@ class TagNode(object):
                 if leaves:
                     leaves_tags = map(lambda x: x.tag, leaves)
                     if ANY in leaves_tags:
-                        root_leave_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
+                        root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
-                        root_leave_id = leaves_tags.index(root.tag)
-                    leave_id = leaves[root_leave_id].identifier
-                    t_l.paste(leave_id, t_r)
-                    t_l.link_past_node(leave_id)
+                        root_leaf_id = leaves_tags.index(root.tag)
+                    leaf_id = leaves[root_leaf_id].identifier
+                    t_l_cp = copy.deepcopy(t_l)
+                    t_l_cp.paste(leaf_id, t_r)
+                    t_l_cp.link_past_node(leaf_id)
+                    trees_cp[ptr] = t_l_cp
                     del trees_cp[ptr+1]
                     if ptr > 0: ptr -= 1
                     combine = True
@@ -101,7 +105,7 @@ class TagNode(object):
         ptr = 0
         trees_cp = copy.deepcopy(trees)
         while ptr < len(trees_cp)-1:
-            root_leave_id = []
+            root_leaf_id = []
             sub_tag_trees = trees_cp[ptr : ptr+2]
             roots = []
             for t, s in zip(sub_tag_trees, (CR, CL)):
@@ -122,21 +126,21 @@ class TagNode(object):
             for r, ls in zip(roots, leaves[::-1]):
                 leaves_tags = map(lambda x: x.tag, ls)
                 if r is not None and ANY in leaves_tags:
-                    root_leave_id.append(len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1)
+                    root_leaf_id.append(len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1)
                 elif r is not None and r.tag in leaves_tags:
-                    root_leave_id.append(leaves_tags.index(r.tag))
+                    root_leaf_id.append(leaves_tags.index(r.tag))
                 else:
-                    root_leave_id.append(None)
-            if root_leave_id[1] is not None:
-                leave_id = leaves[0][root_leave_id[1]].identifier
-                trees_cp[ptr].paste(leave_id, trees_cp[ptr+1])
-                trees_cp[ptr].link_past_node(leave_id)
+                    root_leaf_id.append(None)
+            if root_leaf_id[1] is not None:
+                leaf_id = leaves[0][root_leaf_id[1]].identifier
+                trees_cp[ptr].paste(leaf_id, trees_cp[ptr+1])
+                trees_cp[ptr].link_past_node(leaf_id)
                 del trees_cp[ptr+1]
                 if ptr > 0: ptr -= 1
-            elif root_leave_id[0] is not None:
-                leave_id = leaves[1][root_leave_id[0]].identifier
-                trees_cp[ptr+1].paste(leave_id, trees_cp[ptr])
-                trees_cp[ptr+1].link_past_node(leave_id)
+            elif root_leaf_id[0] is not None:
+                leaf_id = leaves[1][root_leaf_id[0]].identifier
+                trees_cp[ptr+1].paste(leaf_id, trees_cp[ptr])
+                trees_cp[ptr+1].link_past_node(leaf_id)
                 del trees_cp[ptr]
                 if ptr > 0: ptr -= 1
             else:
@@ -226,7 +230,7 @@ class Solver(AStar):
     def is_goal_reached(self, current, goal):
         if current.idx == goal.idx and len(current.tree) == 1:
             ct = current.tree[0]
-            return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
+            return all([l.data.miss_side == '' for l in ct.leafs(ct.root)])
         return False
 
 def convert_to_TagTree(tag_matrix):
