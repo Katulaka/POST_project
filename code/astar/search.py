@@ -10,15 +10,15 @@ from utils.gen_tags import extend_path, R, L, CR, CL, ANY
 import cPickle
 
 def fast_copy(src):
-    return cPickle.loads(cPickle.dumps(src, -1))
+    return cPickle.loads(cPickle.dumps(src))
 
+
+class Prop(object):
+    def __init__(self, miss_side='', comb_side=''):
+        self.miss_side = miss_side
+        self.comb_side = comb_side
 
 class TagTree(object):
-
-    class Prop(object):
-        def __init__(self, miss_side='', comb_side=''):
-            self.miss_side = miss_side
-            self.comb_side = comb_side
 
     def __init__(self, tag, score, pos_id=0):
         self.tag = tag
@@ -34,13 +34,15 @@ class TagTree(object):
                 _tag_nodes = tag_nodes
 
             self.tree.create_node(_tag_nodes[0], pos_id, parent=parent_id,
-                                data=TagTree.Prop(comb_side=c_side))
+                                # data=TagTree.Prop(comb_side=c_side))
+                                data=Prop(comb_side=c_side))
 
             parent_id = pos_id
             pos_id += 1
             for tag_node in _tag_nodes[1:]:
                 self.tree.create_node(tag_node[1:], pos_id, parent=parent_id,
-                                    data=TagTree.Prop(miss_side=tag_node[0]))
+                                    # data=TagTree.Prop(miss_side=tag_node[0]))
+                                    data=Prop(miss_side=tag_node[0]))
                 pos_id += 1
         self.max_pos_id = pos_id
 
