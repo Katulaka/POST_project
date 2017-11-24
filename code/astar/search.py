@@ -101,7 +101,6 @@ class TagNode(object):
         ptr = 0
         trees_cp = copy.deepcopy(trees)
         while ptr < len(trees_cp)-1:
-            import pdb; pdb.set_trace()
             root_leave_id = []
             sub_tag_trees = trees_cp[ptr : ptr+2]
             roots = []
