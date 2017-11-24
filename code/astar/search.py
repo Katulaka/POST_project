@@ -230,7 +230,7 @@ class Solver(AStar):
     def is_goal_reached(self, current, goal):
         if current.idx == goal.idx and len(current.tree) == 1:
             ct = current.tree[0]
-            return all([l.data.miss_side == '' for l in ct.leafs(ct.root)])
+            return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
         return False
 
 def convert_to_TagTree(tag_matrix):
