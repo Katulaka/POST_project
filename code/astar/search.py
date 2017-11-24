@@ -7,6 +7,12 @@ from treelib import Node, Tree
 from astar import AStar
 from utils.gen_tags import extend_path, R, L, CR, CL, ANY
 
+import cPickle
+
+def fast_copy(src):
+    return cPickle.loads(cPickle.dumps(src, -1))
+
+
 class TagTree(object):
 
     class Prop(object):
@@ -70,8 +76,7 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
                     leaf_id = leaves[root_leaf_id].identifier
-                    # t_r_cp = copy.deepcopy(t_r)
-                    t_r_cp = Tree(t_r, True)
+                    t_r_cp = fast_copy(t_r)
                     t_r_cp.paste(leaf_id, t_l)
                     t_r_cp.link_past_node(leaf_id)
                     trees_cp[ptr+1] = t_r_cp
@@ -90,8 +95,7 @@ class TagNode(object):
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
                     leaf_id = leaves[root_leaf_id].identifier
-                    # t_l_cp = copy.deepcopy(t_l)
-                    t_l_cp = Tree(t_l, True)
+                    t_l_cp = fast_copy(t_l)
                     t_l_cp.paste(leaf_id, t_r)
                     t_l_cp.link_past_node(leaf_id)
                     trees_cp[ptr] = t_l_cp
