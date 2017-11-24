@@ -89,9 +89,9 @@ def main(_):
         s = StringIO.StringIO()
         sortby = 'cumulative'
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.dump_stats('profile_stats.txt')
+        ps.print_stats()
         print s.getvalue()
-        import pdb; pdb.set_trace()
+        
 
     elif(args.action == 'stats'):
         stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
