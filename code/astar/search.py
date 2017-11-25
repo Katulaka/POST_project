@@ -59,8 +59,8 @@ class TagNode(object):
         self.rank = rank
         self.tree = tree
 
-    # def __eq__(self, other):
-    #     return self.rank == other.rank and self.idx == other.idx
+    def __eq__(self, other):
+        return self.rank == other.rank and self.idx == other.idx
 
     def combine_trees(self, trees):
         ptr = 0
@@ -250,16 +250,16 @@ def solve_tree_search(tag_matrix, verbose, num_goals):
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    import cProfile, pstats, StringIO
-    pr = cProfile.Profile()
-    pr.enable()
+    # import cProfile, pstats, StringIO
+    # pr = cProfile.Profile()
+    # pr.enable()
     paths = Solver(tags).astar(start, goal, num_goals, verbose = verbose)
-    pr.disable()
-    s = StringIO.StringIO()
-    sortby = 'cumulative'
-    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    ps.print_stats()
-    print s.getvalue()
+    # pr.disable()
+    # s = StringIO.StringIO()
+    # sortby = 'cumulative'
+    # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    # ps.print_stats()
+    # print s.getvalue()
     trees_res = []
     tags_res = []
     for path in paths:

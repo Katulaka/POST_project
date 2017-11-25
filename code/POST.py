@@ -91,6 +91,7 @@ def main(_):
         # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         # ps.print_stats()
         # print s.getvalue()
+        import pdb; pdb.set_trace()
 
 
     elif(args.action == 'stats'):

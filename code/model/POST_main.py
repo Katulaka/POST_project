@@ -230,10 +230,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
         decoded_tags = []
         mrg_tags = []
-        bv = batcher.get_batch() #TODO
-        _bv = [bv[0]] #TODO
-        # for bv in batcher.get_batch(): #TODO
-        for bv in _bv: #TODO
+        for bv in batcher.get_batch():
             w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
@@ -262,7 +259,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                         (i+1, batcher.get_batch_size(), len(beam_tag)))
 
                 _mrg_tags = []
-                trees, new_tags = solve_tree_search(beam_tag, num_goals, 1)
+                trees, new_tags = solve_tree_search(beam_tag, num_goals, 0)
                 decoded_tags.append(new_tags)
                 for tree in trees:
                     leaves_id = sorted([t.identifier for t in tree.leaves()])
