@@ -59,8 +59,8 @@ class TagNode(object):
         self.rank = rank
         self.tree = tree
 
-    def __eq__(self, other):
-        return self.rank == other.rank and self.idx == other.idx
+    # def __eq__(self, other):
+    #     return self.rank == other.rank and self.idx == other.idx
 
     def combine_trees(self, trees):
         ptr = 0
