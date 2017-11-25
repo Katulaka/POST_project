@@ -12,7 +12,6 @@ import cPickle
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
 
-
 class Prop(object):
     def __init__(self, miss_side='', comb_side=''):
         self.miss_side = miss_side
@@ -24,6 +23,12 @@ class TagTree(object):
         self.tag = tag
         self.score = score
         self.tree = Tree()
+        self.max_pos_id = pos_id
+
+        self.buildTree()
+
+
+    def buildTree(self):
         parent_id = None
         for tag_nodes in self.tag:
             if tag_nodes[0] in [CL, CR]:
@@ -32,19 +37,17 @@ class TagTree(object):
             else:
                 c_side = ''
                 _tag_nodes = tag_nodes
+            self.tree.create_node(_tag_nodes[0], self.max_pos_id,
+                                    parent=parent_id,
+                                    data=Prop(comb_side=c_side))
 
-            self.tree.create_node(_tag_nodes[0], pos_id, parent=parent_id,
-                                # data=TagTree.Prop(comb_side=c_side))
-                                data=Prop(comb_side=c_side))
-
-            parent_id = pos_id
-            pos_id += 1
+            parent_id = self.max_pos_id
+            self.max_pos_id += 1
             for tag_node in _tag_nodes[1:]:
-                self.tree.create_node(tag_node[1:], pos_id, parent=parent_id,
-                                    # data=TagTree.Prop(miss_side=tag_node[0]))
-                                    data=Prop(miss_side=tag_node[0]))
-                pos_id += 1
-        self.max_pos_id = pos_id
+                self.tree.create_node(tag_node[1:], self.max_pos_id,
+                                        parent=parent_id,
+                                        data=Prop(miss_side=tag_node[0]))
+                self.max_pos_id += 1
 
 
 class TagNode(object):
