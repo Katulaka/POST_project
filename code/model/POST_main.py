@@ -220,6 +220,8 @@ def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, n
     mrg_tags = []
     w_len, _, words, pos, tags, _, _ = batcher.process(batch)
 
+    print ("Started decode_batch")
+
     bs = BeamSearch(model,
                     config.beam_size,
                     t_vocab.token_to_id('GO'),
@@ -254,6 +256,8 @@ def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, n
             w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
             _mrg_tags.append(to_mrg(tree, w_leaves))
         mrg_tags.append(_mrg_tags)
+
+    print ("Ended decode_batch")
     return mrg_tags, decoded_tags
 
 
@@ -273,13 +277,14 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                             w_attn)
 
         # num_batches = len(batch_list)
-        num_batches = 32
+        num_batches = 128
         batch_list = batcher.get_batch()[:num_batches]
         decoded_tags = [0]*num_batches
         mrg_tags = [0]*num_batches
         if use_threading:
             twrv = [0]*num_batches
             for i, bv in enumerate(batch_list):
+                print ("Starting thread[%d]"%i)
                 twrv[i] = ThreadWithReturnValue(target=decode_batch, name=i,
                                             args=(sess, model, config, t_op,
                                                     t_vocab, w_vocab, batcher,
@@ -288,6 +293,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
             for i in xrange(num_batches):
                 _mrg_tags, _decoded_tags = twrv[i].join()
+                print ("Ended thread[%d]"%i)
                 decoded_tags[i] = _decoded_tags
                 mrg_tags[i] = _mrg_tags
         else:
