@@ -283,12 +283,14 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         # mrg_tags = [0]*num_batches
         if use_Processing:
             twrv = [0]*num_batches
+            res_q = [Queue()]*num_batches
             for i, bv in enumerate(batch_list):
                 print ("[Process Debug] Starting Process[%d]"%i)
                 twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
-                                            args=(sess, model, config, t_op,
-                                                    t_vocab, w_vocab, batcher,
-                                                    bv, num_goals))
+                                                res_q=res_q[i],
+                                                args=(sess, model, config, t_op,
+                                                        t_vocab, w_vocab, batcher,
+                                                        bv, num_goals))
                 twrv[i].start()
 
             for i in xrange(num_batches):
