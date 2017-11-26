@@ -77,21 +77,21 @@ def main(_):
                             args.add_w_pos_in, args.attn, th_loss)
 
     elif (args.action == 'decode'):
-        import cProfile, pstats, StringIO
-        pr = cProfile.Profile()
-        pr.enable()
-        mrg_tags, decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
+        # import cProfile, pstats, StringIO
+        # pr = cProfile.Profile()
+        # pr.enable()
+        # mrg_tags, decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
+        decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
                                                     batcher_test, t_op,
                                                     args.add_pos_in,
                                                     args.add_w_pos_in,
                                                     args.attn, args.num_goals)
-        pr.disable()
-        s = StringIO.StringIO()
-        sortby = 'cumulative'
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print s.getvalue()
-        # import pdb; pdb.set_trace()
+        # pr.disable()
+        # s = StringIO.StringIO()
+        # sortby = 'cumulative'
+        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # ps.print_stats()
+        # print s.getvalue()
 
 
     elif(args.action == 'stats'):
