@@ -1,5 +1,5 @@
 from itertools import chain
-from threading import Thread
+from processing import Process
 
 def _operate_on_Narray(A, function):
     if isinstance(A, list):
@@ -27,10 +27,10 @@ def flatten_to_1D(A):
     n =  arr_dim(A) - 1
     return flattenNd(A, n)
 
-class ThreadWithReturnValue(Thread):
+class ProcessWithReturnValue(Process):
 
     def __init__(self, group=None, target=None, name=None, args=()):
-        Thread.__init__(self, group, target, name, args)
+        Process.__init__(self, group, target, name, args)
         self._name   = name
         self._args   = args
         self._target = target
@@ -41,5 +41,5 @@ class ThreadWithReturnValue(Thread):
             self._return = self._target(*self._args)
 
     def join(self):
-        Thread.join(self)
+        Process.join(self)
         return self._name, self._return
