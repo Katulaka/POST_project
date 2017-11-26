@@ -8,6 +8,7 @@ import sys
 import time
 import tensorflow as tf
 import numpy as np
+from multiprocessing import Queue
 
 from astar.search import solve_tree_search
 from beam.search import BeamSearch

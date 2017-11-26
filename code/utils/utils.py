@@ -1,5 +1,5 @@
-from itertools import chain
 from multiprocessing import Process, Queue
+from itertools import chain
 
 def _operate_on_Narray(A, function):
     if isinstance(A, list):
@@ -28,6 +28,7 @@ def flatten_to_1D(A):
     return flattenNd(A, n)
 
 class ProcessWithReturnValue(Process):
+
 
     def __init__(self, group=None, target=None, name=None, res_q = None, args=()):
         Process.__init__(self, group, target, name, args)
