@@ -216,103 +216,96 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
         eval_losses.append(eval_loss)
 
-def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, num_goals):
-    decoded_tags = []
-    # mrg_tags = []
-    w_len, _, words, pos, tags, _, _ = batcher.process(batch)
+def decode_batch(decode_graph, config, t_op, t_vocab,  w_vocab,
+                    batcher, batch, num_goals):
 
-    print ("Started decode_batch")
+    with tf.Session(graph=decode_graph) as sess:
+        model = get_model(sess,
+                        config,
+                        w_vocab.get_ctrl_tokens(),
+                        add_pos_in,
+                        add_w_pos_in,
+                        decode_graph,
+                        w_attn)
 
-    bs = BeamSearch(model,
-                    config.beam_size,
-                    t_vocab.token_to_id('GO'),
-                    t_vocab.token_to_id('EOS'),
-                    config.dec_timesteps)
+        decoded_tags = []
+        # mrg_tags = []
+        w_len, _, words, pos, tags, _, _ = batcher.process(batch)
+        bs = BeamSearch(model,
+                        config.beam_size,
+                        t_vocab.token_to_id('GO'),
+                        t_vocab.token_to_id('EOS'),
+                        config.dec_timesteps)
 
-    words_cp = copy.copy(words)
-    w_len_cp = copy.copy(w_len)
-    pos_cp = copy.copy(pos)
-    best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
-    beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
-    _beam_pair = map(lambda x, y: zip(x, y),
-                                    beam_tags,
-                                    best_beams['scores'])
-    beam_pair = batcher.restore(_beam_pair)
-    num_sentaces = len(words)
-    word_tokens = w_vocab.to_tokens(words.tolist())
+        words_cp = copy.copy(words)
+        w_len_cp = copy.copy(w_len)
+        pos_cp = copy.copy(pos)
+        best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+        beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+        _beam_pair = map(lambda x, y: zip(x, y),
+                                        beam_tags, best_beams['scores'])
+        beam_pair = batcher.restore(_beam_pair)
+        num_sentaces = len(words)
+        word_tokens = w_vocab.to_tokens(words.tolist())
 
-    for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
-        print ("Staring astar search for sentence %d /"
-                " %d [tag length %d]" %
-                (i+1, num_sentaces, len(beam_tag)))
+        for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
+            print ("Staring astar search for sentence %d /"
+                    " %d [tag length %d]" %
+                    (i+1, num_sentaces, len(beam_tag)))
 
-        # _mrg_tags = []
-        if all(beam_tag):
-            trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
-        else:
-            trees, new_tags = [], []
-        decoded_tags.append(new_tags)
-        # for tree in trees: #TODO
-        #     leaves_id = sorted([t.identifier for t in tree.leaves()])
-        #     w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
-        #     _mrg_tags.append(to_mrg(tree, w_leaves))
-        # mrg_tags.append(_mrg_tags)
+            # _mrg_tags = []
+            if all(beam_tag):
+                trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
+            else:
+                trees, new_tags = [], []
+            decoded_tags.append(new_tags)
 
-    print ("Ended decode_batch")
-    # return mrg_tags, decoded_tags
     return decoded_tags
+
+# for tree in trees: #TODO
+#     leaves_id = sorted([t.identifier for t in tree.leaves()])
+#     w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
+#     _mrg_tags.append(to_mrg(tree, w_leaves))
+# mrg_tags.append(_mrg_tags)
+
+# return mrg_tags, decoded_tags
 
 def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             w_attn, num_goals):
 
-    decode_graph = tf.Graph()
-    use_Processing = True
-    with tf.Session(graph=decode_graph) as sess:
-        model = get_model(sess,
-                            config,
-                            w_vocab.get_ctrl_tokens(),
-                            add_pos_in,
-                            add_w_pos_in,
-                            decode_graph,
-                            w_attn)
+    # use_Processing = True
+    num_batches = 4
+    batch_list = batcher.get_batch()[:num_batches]
+    decode_graph = [tf.Graph()] * num_batches
+    decoded_tags = [0] * num_batches
+    twrv = [0] * num_batches
+    res_q = [Queue()] * num_batches
 
-        num_batches = 128
-        batch_list = batcher.get_batch()[:num_batches]
-        # batch_list = batcher.get_batch()
-        # num_batches = len(batch_list)
-        decoded_tags = [0]*num_batches
-        # mrg_tags = [0]*num_batches
-        if use_Processing:
-            twrv = [0]*num_batches
-            res_q = [Queue()]*num_batches
-            for i, bv in enumerate(batch_list):
-                print ("[Process Debug] Starting Process[%d]"%i)
-                twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
-                                                res_q=res_q[i],
-                                                args=(sess, model, config, t_op,
-                                                        t_vocab, w_vocab, batcher,
-                                                        bv, num_goals))
-                twrv[i].start()
+    for i, (bv, dg) in enumerate(zip(batch_list, decode_graph)):
+        print ("[Process Debug] Starting Process[%d]"%i)
+        twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
+                                        res_q=res_q[i],
+                                        args=(dg, config, t_op,
+                                            t_vocab, w_vocab, batcher,
+                                            bv, num_goals))
+        twrv[i].start()
 
-            for i in xrange(num_batches):
-                print ("[Process Debug] Waiting for Process[%d] to end"%i)
-                _, _decoded_tags = twrv[i].join()
-                print ("[Process Debug] Ended Process[%d]"%i)
-                decoded_tags[i] = _decoded_tags
-                # decoded_tags[i] = _decoded_tags[0]
-                # mrg_tags[i] = _decoded_tags[1]
-        else:
-            for  i, bv in enumerate(batch_list):
-                # _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
-                _decoded_tags = decode_batch(sess, model, config,
-                                                        t_op, t_vocab, w_vocab,
-                                                        batcher, bv, num_goals)
-                decoded_tags[i] = _decoded_tags
-                # mrg_tags[i] = _mrg_tags
+    for i in xrange(num_batches):
+        print ("[Process Debug] Waiting for Process[%d] to end"%i)
+        _, _decoded_tags = twrv[i].join()
+        print ("[Process Debug] Ended Process[%d]"%i)
+        decoded_tags[i] = _decoded_tags
 
-    # return mrg_tags, decoded_tags
     return decoded_tags
 
+#     for  i, bv in enumerate(batch_list):
+#         # _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
+#         _decoded_tags = decode_batch(sess, model, config,
+#                                                 t_op, t_vocab, w_vocab,
+#                                                 batcher, bv, num_goals)
+#         decoded_tags[i] = _decoded_tags
+#         # mrg_tags[i] = _mrg_tags
+# return mrg_tags, decoded_tags
 
 def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             w_attn, data_file):
