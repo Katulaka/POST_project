@@ -210,7 +210,7 @@ def gen_tags(fin):
         except:
             print ("Wrong tree %d in %s" % (i, fin))
 
-def to_mrg(tree, v):
+def to_mrg(tree, v): #TODO fix function
 
     nid = tree.root
     if tree[nid].is_leaf():
