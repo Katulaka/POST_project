@@ -244,7 +244,6 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             pos_cp = copy.copy(pos)
             best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
             beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
-            import pdb; pdb.set_trace()
             _beam_pair = map(lambda x, y: zip(x, y),
                                             beam_tags,
                                             best_beams['scores'])
@@ -259,10 +258,10 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                         (i+1, batcher.get_batch_size(), len(beam_tag)))
 
                 _mrg_tags = []
+                import pdb; pdb.set_trace()
                 if all(beam_tag):
                     trees, new_tags = solve_tree_search(beam_tag, num_goals, 0)
                 else:
-                    import pdb; pdb.set_trace()
                     trees, new_tags = [], []
                 decoded_tags.append(new_tags)
                 for tree in trees:
