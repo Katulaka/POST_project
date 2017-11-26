@@ -288,12 +288,12 @@ class TagOp(object):
     def combine_tag(self, tag):
         res = []
         _tag = tag
-        # try:
-        import pdb; pdb.set_trace()
-        if tag[0] in [CL, CR]:
-            res.append(tag[:2])
-            _tag = tag[2:]
-        # except:
+        try:
+            if tag[0] in [CL, CR]:
+                res.append(tag[:2])
+                _tag = tag[2:]
+        except:
+            return res
         for t in _tag:
             if res and (res[-1][-1].endswith(L) or res[-1][-1].endswith(R)):
                 res[-1] += [t]
