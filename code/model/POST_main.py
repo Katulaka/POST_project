@@ -214,6 +214,46 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
         eval_losses.append(eval_loss)
 
+def decode_batch(sess, config, t_vocab,  w_vocab, batcher, batch):
+    decoded_tags = []
+    mrg_tags = []
+    w_len, _, words, pos, tags, _, _ = batcher.process(batch)
+
+    bs = BeamSearch(model,
+                    config.beam_size,
+                    t_vocab.token_to_id('GO'),
+                    t_vocab.token_to_id('EOS'),
+                    config.dec_timesteps)
+
+    words_cp = copy.copy(words)
+    w_len_cp = copy.copy(w_len)
+    pos_cp = copy.copy(pos)
+    best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+    beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+    _beam_pair = map(lambda x, y: zip(x, y),
+                                    beam_tags,
+                                    best_beams['scores'])
+    beam_pair = batcher.restore(_beam_pair)
+
+    word_tokens = w_vocab.to_tokens(words.tolist())
+
+    for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
+        print ("Staring astar search for sentence %d /"
+                " %d [tag length %d]" %
+                (i+1, batcher.get_batch_size(), len(beam_tag)))
+
+        _mrg_tags = []
+        if all(beam_tag):
+            trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
+        else:
+            trees, new_tags = [], []
+        decoded_tags.append(new_tags)
+        for tree in trees:
+            leaves_id = sorted([t.identifier for t in tree.leaves()])
+            w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
+            _mrg_tags.append(to_mrg(tree, w_leaves))
+        mrg_tags.append(_mrg_tags)
+    return mrg_tags, decoded_tags
 
 def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             w_attn, num_goals):
@@ -230,46 +270,12 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
         decoded_tags = []
         mrg_tags = []
-        _bv = batcher.get_batch()[:1]
-        # for bv in batcher.get_batch():
-        for bv in _bv:
-            w_len, _, words, pos, tags, _, _ = batcher.process(bv)
+        for i, bv in enumerate(batcher.get_batch()):
+            _mrg_tags, _decoded_tags = decode_batch(sess, config, t_vocab,
+                                                    w_vocab, batcher, bv)
+            decoded_tags += _decoded_tags
+            mrg_tags += _mrg_tags
 
-            bs = BeamSearch(model,
-                            config.beam_size,
-                            t_vocab.token_to_id('GO'),
-                            t_vocab.token_to_id('EOS'),
-                            config.dec_timesteps)
-
-            words_cp = copy.copy(words)
-            w_len_cp = copy.copy(w_len)
-            pos_cp = copy.copy(pos)
-            best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
-            beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
-            _beam_pair = map(lambda x, y: zip(x, y),
-                                            beam_tags,
-                                            best_beams['scores'])
-            beam_pair = batcher.restore(_beam_pair)
-
-            word_tokens = w_vocab.to_tokens(words.tolist())
-
-
-            for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
-                print ("Staring astar search for sentence %d /"
-                        " %d [tag length %d]" %
-                        (i+1, batcher.get_batch_size(), len(beam_tag)))
-
-                _mrg_tags = []
-                if all(beam_tag):
-                    trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
-                else:
-                    trees, new_tags = [], []
-                decoded_tags.append(new_tags)
-                for tree in trees:
-                    leaves_id = sorted([t.identifier for t in tree.leaves()])
-                    w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
-                    _mrg_tags.append(to_mrg(tree, w_leaves))
-                mrg_tags.append(_mrg_tags)
     return mrg_tags, decoded_tags
 
 # def to_mrg(tree, v):
