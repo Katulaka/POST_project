@@ -284,7 +284,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         if use_threading:
             twrv = [0]*num_batches
             for i, bv in enumerate(batch_list):
-                print ("Starting thread[%d]"%i)
+                print ("[Thread Debug] Starting thread[%d]"%i)
                 twrv[i] = ThreadWithReturnValue(target=decode_batch, name=i,
                                             args=(sess, model, config, t_op,
                                                     t_vocab, w_vocab, batcher,
@@ -292,8 +292,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                 twrv[i].start()
 
             for i in xrange(num_batches):
+                print ("[Thread Debug] Waiting for thread[%d] to end"%i)
                 _mrg_tags, _decoded_tags = twrv[i].join()
-                print ("Ended thread[%d]"%i)
+                print ("[Thread Debug] Ended thread[%d]"%i)
                 decoded_tags[i] = _decoded_tags
                 mrg_tags[i] = _mrg_tags
         else:
