@@ -214,7 +214,7 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
         eval_losses.append(eval_loss)
 
-def decode_batch(sess, config, t_vocab,  w_vocab, batcher, batch):
+def decode_batch(sess, model, config, t_vocab,  w_vocab, batcher, batch):
     decoded_tags = []
     mrg_tags = []
     w_len, _, words, pos, tags, _, _ = batcher.process(batch)
@@ -271,8 +271,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         decoded_tags = []
         mrg_tags = []
         for i, bv in enumerate(batcher.get_batch()):
-            _mrg_tags, _decoded_tags = decode_batch(sess, config, t_vocab,
-                                                    w_vocab, batcher, bv)
+            _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
+                                                    t_vocab, w_vocab, batcher,
+                                                    bv)
             import pdb; pdb.set_trace()
             decoded_tags += _decoded_tags
             mrg_tags += _mrg_tags
