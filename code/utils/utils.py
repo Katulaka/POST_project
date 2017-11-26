@@ -29,6 +29,7 @@ def flatten_to_1D(A):
 
 class ProcessWithReturnValue(Process):
 
+    from multiprocessing import Process, Queue
 
     def __init__(self, group=None, target=None, name=None, res_q = None, args=()):
         Process.__init__(self, group, target, name, args)
