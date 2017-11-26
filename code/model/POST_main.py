@@ -240,7 +240,10 @@ def decode_batch(decode_graph, config, t_op, t_vocab,  w_vocab,
         words_cp = copy.copy(words)
         w_len_cp = copy.copy(w_len)
         pos_cp = copy.copy(pos)
+        print ("[Process Debug] Pre beam search")
         best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
+        print ("[Process Debug] Post beam search")
+
         beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
         _beam_pair = map(lambda x, y: zip(x, y),
                                         beam_tags, best_beams['scores'])
