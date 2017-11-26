@@ -275,10 +275,10 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                             decode_graph,
                             w_attn)
 
-        # num_batches = 128
-        # batch_list = batcher.get_batch()[:num_batches]
-        batch_list = batcher.get_batch()
-        num_batches = len(batch_list)
+        num_batches = 128
+        batch_list = batcher.get_batch()[:num_batches]
+        # batch_list = batcher.get_batch()
+        # num_batches = len(batch_list)
         decoded_tags = [0]*num_batches
         # mrg_tags = [0]*num_batches
         if use_Processing:
