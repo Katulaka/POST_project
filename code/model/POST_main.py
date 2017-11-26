@@ -12,8 +12,8 @@ import numpy as np
 from astar.search import solve_tree_search
 from beam.search import BeamSearch
 from POST_model import POSTModel
-from utils.gen_tags import to_mrg
-from utils.utils import ThreadWithReturnValue
+# from utils.gen_tags import to_mrg
+from utils.utils import ProcessWithReturnValue
 
 
 def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
@@ -217,7 +217,7 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
 def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, num_goals):
     decoded_tags = []
-    mrg_tags = []
+    # mrg_tags = []
     w_len, _, words, pos, tags, _, _ = batcher.process(batch)
 
     print ("Started decode_batch")
@@ -237,36 +237,35 @@ def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, n
                                     beam_tags,
                                     best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)
-
+    num_sentaces = len(words)
     word_tokens = w_vocab.to_tokens(words.tolist())
 
     for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
         print ("Staring astar search for sentence %d /"
                 " %d [tag length %d]" %
-                (i+1, batcher.get_batch_size(), len(beam_tag)))
+                (i+1, num_sentaces, len(beam_tag)))
 
-        _mrg_tags = []
+        # _mrg_tags = []
         if all(beam_tag):
             trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
         else:
             trees, new_tags = [], []
         decoded_tags.append(new_tags)
-        for tree in trees:
-            leaves_id = sorted([t.identifier for t in tree.leaves()])
-            w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
-            _mrg_tags.append(to_mrg(tree, w_leaves))
-        mrg_tags.append(_mrg_tags)
+        # for tree in trees: #TODO
+        #     leaves_id = sorted([t.identifier for t in tree.leaves()])
+        #     w_leaves = dict(zip(leaves_id, sent[1:w_len[i]-1]))
+        #     _mrg_tags.append(to_mrg(tree, w_leaves))
+        # mrg_tags.append(_mrg_tags)
 
     print ("Ended decode_batch")
-    return mrg_tags, decoded_tags
-
-
+    # return mrg_tags, decoded_tags
+    return decoded_tags
 
 def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             w_attn, num_goals):
 
     decode_graph = tf.Graph()
-    use_threading = True
+    use_Processing = True
     with tf.Session(graph=decode_graph) as sess:
         model = get_model(sess,
                             config,
@@ -276,49 +275,40 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                             decode_graph,
                             w_attn)
 
-        # num_batches = len(batch_list)
-        num_batches = 128
-        batch_list = batcher.get_batch()[:num_batches]
+        # num_batches = 128
+        # batch_list = batcher.get_batch()[:num_batches]
+        batch_list = batcher.get_batch()
+        num_batches = len(batch_list)
         decoded_tags = [0]*num_batches
-        mrg_tags = [0]*num_batches
-        if use_threading:
+        # mrg_tags = [0]*num_batches
+        if use_Processing:
             twrv = [0]*num_batches
             for i, bv in enumerate(batch_list):
-                print ("[Thread Debug] Starting thread[%d]"%i)
-                twrv[i] = ThreadWithReturnValue(target=decode_batch, name=i,
+                print ("[Process Debug] Starting Process[%d]"%i)
+                twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                             args=(sess, model, config, t_op,
                                                     t_vocab, w_vocab, batcher,
                                                     bv, num_goals))
                 twrv[i].start()
 
             for i in xrange(num_batches):
-                print ("[Thread Debug] Waiting for thread[%d] to end"%i)
-                _mrg_tags, _decoded_tags = twrv[i].join()
-                print ("[Thread Debug] Ended thread[%d]"%i)
+                print ("[Process Debug] Waiting for Process[%d] to end"%i)
+                _, _decoded_tags = twrv[i].join()
+                print ("[Process Debug] Ended Process[%d]"%i)
                 decoded_tags[i] = _decoded_tags
-                mrg_tags[i] = _mrg_tags
+                # decoded_tags[i] = _decoded_tags[0]
+                # mrg_tags[i] = _decoded_tags[1]
         else:
             for  i, bv in enumerate(batch_list):
-                _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
+                # _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
+                _decoded_tags = decode_batch(sess, model, config,
                                                         t_op, t_vocab, w_vocab,
                                                         batcher, bv, num_goals)
                 decoded_tags[i] = _decoded_tags
-                mrg_tags[i] = _mrg_tags
+                # mrg_tags[i] = _mrg_tags
 
-    return mrg_tags, decoded_tags
-
-# def to_mrg(tree, v):
-#
-#     nid = tree.root
-#     if tree[nid].is_leaf():
-#         return  ' (' + tree[nid].tag + ' ' + v[nid] + ')'
-#
-#     res = ' (' + tree[nid].tag
-#
-#     for c_nid in sorted(tree.children(nid), key=lambda x: x.identifier):
-#         res += to_mrg(tree.subtree(c_nid.identifier), v)
-#
-#     return res + ')'
+    # return mrg_tags, decoded_tags
+    return decoded_tags
 
 
 def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
