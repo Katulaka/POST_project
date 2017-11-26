@@ -13,7 +13,7 @@ from astar.search import solve_tree_search
 from beam.search import BeamSearch
 from POST_model import POSTModel
 from utils.gen_tags import to_mrg
-from util.utils import ThreadWithReturnValue
+from utils.utils import ThreadWithReturnValue
 
 
 def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
