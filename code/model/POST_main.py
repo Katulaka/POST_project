@@ -216,8 +216,8 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
         eval_losses.append(eval_loss)
 
-def decode_batch(decode_graph, config, t_op, t_vocab,  w_vocab,
-                    batcher, batch, num_goals):
+def decode_batch(decode_graph, config, t_op, t_vocab,  w_vocab, add_pos_in,
+                add_w_pos_in, w_attn, batcher, batch, num_goals):
 
     with tf.Session(graph=decode_graph) as sess:
         model = get_model(sess,
@@ -289,7 +289,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                         res_q=res_q[i],
                                         args=(dg, config, t_op,
-                                            t_vocab, w_vocab, batcher,
+                                            t_vocab, w_vocab, add_pos_in,
+                                            add_w_pos_in, w_attn,batcher,
                                             bv, num_goals))
         twrv[i].start()
 
