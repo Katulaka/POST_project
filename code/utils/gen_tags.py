@@ -289,15 +289,9 @@ class TagOp(object):
         res = []
         _tag = tag
         try:
-<<<<<<< HEAD
             if tag[0] in [CL, CR]:
                 res.append(tag[:2])
                 _tag = tag[2:]
-=======
-        if tag[0] in [CL, CR]:
-            res.append(tag[:2])
-            _tag = tag[2:]
->>>>>>> 9b45a6d580388a545c45f5ddb4f93a9f7563935d
         except:
             import pdb; pdb.set_trace()
         for t in _tag:
