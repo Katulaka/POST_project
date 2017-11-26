@@ -4,7 +4,8 @@
 from abc import ABCMeta, abstractmethod
 from heapq import heappush, heappop
 
-from utils.gen_tags import to_mrg
+# from utils.gen_tags import to_mrg
+import time
 
 class AStar:
     __metaclass__ = ABCMeta
@@ -70,6 +71,8 @@ class AStar:
             return reversed(list(_gen()))
 
     def astar(self, start, goal, num_goals, reverse_path = False, verbose = 0):
+        start_time = time.time()
+        time_out = 60.
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         goals = []
@@ -79,13 +82,14 @@ class AStar:
             cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
             startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
-        while openSet and len(goals) < num_goals:
+        while (time.time() - start_time < time_out) and openSet and len(goals) < num_goals:
             current = heappop(openSet)
             if verbose > 0:
                 print "---------------------------------------------------"
                 print "current:", current.data.idx, current.data.rank, current.fscore
-                v = {l.identifier: "" for l in current.data.tree[0].leaves()}
-                print "current:", to_mrg(current.data.tree[0], v)
+                #TODO fix to_mrg
+                # v = {l.identifier: "" for l in current.data.tree[0].leaves()}
+                # print "current:", to_mrg(current.data.tree[0], v)
             if self.is_goal_reached(current.data, goal):
                 goals.append(self.reconstruct_path(current, reverse_path))
             current.out_openset = True
