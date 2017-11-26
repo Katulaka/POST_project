@@ -13,6 +13,7 @@ from astar.search import solve_tree_search
 from beam.search import BeamSearch
 from POST_model import POSTModel
 from utils.gen_tags import to_mrg
+from util.utils import ThreadWithReturnValue
 
 
 def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
@@ -255,10 +256,13 @@ def decode_batch(sess, model, config, t_op, t_vocab,  w_vocab, batcher, batch, n
         mrg_tags.append(_mrg_tags)
     return mrg_tags, decoded_tags
 
+
+
 def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
             w_attn, num_goals):
 
     decode_graph = tf.Graph()
+    use_threading = True
     with tf.Session(graph=decode_graph) as sess:
         model = get_model(sess,
                             config,
@@ -268,16 +272,30 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                             decode_graph,
                             w_attn)
 
-        decoded_tags = []
-        mrg_tags = []
-        for i, bv in enumerate(batcher.get_batch()):
-            _mrg_tags, _decoded_tags = decode_batch(sess, model, config, t_op,
+        batch_list = batcher.get_batch()
+        num_batches = len(batch_list)
+        decoded_tags = [0]*num_batches
+        mrg_tags = [0]*num_batches
+        if use_threading:
+            twrv = [0]*num_batches
+            for i, bv in enumerate(batch_list):
+                twrv[i] = ThreadWithReturnValue(target=decode_batch, name=i,
+                                            args=(sess, model, config, t_op,
                                                     t_vocab, w_vocab, batcher,
-                                                    bv, num_goals)
-            import pdb; pdb.set_trace()
-            decoded_tags += _decoded_tags
-            mrg_tags += _mrg_tags
+                                                    bv, num_goals))
+                twrv[i].start()
 
+            for i in xrange(num_batches):
+                _mrg_tags, _decoded_tags = twrv[i].join()
+                decoded_tags[i] = _decoded_tags
+                mrg_tags[i] = _mrg_tags
+        else:
+            for  i, bv in enumerate(batch_list):
+                _mrg_tags, _decoded_tags = decode_batch(sess, model, config,
+                                                        t_op, t_vocab, w_vocab,
+                                                        batcher, bv, num_goals)
+                decoded_tags[i] = _decoded_tags
+                mrg_tags[i] = _mrg_tags
 
     return mrg_tags, decoded_tags
 
