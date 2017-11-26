@@ -230,7 +230,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
         decoded_tags = []
         mrg_tags = []
-        for bv in batcher.get_batch():
+        _bv = batcher.get_batch()[:1]
+        # for bv in batcher.get_batch():
+        for bv in _bv:
             w_len, _, words, pos, tags, _, _ = batcher.process(bv)
 
             bs = BeamSearch(model,
