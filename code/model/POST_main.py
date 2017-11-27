@@ -216,13 +216,14 @@ def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens,
 
         eval_losses.append(eval_loss)
 
-def decode_batch(beam_pair, word_tokens):
+def decode_batch(beam_pair, word_tokens, num_goals):
 
     decoded_tags = []
+    num_sentences = len(word_tokens)
     for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
         print ("Staring astar search for sentence %d /"
                 " %d [tag length %d]" %
-                (i+1, num_sentaces, len(beam_tag)))
+                (i+1, num_sentences, len(beam_tag)))
 
         if all(beam_tag):
             trees, new_tags = solve_tree_search(beam_tag, 0, num_goals)
@@ -263,8 +264,17 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
     decode_graph = tf.Graph()
     with tf.Session(graph=decode_graph) as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in,
-                            add_w_pos_in, decode_graph, w_attn)
+        #model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in,
+        #                    add_w_pos_in, decode_graph, w_attn)
+        model = get_model(sess,
+                            config,
+                            w_vocab.get_ctrl_tokens(),
+                            add_pos_in,
+                            add_w_pos_in,
+                            decode_graph,
+                            w_attn)
+
+        print ("FINISHED GENERATING MODEL")
 
         batch_list = batcher.get_batch()[:num_batches]
         for i, batch in enumerate(batch_list):
@@ -273,7 +283,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
             twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                             res_q=res_q[i],
-                                            args=(_beam_pair, _word_tokens))
+                                            args=(_beam_pair, _word_tokens,
+                                                    num_goals))
             twrv[i].start()
 
     for i in xrange(num_batches):
