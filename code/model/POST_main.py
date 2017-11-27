@@ -232,7 +232,7 @@ def decode_batch(beam_pair, word_tokens):
 
     return decoded_tags
 
-def decode_bs(bs, w_vocab, t_vocab, batcher, t_op):
+def decode_bs(bs, w_vocab, t_vocab, batcher, batch, t_op):
 
     w_len, _, words, pos, tags, _, _ = batcher.process(batch)
 
@@ -269,8 +269,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         batch_list = batcher.get_batch()[:num_batches]
         for i, batch in enumerate(batch_list):
             _beam_pair, _word_tokens = decode_bs(bs, w_vocab, t_vocab,
-                                                batcher, t_op)
-                                                
+                                                batcher, batch, t_op)
+
             twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                             res_q=res_q[i],
                                             args=(_beam_pair, _word_tokens))
