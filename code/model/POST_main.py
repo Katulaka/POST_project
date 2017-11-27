@@ -232,7 +232,10 @@ def decode_batch(beam_pair, word_tokens):
 
     return decoded_tags
 
-def decode_bs(sess, bs, w_vocab, t_vocab, batcher, batch, t_op):
+def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
+
+    bs = BeamSearch(model, config.beam_size, t_vocab.token_to_id('GO'),
+                    t_vocab.token_to_id('EOS'), config.dec_timesteps)
 
     w_len, _, words, pos, tags, _, _ = batcher.process(batch)
 
@@ -263,13 +266,10 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
         model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in,
                             add_w_pos_in, decode_graph, w_attn)
 
-        bs = BeamSearch(model, config.beam_size, t_vocab.token_to_id('GO'),
-                        t_vocab.token_to_id('EOS'), config.dec_timesteps)
-
         batch_list = batcher.get_batch()[:num_batches]
         for i, batch in enumerate(batch_list):
-            _beam_pair, _word_tokens = decode_bs(sess, bs, w_vocab, t_vocab,
-                                                batcher, batch, t_op)
+            _beam_pair, _word_tokens = decode_bs(sess, model, config, w_vocab,
+                                                t_vocab, batcher, batch, t_op)
 
             twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                             res_q=res_q[i],
