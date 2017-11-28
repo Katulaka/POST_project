@@ -4,7 +4,7 @@ from multiprocessing import Queue
 
 from astar.search import solve_tree_search
 from utils.tags.tag_tree import convert_to_TagTree
-from utils.tags.gen_tags import to_mrg
+from utils.tags.trees_to_tags import to_mrg
 from beam.search import BeamSearch
 from utils.utils import ProcessWithReturnValue
 

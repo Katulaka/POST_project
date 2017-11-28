@@ -1,7 +1,7 @@
 import cPickle
 import copy
 
-from gen_tags import R, L, CR, CL, ANY
+from tag_symbols import R, L, CR, CL, ANY
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
