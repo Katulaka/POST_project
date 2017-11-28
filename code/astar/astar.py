@@ -4,7 +4,6 @@
 from abc import ABCMeta, abstractmethod
 from heapq import heappush, heappop
 
-# from utils.gen_tags import to_mrg
 import time
 
 class AStar:
