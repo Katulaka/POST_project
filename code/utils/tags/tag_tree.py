@@ -1,5 +1,5 @@
 from treelib import Node, Tree
-from gen_tags import CR, CL
+from tag_symbols import CR, CL
 
 
 class Prop(object):
