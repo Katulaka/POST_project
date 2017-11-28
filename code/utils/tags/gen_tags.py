@@ -3,11 +3,9 @@ from __future__ import print_function
 from nltk.corpus import BracketParseCorpusReader as reader
 import os
 from treelib import Node, Tree
-from utils import operate_on_Narray, _operate_on_Narray
+from utils.utils import operate_on_Narray, _operate_on_Narray
 import copy as copy
 
-# R = '/'
-# L = '\\'
 R = '}'
 L = '{'
 CR = '>'
@@ -76,7 +74,7 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 
     return total_offset+1, max_id, leaf_id
 
-def penn_converter(fin, penn_path='code/utils/pennconverter.jar'):
+def penn_converter(fin, penn_path='code/utils/tags/pennconverter.jar'):
 
     dep_dict_file = []
     dep_dict_tree = {}
@@ -210,18 +208,56 @@ def gen_tags(fin):
         except:
             print ("Wrong tree %d in %s" % (i, fin))
 
-def to_mrg(tree, v): #TODO fix function
-
+def _to_mrg(tree):
     nid = tree.root
     if tree[nid].is_leaf():
-        return  ' (' + tree[nid].tag + ' ' + v[nid] + ')'
+        return  ' (' + tree[nid].tag + ' ' + tree[nid].data.word + ')'
 
     res = ' (' + tree[nid].tag
 
     for c_nid in sorted(tree.children(nid), key=lambda x: x.identifier):
-        res += to_mrg(tree.subtree(c_nid.identifier), v)
+        res += to_mrg(tree.subtree(c_nid.identifier))
 
     return res + ')'
+
+def to_mrg(trees):
+    return _operate_on_Narray(trees, _to_mrg)
+
+
+def find_tag(tree):
+    sorted_nodes = sorted([t.identifier for t in tree.all_nodes()])
+    new_tag = []
+    while (sorted_nodes):
+        _new_tag =[]
+        if tree[sorted_nodes[0]].is_leaf():
+            _new_tag.append(tree[sorted_nodes[0]].tag)
+            del sorted_nodes[0]
+        else:
+            while (not tree[sorted_nodes[0]].is_leaf()):
+                ch = [R+c.tag if sorted_nodes[1] < c.identifier else L+c.tag
+                            for c in tree.siblings(sorted_nodes[1])]
+                _new_tag.append(''.join([tree[sorted_nodes[0]].tag] + ch))
+                del sorted_nodes[0]
+            _new_tag.append(tree[sorted_nodes[0]].tag)
+            del sorted_nodes[0]
+        new_tag.append(_new_tag)
+    return new_tag
+
+
+def _find_tag(tree):
+    sorted_nodes = sorted([t.identifier for t in tree.all_nodes()])
+    new_tag = []
+    while (sorted_nodes):
+        sub_tag = []
+        if tree[sorted_nodes[0]].data.comb_side != '':
+            sub_tag = [tree[sorted_nodes[0]].data.comb_side]
+        while (not tree[sorted_nodes[0]].is_leaf()):
+            sub_tag += [sorted_nodes[0]]
+            del sorted_nodes[0]
+        sub_tag += [sorted_nodes[0]]
+        del sorted_nodes[0]
+        new_tag.append(sub_tag)
+    return extend_path(tree, new_tag)
 
 
 class TagOp(object):

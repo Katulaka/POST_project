@@ -7,7 +7,7 @@ import json
 import time
 
 from vocab import Vocab
-from gen_tags import gen_tags, TagOp
+from tags.gen_tags import gen_tags, TagOp
 from utils import flatten_to_1D
 
 def get_raw_data(data_path):
