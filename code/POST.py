@@ -4,7 +4,9 @@ import time
 import os
 
 from utils.dataset import gen_dataset, split_dataset
-import model.POST_main as POST_main
+# import model.POST_main as POST_main
+import model.POST_decode as POST_decode
+import model.POST_train as POST_train
 from utils.conf import Config
 from utils.batcher import Batcher
 
@@ -39,7 +41,6 @@ def main(_):
     # parser.add_argument('--slash_split', action='store_true', help='')
 
     args = parser.parse_args()
-    # import pdb; pdb.set_trace()
 
     data_file = os.path.join(os.getcwd(), Config.train_dir, 'new_data.txt')
 
@@ -72,34 +73,28 @@ def main(_):
 
     if (args.action == 'train'):
         th_loss = 0.1
-        POST_main.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
+        # POST_main.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
+        POST_train.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
                             w_vocab.get_ctrl_tokens(), args.add_pos_in,
                             args.add_w_pos_in, args.attn, th_loss)
 
     elif (args.action == 'decode'):
-        # import cProfile, pstats, StringIO
-        # pr = cProfile.Profile()
-        # pr.enable()
-        # mrg_tags, decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
-        decoded_tags = POST_main.decode(Config, w_vocab, t_vocab,
-                                                    batcher_test, t_op,
-                                                    args.add_pos_in,
-                                                    args.add_w_pos_in,
-                                                    args.attn, args.num_goals)
-        # pr.disable()
-        # s = StringIO.StringIO()
-        # sortby = 'cumulative'
-        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        # ps.print_stats()
-        # print s.getvalue()
+
+        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
+                                            batcher_test, t_op,
+                                            args.add_pos_in,
+                                            args.add_w_pos_in,
+                                            args.attn, args.num_goals)
+
+        import pdb; pdb.set_trace()
 
 
     elif(args.action == 'stats'):
-        stats = POST_main.stats(Config, w_vocab, t_vocab, batcher, t_op,
+        stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher, t_op,
                                 args.add_pos_in, args.add_w_pos_in,
                                 args.attn, args.stat_file)
     elif(args.action == 'verify'):
-        verify_tags = POST_main.verify(t_vocab, batcher, t_op)
+        verify_tags = POST_decode.verify(t_vocab, batcher, t_op)
         import collections
         compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
         res = map(lambda to, tn: all(map(lambda x,y: compare(x,y), to, tn)),
