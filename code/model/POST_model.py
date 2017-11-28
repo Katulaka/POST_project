@@ -110,7 +110,6 @@ class POSTModel(object):
             self.dec_init_state = tf.reshape(self.atten_state, [-1, self.att_shape])
 
 
-    # def _add_lstm_layer(self, reuse):
     def _add_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.name_scope('LSTM-Layer'):
@@ -119,7 +118,6 @@ class POSTModel(object):
                                         tf.zeros_like(self.dec_init_state))
 
             lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.att_shape,
-            # self.n_hidden_lstm,
                                                     forget_bias=1.0,
                                                     state_is_tuple=True)
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
@@ -172,7 +170,7 @@ class POSTModel(object):
                                                 -1.0, 1.0)
             w_out = tf.Variable(w_uniform_dist, name='W-out')
             b_out = tf.Variable(tf.zeros([self.t_vocab_size]), name='b-out')
-
+            #TODO add support for attention and without attention
             self.logits = tf.matmul(self.lstm_att, w_out) + b_out
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
