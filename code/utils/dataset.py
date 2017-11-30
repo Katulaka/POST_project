@@ -113,8 +113,7 @@ def slice_dataset(all_dataset, max_len):
         indeces = [len(w) <= max_len for w in ds['words']]
         dataset[key]['words'] = _select(ds['words'], indeces)
         dataset[key]['tags'] = _select(ds['tags'], indeces)
-    print("Total time to slice sentences of length <= %d: %f" %
-                (max_len, time.time()-start_time))
+    print("Total time to slice sentences : %f" % (time.time()-start_time))
     return dataset
 
 def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
