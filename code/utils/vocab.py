@@ -47,7 +47,7 @@ class Vocab(object):
 
     def token_to_id(self, token):
         if token not in self._token_to_id:
-            return self._token_to_id[UNK[1]]
+            return self._token_to_id[UNK[0]]
         return self._token_to_id[token]
 
     def tokens_to_ids(self, token_list):

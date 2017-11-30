@@ -13,6 +13,7 @@ class Config(object):
     steps_per_checkpoint = 10
     beam_size = 5
     dec_timesteps = 20 #TODO
-    src_dir = '../raw_data/wsj'
+    # src_dir = '../raw_data/wsj'
+    src_dir = '../gold_data'
     train_dir = 'data'
     checkpoint_path = 'checkpoints'

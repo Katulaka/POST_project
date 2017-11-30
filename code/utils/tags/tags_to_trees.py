@@ -1,36 +1,12 @@
-from nltk.corpus import BracketParseCorpusReader as reader
+from nltk.tree import Tree as Tree_
 from treelib import Node, Tree
-
-def remove_traces(ts): # Remove traces and null elements
-    for t in ts:
-        for ind, leaf in reversed(list(enumerate(t.leaves()))):
-            postn = t.leaf_treeposition(ind)
-            parentpos = postn[:-1]
-            if leaf.startswith("*") or t[parentpos].label() == '-NONE-':
-                while parentpos and len(t[parentpos]) == 1:
-                    postn = parentpos
-                    parentpos = postn[:-1]
-                print(t[postn], "will be deleted")
-                del t[postn]
-    return ts
-
-def simplify(ts): # Simplify tags
-    for t in ts:
-        for s in t.subtrees():
-            tag = s.label()
-            if tag not in ['-LRB-', '-RRB-', '-NONE-']:
-                if '-' in tag or '=' in tag or '|' in tag:
-                    simple = tag.split('-')[0].split('=')[0].split('|')[0]
-                    s.set_label(simple)
-                    print('substituting', simple, 'for', tag)
-    return ts
+import os
 
 class TreeAux(object):
 
     def __init__(self, height=0, lids=[]):
         self.height = height
         self.leaves = lids
-
 
 def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
     # starts by ['(', 'pos']
@@ -62,7 +38,7 @@ def get_tree(tree, line, max_id=0, leaf_id=1, parent_id=None):
 
     return total_offset+1, max_id, leaf_id
 
-def penn_converter(fin, penn_path='code/utils/pennconverter.jar'):
+def penn_converter(fin, penn_path='code/utils/tags/pennconverter.jar'):
 
     dep_dict_file = []
     dep_dict_tree = {}
@@ -113,18 +89,16 @@ def gen_height(tree, tree_dep):
     return True
 
 def get_trees(fin):
+    #TODO maybe change code to nltk trees
     tree_deps = penn_converter(fin)
-
-    rfin = fin.split('/')
-    r = reader('/'.join(rfin[:-2]), '/'.join(rfin[-2:]))
-    trees = simplify(remove_traces(list(r.parsed_sents())))
-    for i, t in enumerate(trees):
-        line = str(t.pformat().replace('\n', ''))
-        line = line.replace('(', ' ( ').replace(')', ' ) ').split()
-        tree = Tree()
+    with open(fin) as f:
+        lines = [x.strip('\n') for x in f.readlines()]
+    for i, line in enumerate(lines):
         #max_id is the number of words in line + 1.
         # This is index kept in order to number words from 1 to num of words
-        max_id = len(t.leaves()) + 1
+        max_id = len(Tree_.fromstring(line).leaves()) + 1
+        line = line.replace('(', ' ( ').replace(')', ' ) ').split()
+        tree = Tree()
         get_tree(tree, line, max_id)
         gen_height(tree, tree_deps[i])
         yield tree

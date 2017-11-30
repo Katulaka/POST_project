@@ -25,31 +25,49 @@ def get_raw_data(data_path):
         "/project/eecs/nlp/corpora/EnglishTreebank/wsj/* ")
         os.system(scp_path + data_path)
 
-def convert_data_flat(src_dir, data_file):
-    """ If src dir is empty or not a file will result in empty file """
-    # Download raw data for training #TODO
-    # if not os.path.exists(src_dir):
-    #      get_raw_data(src_dir)
-
+def split_to_tags_words(src_file, dst_file):
     data = dict()
     data['words'] =[]
     data['tags'] = []
-    for directory, _, filenames in os.walk(src_dir):
-        for fname in filenames:
-            data_in = os.path.join(directory, fname)
-            print("Reading file %s" %(data_in))
-            for tags, words in gen_tags(data_in):
-                data['words'].append(words)
-                data['tags'].append(tags)
+    for tags, words in gen_tags(src_file):
+        data['words'].append(words)
+        data['tags'].append(tags)
+    with open(dst_file, 'w') as outfile:
+        jason.dump(data, outfile)
+    # return data
 
+def split_all(src_dir, dst_root_dir):
+    for directory, dirnames, filenames in os.walk(src_dir):
+        if directory[-1].isdigit():
+            dst_dir = os.path.join(dst_root_dir, directory[-2:])
+            if not os.path.exists(dst_dir):
+                os.mkdir(dst_dir)
+            for fname in sorted(filenames):
+                src_file = os.path.join(directory, fname)
+                dst_file = os.path.join(dst_dir, fname)
+                split_to_tags_words(src_file, dst_file)
+
+def convert_data_flat(src_dir, data_file):
+    """ If src dir is empty or not a file will result in empty file """
+    all_data = dict()
+    for directory, dirnames, filenames in os.walk(src_dir):
+        if directory[-1].isdigit():
+            data = dict()
+            data['words'] =[]
+            data['tags'] = []
+            for fname in sorted(filenames):
+                data_in = os.path.join(directory, fname)
+                print("Reading file %s" %(data_in))
+                for tags, words in gen_tags(data_in):
+                    data['words'].append(words)
+                    data['tags'].append(tags)
+            all_data[int(directory[-2:])] = data
     with open(data_file, 'w') as outfile:
-        json.dump(data, outfile)
+        json.dump(all_data, outfile)
+    return all_data
 
-    return data
 
-
-def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
-                max_len=np.inf):
+def get_dataset(src_dir, data_file):
 
     start_time = time.time()
     if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
@@ -59,22 +77,69 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
         with open (data_file, 'r') as outfile:
             data = json.load(outfile)
     print("Total time to load data: %f" % (time.time()-start_time))
-    dataset = dict()
+    return data
 
-    _select = lambda A, i: list(np.array(A)[i])
-    words = data['words']
-    w_vocab = Vocab(flatten_to_1D(words), w_vocab_size)
-    indeces = [len(w) <= max_len for w in words]
-    dataset['words'] = w_vocab.to_ids(_select(words, indeces))
-    print ("Time to get word data %f" % (time.time()-start_time))
+def _split_dataset(data):
+
+    start_time = time.time()
+    dataset = {'train' : {'words': [], 'tags': []},
+                'dev': data[str(22)],
+                'test': data[str(23)]}
+    for idx in xrange(2,22):
+        dataset['train']['words'].extend(data[str(idx)]['words'])
+        dataset['train']['tags'].extend(data[str(idx)]['tags'])
+    print("Total time to split data into train, dev,test: %f" %
+                                        (time.time()-start_time))
+    return dataset
+
+def get_vocab(train_dataset, tags_type, w_vocab_size, t_vocab_size):
+
+    start_time = time.time()
+    w_vocab = Vocab(flatten_to_1D(train_dataset['words']), w_vocab_size)
+    print ("Total time for word vocab %f" % (time.time()-start_time))
     t_op = TagOp(*tags_type)
-    tags = _select(data['tags'], indeces)
-    _tags = t_op.modify_fn(data['tags'])
-    print ("Time to modify tags %f" % (time.time()-start_time))
+    _tags = t_op.modify_fn(train_dataset['tags'])
+    print ("Total time to modify tags %f" % (time.time()-start_time))
     t_vocab = Vocab(flatten_to_1D(_tags), t_vocab_size)
-    print ("Time for tag vocab %f" % (time.time()-start_time))
-    dataset['tags'] = t_vocab.to_ids(_select(_tags, indeces))
-    print ("Time to get tag data %f" % (time.time()-start_time))
+    print ("Total time for tag vocab %f" % (time.time()-start_time))
+    return w_vocab, t_vocab, t_op
+
+def slice_dataset(all_dataset, max_len):
+
+    start_time = time.time()
+    dataset = {'train': dict(), 'dev': dict(), 'test': dict()}
+    _select = lambda A, i: list(np.array(A)[i])
+    for key, ds in all_dataset.items():
+        indeces = [len(w) <= max_len for w in ds['words']]
+        dataset[key]['words'] = _select(ds['words'], indeces)
+        dataset[key]['tags'] = _select(ds['tags'], indeces)
+    print("Total time to slice sentences of length <= %d: %f" %
+                (max_len, time.time()-start_time))
+    return dataset
+
+def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
+                max_len=np.inf):
+
+    all_dataset = _split_dataset(get_dataset(src_dir, data_file))
+
+    dataset = slice_dataset(all_dataset, max_len)
+
+    tags = dict()
+    for key, ds in dataset.items():
+        tags[key] = ds['tags']
+
+    w_vocab, t_vocab, t_op = get_vocab(dataset['train'],
+                                        tags_type,
+                                        w_vocab_size,
+                                        t_vocab_size)
+
+    start_time = time.time()
+    for ds in dataset.values():
+        ds['words'] = w_vocab.to_ids(ds['words'])
+        ds['tags'] = t_vocab.to_ids(ds['tags'])
+    print ("Total time to convert data from tokens to ids %f" %
+            (time.time()-start_time))
+
     return w_vocab, t_vocab, dataset, t_op, tags
 
 def split_dataset(dataset, ratio):

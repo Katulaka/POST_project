@@ -3,7 +3,7 @@ import tensorflow as tf
 import time
 import os
 
-from utils.dataset import gen_dataset, split_dataset
+from utils.dataset import gen_dataset
 # import model.POST_main as POST_main
 import model.POST_decode as POST_decode
 import model.POST_train as POST_train
@@ -37,12 +37,10 @@ def main(_):
     parser.add_argument('--reverse', action='store_true', help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
 
-    # parser.add_argument('--tag_split', action='store_true', help='')
-    # parser.add_argument('--slash_split', action='store_true', help='')
-
     args = parser.parse_args()
 
-    data_file = os.path.join(os.getcwd(), Config.train_dir, 'new_data.txt')
+    data_file = os.path.join(os.getcwd(), Config.train_dir, '_test_data.txt')
+
 
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
@@ -51,17 +49,13 @@ def main(_):
                                             data_file,
                                             (args.only_pos,
                                             args.keep_direction,
-                                            # args.tag_split,
-                                            # args.slash_split,
-                                            # args.reverse,
                                             args.no_val_gap),
                                             max_len=args.ds_len)
     print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
-    ratio = 0.1
-    train_set, test_set = split_dataset(dataset, ratio)
     # initializing batcher class
-    batcher_train = Batcher(train_set, args.batch, args.reverse)
-    batcher_test = Batcher(test_set, args.batch, args.reverse)
+    batcher_train = Batcher(dataset['train'], args.batch, args.reverse)
+    batcher_dev = Batcher(dataset['dev'], args.batch, args.reverse)
+    batcher_test = Batcher(dataset['test'], args.batch, args.reverse)
 
 
     # Update config variables
@@ -73,10 +67,9 @@ def main(_):
 
     if (args.action == 'train'):
         th_loss = 0.1
-        # POST_main.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
-        POST_train.train_eval(Config, batcher_train, batcher_test, args.cp_dir,
-                            w_vocab.get_ctrl_tokens(), args.add_pos_in,
-                            args.add_w_pos_in, args.attn, th_loss)
+        POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir,
+                                w_vocab.get_ctrl_tokens(), args.add_pos_in,
+                                args.add_w_pos_in, args.attn, th_loss)
 
     elif (args.action == 'decode'):
 
