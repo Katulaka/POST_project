@@ -61,9 +61,6 @@ def gen_tags(fin):
         path = {}
         try:
             gen_tag(tree, tree.root, path)
-            # tst = extend_path(tree, path.values())
-            # res = [t[0] for t in tst if t[0] in ['>', '<']]
-            # if len(res) != len(tst) - 1:
             yield (extend_path(tree, path.values()),
                             [tree[key].tag for key in path.keys()])
         except:
