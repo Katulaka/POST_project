@@ -10,14 +10,13 @@ from POST_main import get_model
 def _train(config, special_tokens, batcher, cp_path):
 
     step_time, loss = 0.0, 0.0
-    num_epochs = config.num_epochs
     train_graph = tf.Graph()
 
     with tf.Session(graph=train_graph) as sess:
         model = get_model(sess, config, special_tokens, train_graph, 'train')
 
         current_step =  model.global_step.eval()
-        for i in range(num_epochs):
+        for i in range(config.num_epochs):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
                 w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)

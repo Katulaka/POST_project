@@ -39,24 +39,23 @@ def main(_):
 
     args = parser.parse_args()
 
-    data_file = os.path.join(os.getcwd(), Config.train_dir, '_test_data.txt')
-
+    data_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
 
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
-    w_vocab, t_vocab, dataset, t_op, tags = gen_dataset(Config.src_dir,
+    w_vocab, t_vocab, dataset, t_op, tags = gen_dataset(Config.src_data_dir,
                                             data_file,
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.no_val_gap),
                                             max_len=args.ds_len)
-    print ("Time to generate dataset and vocabulary %f" % (time.time()-start_time))
+    print ("Time to generate dataset and vocabulary %f" %
+                    (time.time()-start_time))
     # initializing batcher class
     batcher_train = Batcher(dataset['train'], args.batch, args.reverse)
     batcher_dev = Batcher(dataset['dev'], args.batch, args.reverse)
     batcher_test = Batcher(dataset['test'], args.batch, args.reverse)
-
 
     # Update config variables
     Config.batch_size = args.batch
@@ -67,11 +66,10 @@ def main(_):
     Config.add_pos_in = args.add_pos_in
     Config.add_w_pos_in = args.add_w_pos_in
     Config.w_attn = args.attn
-    # Config.th_loss = args.th_loss
 
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir,
-                                w_vocab.get_ctrl_tokens(), )
+                                w_vocab.get_ctrl_tokens())
 
     elif (args.action == 'decode'):
 

@@ -12,19 +12,26 @@ class Config(object):
     learning_rate_decay_factor = 0.1
     steps_per_checkpoint = 10
     beam_size = 5
-    dec_timesteps = 20 #TODO
-    # src_dir = '../raw_data/wsj'
-    src_dir = '../gold_data'
-    train_dir = 'data'
+    dec_timesteps = 20
+
     checkpoint_path = 'checkpoints'
-    num_epochs = 2
 
     add_pos_in = True
     add_w_pos_in = True
     w_attn = True
+
+    #training loss threshold to stop
+    th_loss = 0.1
+    #training num epochs before evaluting the dev loss
+    num_epochs = 1
+
+    #Astar search time-out
+    time_out = 100.
+    #Astar search number of goals
     num_goals = 1
+    # use multi-processing when doing astar search
     multi_processing = False
 
-    th_loss = 0.1
-
-    time_out = 100.
+    src_data_dir = '../gold_data'
+    dataset_dir = 'data'
+    dataset_fname = '_test_data.txt'
