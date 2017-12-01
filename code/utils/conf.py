@@ -34,4 +34,4 @@ class Config(object):
 
     src_data_dir = '../gold_data'
     dataset_dir = 'data'
-    dataset_fname = '_test_data.txt'
+    dataset_fname = 'data.txt'
