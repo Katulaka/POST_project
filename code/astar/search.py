@@ -75,7 +75,6 @@ class Solver(AStar):
         return False
 
 def solve_tree_search(tags, verbose, num_goals):
-    # max_lid = len(tag_matrix)
     max_lid = len(tags)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])

@@ -75,7 +75,6 @@ class POSTModel(object):
             self.bidi_in = self.w_pos_embed if self.add_pos_in else self.word_embed
             self.bidi_in_seq_len = self.w_seq_len
 
-    # def _add_bidi_lstm(self, reuse):
     def _add_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.name_scope('bidirectional-LSTM-Layer'):

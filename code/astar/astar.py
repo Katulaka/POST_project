@@ -86,9 +86,6 @@ class AStar:
             if verbose > 0:
                 print "---------------------------------------------------"
                 print "current:", current.data.idx, current.data.rank, current.fscore
-                #TODO fix to_mrg
-                # v = {l.identifier: "" for l in current.data.tree[0].leaves()}
-                # print "current:", to_mrg(current.data.tree[0], v)
             if self.is_goal_reached(current.data, goal):
                 goals.append(self.reconstruct_path(current, reverse_path))
             current.out_openset = True
