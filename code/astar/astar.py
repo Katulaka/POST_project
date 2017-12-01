@@ -69,9 +69,9 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, num_goals, reverse_path = False, verbose = 0):
+    def astar(self, start, goal, num_goals, time_out, verbose,
+                reverse_path = False):
         start_time = time.time()
-        time_out = 60.
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         goals = []

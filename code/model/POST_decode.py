@@ -32,7 +32,7 @@ def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
     word_tokens = w_vocab.to_tokens(_words)
     return beam_pair, word_tokens
 
-def decode_batch(beam_pair, word_tokens, num_goals):
+def decode_batch(beam_pair, word_tokens, num_goals, time_out):
 
     decode_trees = []
     num_sentences = len(word_tokens)
@@ -43,7 +43,7 @@ def decode_batch(beam_pair, word_tokens, num_goals):
 
         if all(beam_tag):
             tags = convert_to_TagTree(beam_tag, sent)
-            trees = solve_tree_search(tags, 1, num_goals)
+            trees = solve_tree_search(tags, num_goals, time_out)
         else:
             trees = []
         decode_trees.append(trees)
@@ -69,7 +69,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                                 res_q=res_q[i],
                                                 args=(beam_pair, word_tokens,
-                                                    config.num_goals))
+                                                    config.num_goals,
+                                                    config.time_out))
                 twrv[i].start()
 
             for i in xrange(len(batch_list)):
@@ -85,7 +86,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                                                     w_vocab, t_vocab, batcher,
                                                     batch, t_op)
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
-                                                config.num_goals))
+                                                config.num_goals,
+                                                config.time_out))
         decode_tags = to_mrg(decoded_trees)
 
     return decode_tags

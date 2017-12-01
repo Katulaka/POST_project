@@ -26,3 +26,5 @@ class Config(object):
     multi_processing = False
 
     th_loss = 0.1
+
+    time_out = 100.
