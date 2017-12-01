@@ -75,19 +75,15 @@ def main(_):
 
     elif (args.action == 'decode'):
 
-        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
-                                            batcher_test, t_op,
-                                            args.add_pos_in,
-                                            args.add_w_pos_in,
-                                            args.attn, args.num_goals)
+        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab, batcher_test,
+                                        t_op,)
 
         import pdb; pdb.set_trace()
 
 
     elif(args.action == 'stats'):
-        stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher, t_op,
-                                args.add_pos_in, args.add_w_pos_in,
-                                args.attn, args.stat_file)
+        stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher_test, t_op,
+                                    args.stat_file)
     elif(args.action == 'verify'):
         verify_tags = POST_decode.verify(t_vocab, batcher, t_op)
         import collections
