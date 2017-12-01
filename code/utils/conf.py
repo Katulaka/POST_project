@@ -1,6 +1,6 @@
 class Config(object):
 
-    batch_size = 2
+    batch_size = 32
     word_embedding_size = 128
     tag_embedding_size = 128
     n_hidden_fw = 128
@@ -17,3 +17,12 @@ class Config(object):
     src_dir = '../gold_data'
     train_dir = 'data'
     checkpoint_path = 'checkpoints'
+    num_epochs = 2
+
+    add_pos_in = True
+    add_w_pos_in = True
+    w_attn = True
+    num_goals = 1
+    multi_processing = False
+
+    th_loss = 0.1
