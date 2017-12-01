@@ -74,12 +74,12 @@ class Solver(AStar):
             return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
         return False
 
-def solve_tree_search(tags, verbose, num_goals):
+def solve_tree_search(tags, num_goals, time_out, verbose=1):
     max_lid = len(tags)
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    paths = Solver(tags).astar(start, goal, num_goals, verbose = verbose)
+    paths = Solver(tags).astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
     for path in paths:
         path = list(path)[-1]
