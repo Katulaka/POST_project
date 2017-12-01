@@ -97,18 +97,16 @@ class BeamSearch(object):
                     ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        # dec_in_state,
         atten_state_batch = self._model.encode_top_state(sess,
                                                     enc_inputs,
                                                     enc_seqlen,
                                                     enc_aux_inputs)
-        # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
             atten_len = enc_seqlen[j] - 1
-            # for i, dec_in in enumerate(atten_state[1:atten_len]):
+            #TODO fix offset of input
             for i, dec_in in enumerate(atten_state[:atten_len-1]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
@@ -126,7 +124,6 @@ class BeamSearch(object):
                     #TODO maybe cube
                     for hyp in hyps:
                         latest_token = [[hyp.latest_token]]
-                        # states = [hyp.state]
                         states = hyp.state
                         ids, probs, new_state = self._model.decode_topk(sess,
                                                                 latest_token,
@@ -155,8 +152,10 @@ class BeamSearch(object):
                 decs.append(self.best_hyps(res))
 
         beams = dict()
-        beams['tokens'] = map(lambda r: map(lambda h: h.tokens[1:-1], r), decs)
-        beams['scores'] = map(lambda r: map(lambda h: h.score, r), decs)
+        beams['tokens'] = [[h.tokens[1:-1] for h in r if len(h.tokens)>2]
+                            for r in decs]
+        beams['scores'] = [[h.score for h in r if len(h.tokens)>2]
+                             for r in decs]
         return beams
 
     def best_hyps(self, hyps):
