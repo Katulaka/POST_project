@@ -7,8 +7,8 @@ import tensorflow as tf
 
 from POST_model import POSTModel
 
-def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
-              graph, w_attention=True, mode='decode'):
+def get_model(session, config, special_tokens, graph, mode='decode'):
+
     """ Creates new model for restores existing model """
     start_time = time.time()
 
@@ -17,8 +17,8 @@ def get_model(session, config, special_tokens, add_pos_in, add_w_pos_in,
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size, config.learning_rate,
-                        config.learning_rate_decay_factor, add_pos_in,
-                        add_w_pos_in, w_attention, mode)
+                        config.learning_rate_decay_factor, config.add_pos_in,
+                        config.add_w_pos_in, config.w_attn, mode)
 
     model.build_graph(graph, special_tokens)
 

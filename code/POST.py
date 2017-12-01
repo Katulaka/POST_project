@@ -64,12 +64,14 @@ def main(_):
     Config.tag_vocabulary_size = t_vocab.vocab_size()
     Config.word_vocabulary_size = w_vocab.vocab_size()
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
+    Config.add_pos_in = args.add_pos_in
+    Config.add_w_pos_in = args.add_w_pos_in
+    Config.w_attn = args.attn
+    # Config.th_loss = args.th_loss
 
     if (args.action == 'train'):
-        th_loss = 0.1
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir,
-                                w_vocab.get_ctrl_tokens(), args.add_pos_in,
-                                args.add_w_pos_in, args.attn, th_loss)
+                                w_vocab.get_ctrl_tokens(), )
 
     elif (args.action == 'decode'):
 

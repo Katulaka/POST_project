@@ -1,6 +1,9 @@
 import copy
 import tensorflow as tf
+import json
+import numpy as np
 from multiprocessing import Queue
+
 
 from astar.search import solve_tree_search
 from utils.tags.tag_tree import convert_to_TagTree
@@ -25,7 +28,6 @@ def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
     _beam_pair = map(lambda x, y: zip(x, y),
                                 beam_tags, best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)
-    #TODO pass words without eos and go symbols
     _words = [s[1:s_len-1].tolist() for s, s_len in zip(words, w_len)]
     word_tokens = w_vocab.to_tokens(_words)
     return beam_pair, word_tokens
@@ -41,16 +43,13 @@ def decode_batch(beam_pair, word_tokens, num_goals):
 
         if all(beam_tag):
             tags = convert_to_TagTree(beam_tag, sent)
-            trees = solve_tree_search(tags, 0, num_goals)
+            trees = solve_tree_search(tags, 1, num_goals)
         else:
             trees = []
         decode_trees.append(trees)
     return decode_trees
 
-def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
-            w_attn, num_goals):
-
-    use_Processing = False
+def decode(config, w_vocab, t_vocab, batcher, t_op):
 
     #TODO retrun to general
     num_batches = 2
@@ -58,10 +57,9 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
 
     decode_graph = tf.Graph()
     with tf.Session(graph=decode_graph) as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), add_pos_in,
-                            add_w_pos_in, decode_graph, w_attn)
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), decode_graph)
 
-        if use_Processing:
+        if config.multi_processing:
             decoded_trees = [0] * num_batches
             twrv = [0] * num_batches
             res_q = [Queue()] * num_batches
@@ -73,7 +71,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                 twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
                                                 res_q=res_q[i],
                                                 args=(beam_pair, word_tokens,
-                                                        num_goals))
+                                                    config.num_goals))
                 twrv[i].start()
 
             for i in xrange(len(batch_list)):
@@ -89,23 +87,16 @@ def decode(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
                                                     w_vocab, t_vocab, batcher,
                                                     batch, t_op)
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
-                                                num_goals))
+                                                config.num_goals))
         decode_tags = to_mrg(decoded_trees)
 
     return decode_tags
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, add_pos_in, add_w_pos_in,
-            w_attn, data_file):
+def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
     stat_graph = tf.Graph()
     with tf.Session(graph=stat_graph) as sess:
         greedy = False
-        model = get_model(sess,
-                            config,
-                            w_vocab.get_ctrl_tokens(),
-                            add_pos_in,
-                            add_w_pos_in,
-                            stat_graph,
-                            w_attn)
+        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), stat_graph,)
         beam_rank = []
         batch_list = batcher.get_batch()
         len_batch_list = len(batch_list)
