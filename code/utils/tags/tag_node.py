@@ -20,7 +20,8 @@ class TagNode(object):
 
     def combine_trees(self):
         ptr = 0
-
+        if len(self.tree) > 2:
+            import pdb; pdb.set_trace()
         trees_cp = copy.copy(self.tree)
         while ptr < len(trees_cp)-1:
             combine = False
