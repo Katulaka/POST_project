@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from POST_model import POSTModel
 
-def get_model(session, config, special_tokens, graph, mode='decode'):
+def get_model(session, config, graph, mode='decode'):
 
     """ Creates new model for restores existing model """
     start_time = time.time()
@@ -18,9 +18,10 @@ def get_model(session, config, special_tokens, graph, mode='decode'):
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size, config.learning_rate,
                         config.learning_rate_decay_factor, config.add_pos_in,
-                        config.add_w_pos_in, config.w_attn, mode)
+                        config.add_w_pos_in, config.w_attn, mode,
+                        config.reg_loss,)
 
-    model.build_graph(graph, special_tokens)
+    model.build_graph(graph)
 
     ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):

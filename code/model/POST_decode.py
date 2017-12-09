@@ -55,7 +55,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
 
     decode_graph = tf.Graph()
     with tf.Session(graph=decode_graph) as sess:
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), decode_graph)
+        model = get_model(sess, config, decode_graph)
 
         if config.multi_processing:
             decoded_trees = [0] * num_batches
@@ -95,8 +95,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
 def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
     stat_graph = tf.Graph()
     with tf.Session(graph=stat_graph) as sess:
-        greedy = False
-        model = get_model(sess, config, w_vocab.get_ctrl_tokens(), stat_graph,)
+        model = get_model(sess, config, stat_graph,)
         beam_rank = []
         batch_list = batcher.get_batch()
         len_batch_list = len(batch_list)
@@ -111,7 +110,7 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)
             pos_cp = copy.copy(pos)
-            search_fn = bs.greedy_beam_search if greedy else bs.beam_search
+            search_fn = bs.greedy_beam_search if config.greedy else bs.beam_search
             best_beams = search_fn(sess, words_cp, w_len_cp, pos_cp)
             tags_cp = copy.copy(tags)
             tags_cp = [t for tc in tags_cp for t in tc]

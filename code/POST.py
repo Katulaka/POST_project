@@ -68,8 +68,7 @@ def main(_):
     Config.w_attn = args.attn
 
     if (args.action == 'train'):
-        POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir,
-                                w_vocab.get_ctrl_tokens())
+        POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
 
     elif (args.action == 'decode'):
 

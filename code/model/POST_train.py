@@ -7,13 +7,13 @@ import numpy as np
 
 from POST_main import get_model
 
-def _train(config, special_tokens, batcher, cp_path):
+def _train(config, batcher, cp_path):
 
     step_time, loss = 0.0, 0.0
     train_graph = tf.Graph()
 
     with tf.Session(graph=train_graph) as sess:
-        model = get_model(sess, config, special_tokens, train_graph, 'train')
+        model = get_model(sess, config, train_graph, 'train')
 
         current_step =  model.global_step.eval()
         for i in range(config.num_epochs):
@@ -51,17 +51,14 @@ def _train(config, special_tokens, batcher, cp_path):
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
 
-def _eval(config, special_tokens, batcher, cp_path):
+def _eval(config, batcher, cp_path):
 
     step_time, loss = 0.0, 0.0
     eval_graph = tf.Graph()
     current_step =  0
 
     with tf.Session(graph=eval_graph) as sess:
-        model = get_model(sess,
-                            config,
-                            special_tokens,
-                            eval_graph)
+        model = get_model(sess, config, eval_graph)
 
         for bv in batcher.get_permute_batch():
             start_time = time.time()
@@ -79,14 +76,14 @@ def _eval(config, special_tokens, batcher, cp_path):
             sys.stdout.flush()
         return loss
 
-def train_eval(config, batcher_train, batcher_test, cp_path, special_tokens):
+def train_eval(config, batcher_train, batcher_test, cp_path):
 
     # This is the training loop.
     eval_loss = np.inf
     eval_losses = []
     while eval_loss > config.th_loss:
-        _train(config, special_tokens, batcher_train, cp_path)
+        _train(config, batcher_train, cp_path)
 
-        eval_loss = _eval(config, special_tokens, batcher_test, cp_path)
+        eval_loss = _eval(config, batcher_test, cp_path)
 
         eval_losses.append(eval_loss)
