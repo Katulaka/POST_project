@@ -19,6 +19,8 @@ class Config(object):
     add_pos_in = True
     add_w_pos_in = True
     w_attn = True
+    #use regular loss or modified with "covarience" relation
+    reg_loss = False #TODO
 
     #training loss threshold to stop
     th_loss = 0.1
@@ -31,6 +33,9 @@ class Config(object):
     num_goals = 1
     # use multi-processing when doing astar search
     multi_processing = False
+
+    #beam search or greedy beam search
+    greedy = False
 
     src_data_dir = '../gold_data'
     dataset_dir = 'data'
