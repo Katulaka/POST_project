@@ -27,6 +27,18 @@ def flatten_to_1D(A):
     n =  arr_dim(A) - 1
     return flattenNd(A, n)
 
+# def profile(fn, *args): #TODO
+#     import cProfile, pstats, StringIO
+#     pr = cProfile.Profile()
+#     pr.enable()
+#     fn(*args)
+#     pr.disable()
+#     s = StringIO.StringIO()
+#     sortby = 'cumulative'
+#     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+#     ps.print_stats()
+#     print s.getvalue()
+
 class ProcessWithReturnValue(Process):
 
     from multiprocessing import Process, Queue
