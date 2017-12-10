@@ -52,7 +52,7 @@ def _train(config, batcher, cp_path):
                     sys.stdout.flush()
 
 def _eval(config, batcher, cp_path):
-
+    #TODO why loss print is wrong
     step_time, loss = 0.0, 0.0
     eval_graph = tf.Graph()
     current_step =  0
