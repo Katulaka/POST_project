@@ -56,15 +56,17 @@ class TagNode(object):
                         root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
-                    leaf_id = leaves[root_leaf_id].identifier
-                    t_l_cp = fast_copy(t_l)
-                    t_l_cp.paste(leaf_id, t_r)
-                    t_l_cp.link_past_node(leaf_id)
-                    trees_cp[ptr] = t_l_cp
-                    del trees_cp[ptr+1]
-                    if ptr > 0: ptr -= 1
-                    combine = True
-
+                    try:
+                        leaf_id = leaves[root_leaf_id].identifier
+                        t_l_cp = fast_copy(t_l)
+                        t_l_cp.paste(leaf_id, t_r)
+                        t_l_cp.link_past_node(leaf_id)
+                        trees_cp[ptr] = t_l_cp
+                        del trees_cp[ptr+1]
+                        if ptr > 0: ptr -= 1
+                        combine = True
+                    except:
+                        import pdb; pdb.set_trace()
             if not combine:
                 ptr += 1
         return trees_cp
