@@ -126,13 +126,12 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
     return np.mean(beam_rank)
 
 def verify(t_vocab, batcher, t_op):
-    #TODO
     decoded_tags = []
     for bv in batcher.get_batch():
         _, _, _, _, tags, _, _ = batcher.process(bv)
         verify_tags = t_op.combine_fn(t_vocab.to_tokens(tags))
         verify_pair = [[pair] for pair in zip(verify_tags, [1.]*len(tags))]
         for verify_tag in batcher.restore(verify_pair):
-            path, tree, new_tag = solve_tree_search(verify_tag, 1)
-            decoded_tags.append(new_tag)
+            tree = solve_tree_search(tags, 1, 100)
+            decode_tags.append(to_mrg(decoded_trees))
     return decoded_tags
