@@ -56,7 +56,10 @@ class TagNode(object):
                         root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
-                    leaf_id = leaves[root_leaf_id].identifier
+                    try:
+                        leaf_id = leaves[root_leaf_id].identifier
+                    except:
+                        import pdb; pdb.set_trace()  
                     t_l_cp = fast_copy(t_l)
                     t_l_cp.paste(leaf_id, t_r)
                     t_l_cp.link_past_node(leaf_id)
