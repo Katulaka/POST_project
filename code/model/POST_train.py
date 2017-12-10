@@ -52,7 +52,6 @@ def _train(config, batcher, cp_path):
                     sys.stdout.flush()
 
 def _eval(config, batcher, cp_path):
-    #TODO why loss print is wrong
     step_time, loss = 0.0, 0.0
     eval_graph = tf.Graph()
     current_step =  0
@@ -65,10 +64,11 @@ def _eval(config, batcher, cp_path):
             w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
             step_loss = model.eval_step(sess, w_len, t_len, words, pos, tags,
                                         targets)
-            step_time += (time.time() - start_time)\
-                             / config.steps_per_checkpoint
-            loss += step_loss / config.steps_per_checkpoint
             current_step += 1
+            step_time += (time.time() - start_time) / current_step
+                             # / config.steps_per_checkpoint
+            loss += step_loss / current_step
+            # config.steps_per_checkpoint
             perplex = math.exp(loss) if loss < 300 else float('inf')
             print ("global step %d step-time %.2f"
                     " perplexity %.6f (loss %.6f)" %
