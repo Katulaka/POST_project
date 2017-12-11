@@ -23,7 +23,7 @@ class Config(object):
     reg_loss = False #TODO
 
     #training loss threshold to stop
-    th_loss = 0.3
+    th_loss = 0.1
     #training num epochs before evaluting the dev loss
     num_epochs = 1
 
