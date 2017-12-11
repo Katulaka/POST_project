@@ -65,7 +65,7 @@ def _eval(config, batcher, cp_path):
             step_loss = model.eval_step(sess, w_len, t_len, words, pos, tags,
                                         targets)
             current_step += 1
-            step_time += (time.time() - start_time) / current_step
+            step_time = (time.time() - start_time) / current_step
                              # / config.steps_per_checkpoint
             loss = (loss + step_loss) / current_step
             # config.steps_per_checkpoint
