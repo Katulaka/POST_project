@@ -67,8 +67,10 @@ def _eval(config, batcher, cp_path):
             current_step += 1
             step_time = (time.time() - start_time) / current_step
                              # / config.steps_per_checkpoint
-            loss += step_loss / current_step
+            # loss += step_loss / current_step
             # config.steps_per_checkpoint
+            tot_loss += step_loss
+            loss = avg_loss = tot_loss / current_step
             perplex = math.exp(loss) if loss < 300 else float('inf')
             print ("global step %d step-time %.2f"
                     " perplexity %.6f (loss %.6f)" %
