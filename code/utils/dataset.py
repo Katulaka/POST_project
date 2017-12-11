@@ -92,17 +92,17 @@ def _split_dataset(data):
                                         (time.time()-start_time))
     return dataset
 
-def get_vocab(train_dataset, tags_type, w_vocab_size, t_vocab_size):
+def get_vocab(dataset, w_vocab_size, t_vocab_size):
 
     start_time = time.time()
-    w_vocab = Vocab(flatten_to_1D(train_dataset['words']), w_vocab_size)
+    w_vocab = Vocab(flatten_to_1D(dataset['train']['words']), w_vocab_size)
     print ("Total time for word vocab %f" % (time.time()-start_time))
-    t_op = TagOp(*tags_type)
-    _tags = t_op.modify_fn(train_dataset['tags'])
-    print ("Total time to modify tags %f" % (time.time()-start_time))
-    t_vocab = Vocab(flatten_to_1D(_tags), t_vocab_size)
+    _tags = []
+    for ds in dataset.values(): #TODO
+        _tags.extend(flatten_to_1D(ds['tags']))
+    t_vocab = Vocab(_tags, t_vocab_size)
     print ("Total time for tag vocab %f" % (time.time()-start_time))
-    return w_vocab, t_vocab, t_op
+    return w_vocab, t_vocab
 
 def slice_dataset(all_dataset, max_len):
 
@@ -120,17 +120,18 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
                 max_len=np.inf):
 
     all_dataset = _split_dataset(get_dataset(src_dir, data_file))
-
     dataset = slice_dataset(all_dataset, max_len)
-
     tags = dict()
     for key, ds in dataset.items():
         tags[key] = ds['tags']
 
-    w_vocab, t_vocab, t_op = get_vocab(dataset['train'],
-                                        tags_type,
-                                        w_vocab_size,
-                                        t_vocab_size)
+    start_time = time.time()
+    t_op = TagOp(*tags_type)
+    for ds in dataset.values():
+        ds['tags'] = t_op.modify_fn(ds['tags'])
+    print ("Total time to modify tags %f" % (time.time()-start_time))
+
+    w_vocab, t_vocab = get_vocab(dataset, w_vocab_size, t_vocab_size)
 
     start_time = time.time()
     for ds in dataset.values():
@@ -138,7 +139,6 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
         ds['tags'] = t_vocab.to_ids(ds['tags'])
     print ("Total time to convert data from tokens to ids %f" %
             (time.time()-start_time))
-
     return w_vocab, t_vocab, dataset, t_op, tags
 
 def split_dataset(dataset, ratio):
