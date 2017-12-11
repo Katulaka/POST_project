@@ -33,11 +33,12 @@ class TagNode(object):
                 leaves = [l for l in t_r.leaves(t_r.root) if l.data.miss_side == L]
                 if leaves:
                     leaves_tags = map(lambda x: x.tag, leaves)
+                    root_leaf_id = ''
                     if ANY in leaves_tags:
                         root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
-                    try:
+                    if root_leaf_id:
                         leaf_id = leaves[root_leaf_id].identifier
                         t_r_cp = fast_copy(t_r)
                         t_r_cp.paste(leaf_id, t_l)
@@ -51,13 +52,14 @@ class TagNode(object):
                 all([n.data.miss_side == '' for n in t_r.all_nodes()]):
                 root = t_r[t_r.root]
                 leaves = [l for l in t_l.leaves(t_l.root) if l.data.miss_side == R]
+                root_leaf_id = ''
                 if leaves:
                     leaves_tags = map(lambda x: x.tag, leaves)
                     if ANY in leaves_tags:
                         root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
                     elif root.tag in leaves_tags:
                         root_leaf_id = leaves_tags.index(root.tag)
-                    try: #TODO
+                    if root_leaf_id:
                         leaf_id = leaves[root_leaf_id].identifier
                         t_l_cp = fast_copy(t_l)
                         t_l_cp.paste(leaf_id, t_r)
