@@ -161,9 +161,9 @@ class POSTModel(object):
             self.proj_in = tf.boolean_mask(lstm_att_pad, mask_t)
 
     def _add_project_bridge(self):
-        w_uniform_dist = tf.random_uniform([self.lstm_shape,self.n_hidden_lstm],
-                                            -1.0, 1.0)
-        w_proj = tf.Variable(w_uniform_dist, name='W-dist')
+        w_dist = tf.random_uniform([self.lstm_shape, self.n_hidden_lstm],
+                                    -1.0, 1.0)
+        w_proj = tf.Variable(w_dist, name='W-dist')
         proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
         mask_t = tf.sequence_mask(self.t_seq_len)
         self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
