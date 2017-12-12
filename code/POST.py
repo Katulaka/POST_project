@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import time
 import os
+import json
 
 from utils.dataset import gen_dataset
 # import model.POST_main as POST_main
@@ -77,8 +78,8 @@ def main(_):
         decode_tags = POST_decode.decode(Config, w_vocab, t_vocab, batcher_test,
                                         t_op,)
 
-        import pdb; pdb.set_trace()
-
+        with open('decode_file', 'w') as outfile:
+            json.dump(decode_tags, outfile)
 
     elif(args.action == 'stats'):
         stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher_test, t_op,
