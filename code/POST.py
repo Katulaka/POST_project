@@ -36,6 +36,7 @@ def main(_):
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
+    parser.add_argument('--reg_loss', action='store_true', help='')
 
     args = parser.parse_args()
 
@@ -66,6 +67,7 @@ def main(_):
     Config.add_pos_in = args.add_pos_in
     Config.add_w_pos_in = args.add_w_pos_in
     Config.w_attn = args.attn
+    Config.reg_loss = args.reg_loss
 
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
