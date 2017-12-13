@@ -19,6 +19,7 @@ class TagNode(object):
         return self.rank == other.rank and self.idx == other.idx
 
     def combine_trees(self):
+        import pdb; pdb.set_trace()
         ptr = 0
         if len(self.tree) > 2:
             import pdb; pdb.set_trace()
