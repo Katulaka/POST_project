@@ -1,6 +1,7 @@
 import copy
 import tensorflow as tf
 import json
+import cPickle
 import numpy as np
 from multiprocessing import Queue
 
@@ -88,9 +89,12 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
-                with open('tmp', 'w') as outfile:
-                    import pdb; pdb.set_trace()
-                    json.dump(decoded_trees, outfile)
+                f = open('tmp', 'wb')
+                cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
+                f.close()
+                # with open('tmp', 'w') as outfile:
+                #     import pdb; pdb.set_trace()
+                #     json.dump(decoded_trees, outfile)
 
         decode_tags = to_mrg(decoded_trees)
     return decode_tags
