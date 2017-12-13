@@ -70,6 +70,8 @@ def main(_):
     Config.w_attn = args.attn
     Config.reg_loss = args.reg_loss
 
+    Config.no_val_gap = args.no_val_gap
+
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
 

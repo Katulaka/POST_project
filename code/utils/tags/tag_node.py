@@ -2,6 +2,7 @@ import cPickle
 import copy
 
 from tag_symbols import R, L, CR, CL, ANY
+from utils.conf import Config.no_val_gap as no_val_gap
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
@@ -30,43 +31,36 @@ class TagNode(object):
             if t_l[t_l.root].data.comb_side == CR and \
                 all([n.data.miss_side == '' for n in t_l.all_nodes()]):
                 root = t_l[t_l.root]
-                leaves = [l for l in t_r.leaves(t_r.root) if l.data.miss_side == L]
+                miss_tag = ANY if no_val_gap else root.tag
+                leaves = [l.identifier for l in t_r.leaves(t_r.root)
+                            if l.data.miss_side == L and l.tag == miss_tag]
                 if leaves:
                     import pdb; pdb.set_trace()
-                    root_leaf_id = [l for l in leaves if l.tag == ANY]
-                    if not root_leaf_id:
-                        root_leaf_id = [l for l in leaves if l.tag == root.tag]
-                    # leaves_tags = map(lambda x: x.tag, leaves)
-                    # root_leaf_id = ''
-                    # if ANY in leaves_tags:
-                    #     root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
-                    # elif root.tag in leaves_tags:
-                    #     root_leaf_id = leaves_tags.index(root.tag)
-                    # if root_leaf_id != '':
-                    if root_leaf_id:
-                        # leaf_id = leaves[root_leaf_id].identifier
-                        leaf_id = root_leaf_id[::-1].identifier
-                        t_r_cp = fast_copy(t_r)
-                        t_r_cp.paste(leaf_id, t_l)
-                        t_r_cp.link_past_node(leaf_id)
-                        trees_cp[ptr+1] = t_r_cp
-                        del trees_cp[ptr]
-                        if ptr > 0: ptr -= 1
-                        combine = True
+                    # #TODO maybe expose type of tags
+                    # root_leaf_id = [l for l in leaves if l.tag == ANY]
+                    # if not root_leaf_id:
+                    #     root_leaf_id = [l for l in leaves if l.tag == root.tag]
+                    # if root_leaf_id:
+                        # leaf_id = root_leaf_id[-1].identifier
+                    leaf_id = leaves[-1]
+                    t_r_cp = fast_copy(t_r)
+                    t_r_cp.paste(leaf_id, t_l)
+                    t_r_cp.link_past_node(leaf_id)
+                    trees_cp[ptr+1] = t_r_cp
+                    del trees_cp[ptr]
+                    if ptr > 0: ptr -= 1
+                    combine = True
 
             if not combine and t_r[t_r.root].data.comb_side == CL and \
                 all([n.data.miss_side == '' for n in t_r.all_nodes()]):
                 root = t_r[t_r.root]
                 leaves = [l for l in t_l.leaves(t_l.root) if l.data.miss_side == R]
-                root_leaf_id = ''
                 if leaves:
-                    leaves_tags = map(lambda x: x.tag, leaves)
-                    if ANY in leaves_tags:
-                        root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
-                    elif root.tag in leaves_tags:
-                        root_leaf_id = leaves_tags.index(root.tag)
-                    if root_leaf_id != '':
-                        leaf_id = leaves[root_leaf_id].identifier
+                    root_leaf_id = [l for l in leaves if l.tag == ANY]
+                    if not root_leaf_id:
+                        root_leaf_id = [l for l in leaves if l.tag == root.tag]
+                    if root_leaf_id:
+                        leaf_id = root_leaf_id[-1].identifier
                         t_l_cp = fast_copy(t_l)
                         t_l_cp.paste(leaf_id, t_r)
                         t_l_cp.link_past_node(leaf_id)
