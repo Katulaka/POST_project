@@ -2,7 +2,8 @@ import cPickle
 import copy
 
 from tag_symbols import R, L, CR, CL, ANY
-from utils.conf import Config.no_val_gap as no_val_gap
+from utils.conf import Config
+no_val_gap = Config.no_val_gap
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
