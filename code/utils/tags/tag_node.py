@@ -36,13 +36,6 @@ class TagNode(object):
                 leaves = [l.identifier for l in t_r.leaves(t_r.root)
                             if l.data.miss_side == L and l.tag == miss_tag]
                 if leaves:
-                    import pdb; pdb.set_trace()
-                    # #TODO maybe expose type of tags
-                    # root_leaf_id = [l for l in leaves if l.tag == ANY]
-                    # if not root_leaf_id:
-                    #     root_leaf_id = [l for l in leaves if l.tag == root.tag]
-                    # if root_leaf_id:
-                        # leaf_id = root_leaf_id[-1].identifier
                     leaf_id = leaves[-1]
                     t_r_cp = fast_copy(t_r)
                     t_r_cp.paste(leaf_id, t_l)
@@ -55,20 +48,18 @@ class TagNode(object):
             if not combine and t_r[t_r.root].data.comb_side == CL and \
                 all([n.data.miss_side == '' for n in t_r.all_nodes()]):
                 root = t_r[t_r.root]
-                leaves = [l for l in t_l.leaves(t_l.root) if l.data.miss_side == R]
+                miss_tag = ANY if Config.no_val_gap else root.tag
+                leaves = [l.identifier for l in t_l.leaves(t_l.root)
+                            if l.data.miss_side == R and l.tag == miss_tag]
                 if leaves:
-                    root_leaf_id = [l for l in leaves if l.tag == ANY]
-                    if not root_leaf_id:
-                        root_leaf_id = [l for l in leaves if l.tag == root.tag]
-                    if root_leaf_id:
-                        leaf_id = root_leaf_id[-1].identifier
-                        t_l_cp = fast_copy(t_l)
-                        t_l_cp.paste(leaf_id, t_r)
-                        t_l_cp.link_past_node(leaf_id)
-                        trees_cp[ptr] = t_l_cp
-                        del trees_cp[ptr+1]
-                        if ptr > 0: ptr -= 1
-                        combine = True
+                    leaf_id = leaves[-1]
+                    t_l_cp = fast_copy(t_l)
+                    t_l_cp.paste(leaf_id, t_r)
+                    t_l_cp.link_past_node(leaf_id)
+                    trees_cp[ptr] = t_l_cp
+                    del trees_cp[ptr+1]
+                    if ptr > 0: ptr -= 1
+                    combine = True
 
             if not combine:
                 ptr += 1
