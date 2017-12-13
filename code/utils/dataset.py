@@ -25,36 +25,15 @@ def get_raw_data(data_path):
         "/project/eecs/nlp/corpora/EnglishTreebank/wsj/* ")
         os.system(scp_path + data_path)
 
-def split_to_tags_words(src_file, dst_file):
-    data = dict()
-    data['words'] =[]
-    data['tags'] = []
-    for tags, words in gen_tags(src_file):
-        data['words'].append(words)
-        data['tags'].append(tags)
-    with open(dst_file, 'w') as outfile:
-        jason.dump(data, outfile)
-    # return data
-
-def split_all(src_dir, dst_root_dir):
-    for directory, dirnames, filenames in os.walk(src_dir):
-        if directory[-1].isdigit():
-            dst_dir = os.path.join(dst_root_dir, directory[-2:])
-            if not os.path.exists(dst_dir):
-                os.mkdir(dst_dir)
-            for fname in sorted(filenames):
-                src_file = os.path.join(directory, fname)
-                dst_file = os.path.join(dst_dir, fname)
-                split_to_tags_words(src_file, dst_file)
-
-def convert_data_flat(src_dir, data_file):
+def data_to_dict(src_dir, data_file):
     """ If src dir is empty or not a file will result in empty file """
     all_data = dict()
     for directory, dirnames, filenames in os.walk(src_dir):
         if directory[-1].isdigit():
-            data = dict()
-            data['words'] =[]
-            data['tags'] = []
+            # data = dict()
+            # data['words'] =[]
+            # data['tags'] = []
+            data = {'words' : [], 'tags' : []}
             for fname in sorted(filenames):
                 data_in = os.path.join(directory, fname)
                 print("Reading file %s" %(data_in))
@@ -71,7 +50,7 @@ def get_dataset(src_dir, data_file):
 
     start_time = time.time()
     if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
-        data = convert_data_flat(src_dir, data_file)
+        data = data_to_dict(src_dir, data_file)
     else:
         print ("Data file used: %s" % data_file)
         with open (data_file, 'r') as outfile:
@@ -79,7 +58,7 @@ def get_dataset(src_dir, data_file):
     print("Total time to load data: %f" % (time.time()-start_time))
     return data
 
-def _split_dataset(data):
+def split_dataset(data):
 
     start_time = time.time()
     dataset = {'train' : {'words': [], 'tags': []},
@@ -116,11 +95,27 @@ def slice_dataset(all_dataset, max_len):
     print("Total time to slice sentences : %f" % (time.time()-start_time))
     return dataset
 
-def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
-                max_len=np.inf):
+def _slice_dataset(dataset, max_len):
 
-    all_dataset = _split_dataset(get_dataset(src_dir, data_file))
+    start_time = time.time()
+    _select = lambda A, i: list(np.array(A)[i])
+    indeces = [len(w) <= max_len for w in ds['words']]
+    dataset['words'] = _select(dataset['words'], indeces)
+    dataset['tags'] = _select(dataset['tags'], indeces)
+    print("Total time to slice sentences : %f" % (time.time()-start_time))
+    return dataset
+
+
+def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
+                max_len_train=np.inf, max_len_decode=np.inf):
+
+    all_dataset = split_dataset(get_dataset(src_dir, data_file))
+    import pdb; pdb.set_trace()
     dataset = slice_dataset(all_dataset, max_len)
+    dataset['train'] = _slice_dataset(all_dataset['train'], max_len_train)
+    dataset['dev'] = _slice_dataset(all_dataset['dev'], max_len_train)
+    dataset['decode'] = _slice_dataset(all_dataset['decode'], max_len_decode)
+
     tags = dict()
     for key, ds in dataset.items():
         tags[key] = ds['tags']
@@ -141,8 +136,30 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
             (time.time()-start_time))
     return w_vocab, t_vocab, dataset, t_op, tags
 
-def split_dataset(dataset, ratio):
-    train_len = int(len(dataset[dataset.keys()[0]])*(1 - ratio))
-    train = dict((k, v[:train_len]) for k, v in dataset.items())
-    test = dict((k, v[train_len:]) for k, v in dataset.items())
-    return train, test
+# def _split_dataset(dataset, ratio):
+#     train_len = int(len(dataset[dataset.keys()[0]])*(1 - ratio))
+#     train = dict((k, v[:train_len]) for k, v in dataset.items())
+#     test = dict((k, v[train_len:]) for k, v in dataset.items())
+#     return train, test
+#
+# def split_to_tags_words(src_file, dst_file):
+#     data = dict()
+#     data['words'] =[]
+#     data['tags'] = []
+#     for tags, words in gen_tags(src_file):
+#         data['words'].append(words)
+#         data['tags'].append(tags)
+#     with open(dst_file, 'w') as outfile:
+#         jason.dump(data, outfile)
+#     # return data
+#
+# def split_all(src_dir, dst_root_dir):
+#     for directory, dirnames, filenames in os.walk(src_dir):
+#         if directory[-1].isdigit():
+#             dst_dir = os.path.join(dst_root_dir, directory[-2:])
+#             if not os.path.exists(dst_dir):
+#                 os.mkdir(dst_dir)
+#             for fname in sorted(filenames):
+#                 src_file = os.path.join(directory, fname)
+#                 dst_file = os.path.join(dst_dir, fname)
+#                 split_to_tags_words(src_file, dst_file)
