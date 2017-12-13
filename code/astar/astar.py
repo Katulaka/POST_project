@@ -81,7 +81,8 @@ class AStar:
             cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
             startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
-        while (time.time() - start_time < time_out) and openSet and len(goals) < num_goals:
+        # while (time.time() - start_time < time_out) and openSet and len(goals) < num_goals:
+        while openSet and len(goals) < num_goals:
             current = heappop(openSet)
             if verbose > 0:
                 print "---------------------------------------------------"
