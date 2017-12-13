@@ -99,7 +99,7 @@ def _slice_dataset(dataset, max_len):
 
     start_time = time.time()
     _select = lambda A, i: list(np.array(A)[i])
-    indeces = [len(w) <= max_len for w in ds['words']]
+    indeces = [len(w) <= max_len for w in dataset['words']]
     dataset['words'] = _select(dataset['words'], indeces)
     dataset['tags'] = _select(dataset['tags'], indeces)
     print("Total time to slice sentences : %f" % (time.time()-start_time))
@@ -111,7 +111,7 @@ def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
 
     all_dataset = split_dataset(get_dataset(src_dir, data_file))
     import pdb; pdb.set_trace()
-    dataset = slice_dataset(all_dataset, max_len)
+    dataset = slice_dataset(all_dataset, max_len_train)
     dataset['train'] = _slice_dataset(all_dataset['train'], max_len_train)
     dataset['dev'] = _slice_dataset(all_dataset['dev'], max_len_train)
     dataset['decode'] = _slice_dataset(all_dataset['decode'], max_len_decode)
