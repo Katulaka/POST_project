@@ -38,6 +38,7 @@ def main(_):
     parser.add_argument('--reverse', action='store_true', help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
     parser.add_argument('--reg_loss', action='store_true', help='')
+    parser.add_argument('--time_out', type=float, default=100., help='')
 
     args = parser.parse_args()
 
@@ -69,6 +70,7 @@ def main(_):
     Config.add_w_pos_in = args.add_w_pos_in
     Config.w_attn = args.attn
     Config.reg_loss = args.reg_loss
+    Config.time_out = args.time_out
 
     Config.no_val_gap = args.no_val_gap
 
