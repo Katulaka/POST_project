@@ -32,14 +32,20 @@ class TagNode(object):
                 root = t_l[t_l.root]
                 leaves = [l for l in t_r.leaves(t_r.root) if l.data.miss_side == L]
                 if leaves:
-                    leaves_tags = map(lambda x: x.tag, leaves)
-                    root_leaf_id = ''
-                    if ANY in leaves_tags:
-                        root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
-                    elif root.tag in leaves_tags:
-                        root_leaf_id = leaves_tags.index(root.tag)
-                    if root_leaf_id != '':
-                        leaf_id = leaves[root_leaf_id].identifier
+                    import pdb; pdb.set_trace()
+                    root_leaf_id = [l for l in leaves if l.tag == ANY]
+                    if not root_leaf_id:
+                        root_leaf_id = [l for l in leaves if l.tag == root.tag]
+                    # leaves_tags = map(lambda x: x.tag, leaves)
+                    # root_leaf_id = ''
+                    # if ANY in leaves_tags:
+                    #     root_leaf_id = len(leaves_tags) - leaves_tags[::-1].index(ANY) - 1
+                    # elif root.tag in leaves_tags:
+                    #     root_leaf_id = leaves_tags.index(root.tag)
+                    # if root_leaf_id != '':
+                    if root_leaf_id:
+                        # leaf_id = leaves[root_leaf_id].identifier
+                        leaf_id = root_leaf_id[::-1].identifier
                         t_r_cp = fast_copy(t_r)
                         t_r_cp.paste(leaf_id, t_l)
                         t_r_cp.link_past_node(leaf_id)
