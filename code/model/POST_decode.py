@@ -88,8 +88,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
+                import pdb; pdb.set_trace()
         decode_tags = to_mrg(decoded_trees)
-        import pdb; pdb.set_trace()
     return decode_tags
 
 def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
