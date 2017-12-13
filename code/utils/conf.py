@@ -21,6 +21,7 @@ class Config(object):
     w_attn = True
     #use regular loss or modified with "covarience" relation
     reg_loss = False #TODO
+    no_val_gap = False
 
     #training loss threshold to stop
     th_loss = 0.1
@@ -37,7 +38,6 @@ class Config(object):
     #beam search or greedy beam search
     greedy = False
 
-    no_val_gap = False
 
     src_data_dir = '../gold_data'
     dataset_dir = 'data'
