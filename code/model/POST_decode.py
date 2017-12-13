@@ -44,6 +44,7 @@ def decode_batch(beam_pair, word_tokens, num_goals, time_out):
         if all(beam_tag):
             tags = convert_to_TagTree(beam_tag, sent)
             trees = solve_tree_search(tags, num_goals, time_out)
+            import pdb; pdb.set_trace()
         else:
             trees = []
         decode_trees.append(trees)
@@ -88,7 +89,6 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
-                import pdb; pdb.set_trace()
         decode_tags = to_mrg(decoded_trees)
     return decode_tags
 
