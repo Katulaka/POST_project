@@ -28,7 +28,7 @@ class Config(object):
     num_epochs = 1
 
     #Astar search time-out
-    time_out = 100.
+    time_out = 1000000000000.
     #Astar search number of goals
     num_goals = 1
     # use multi-processing when doing astar search
