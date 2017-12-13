@@ -37,6 +37,8 @@ class Config(object):
     #beam search or greedy beam search
     greedy = False
 
+    no_val_gap = False
+
     src_data_dir = '../gold_data'
     dataset_dir = 'data'
     dataset_fname = 'data.txt'

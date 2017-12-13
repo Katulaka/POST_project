@@ -3,7 +3,7 @@ import copy
 
 from tag_symbols import R, L, CR, CL, ANY
 from utils.conf import Config
-no_val_gap = Config.no_val_gap
+# no_val_gap = Config.no_val_gap
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
@@ -32,7 +32,7 @@ class TagNode(object):
             if t_l[t_l.root].data.comb_side == CR and \
                 all([n.data.miss_side == '' for n in t_l.all_nodes()]):
                 root = t_l[t_l.root]
-                miss_tag = ANY if no_val_gap else root.tag
+                miss_tag = ANY if Config.no_val_gap else root.tag
                 leaves = [l.identifier for l in t_r.leaves(t_r.root)
                             if l.data.miss_side == L and l.tag == miss_tag]
                 if leaves:
