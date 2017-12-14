@@ -83,37 +83,31 @@ def get_vocab(dataset, w_vocab_size, t_vocab_size):
     print ("Total time for tag vocab %f" % (time.time()-start_time))
     return w_vocab, t_vocab
 
-def slice_dataset(all_dataset, max_len):
-
-    start_time = time.time()
-    dataset = {'train': dict(), 'dev': dict(), 'test': dict()}
-    _select = lambda A, i: list(np.array(A)[i])
-    for key, ds in all_dataset.items():
-        indeces = [len(w) <= max_len for w in ds['words']]
-        dataset[key]['words'] = _select(ds['words'], indeces)
-        dataset[key]['tags'] = _select(ds['tags'], indeces)
-    print("Total time to slice sentences : %f" % (time.time()-start_time))
-    return dataset
+def _select(A,i):
+    return list(np.array(A)[i])
 
 def _slice_dataset(dataset, min_len, max_len):
 
     start_time = time.time()
-    _select = lambda A, i: list(np.array(A)[i])
     indeces = [min_len <= len(w) <= max_len for w in dataset['words']]
     dataset['words'] = _select(dataset['words'], indeces)
     dataset['tags'] = _select(dataset['tags'], indeces)
     print("Total time to slice sentences : %f" % (time.time()-start_time))
-    return dataset
+    return dataset, indeces
 
 
 def gen_dataset(src_dir, data_file, tags_type, min_len, max_len,
                 w_vocab_size=0, t_vocab_size=0,):
 
     dataset = split_dataset(get_dataset(src_dir, data_file))
+    gold_data = get_gold('../gold_data')
     tags = dict()
+    indeces = dict()
     for key in dataset.keys():
-        dataset[key] = _slice_dataset(dataset[key], min_len[key], max_len[key])
+        dataset[key], indeces[key] = _slice_dataset(dataset[key], min_len[key], max_len[key])
         tags[key] = dataset[key]['tags']
+    gold_data = _select(gold_data, indeces['test'])
+    import pdb; pdb.set_trace()
     start_time = time.time()
     t_op = TagOp(*tags_type)
     for ds in dataset.values():
@@ -130,6 +124,28 @@ def gen_dataset(src_dir, data_file, tags_type, min_len, max_len,
             (time.time()-start_time))
     return w_vocab, t_vocab, dataset, t_op, tags
 
+def get_gold(gold_dir):
+    gold_data = []
+    for directory, dirnames, filenames in os.walk(gold_dir):
+        if directory[-1].isdigit() and int(directory[-2:])==23:
+            for fname in sorted(filenames):
+                data_file = os.path.join(directory, fname)
+                with open(data_file) as f:
+                    gold_data += [x.strip('\n') for x in f.readlines()]
+    return gold_data
+
+#
+# def slice_dataset(all_dataset, max_len):
+#
+#     start_time = time.time()
+#     dataset = {'train': dict(), 'dev': dict(), 'test': dict()}
+#     _select = lambda A, i: list(np.array(A)[i])
+#     for key, ds in all_dataset.items():
+#         indeces = [len(w) <= max_len for w in ds['words']]
+#         dataset[key]['words'] = _select(ds['words'], indeces)
+#         dataset[key]['tags'] = _select(ds['tags'], indeces)
+#     print("Total time to slice sentences : %f" % (time.time()-start_time))
+#     return dataset
 # def _split_dataset(dataset, ratio):
 #     train_len = int(len(dataset[dataset.keys()[0]])*(1 - ratio))
 #     train = dict((k, v[:train_len]) for k, v in dataset.items())
