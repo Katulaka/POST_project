@@ -32,7 +32,7 @@ def main(_):
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--ds_len_train', type=int, default=np.inf, help='')
     parser.add_argument('--ds_len_dev', type=int, default=np.inf, help='')
-    parser.add_argument('--ds_len_test', type=int, default=np.inf, help='')
+    parser.add_argument('--ds_len_test', nargs=2, type=int, default=[0,np.inf], help='')
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
@@ -77,6 +77,7 @@ def main(_):
     Config.time_out = args.time_out
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
+    import pdb; pdb.set_trace()
 
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
