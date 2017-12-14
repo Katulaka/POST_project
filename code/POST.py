@@ -54,9 +54,9 @@ def main(_):
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.no_val_gap),
-                                            (args.ds_len_train,
-                                            args.ds_len_dev,
-                                            args.ds_len_test))
+                                            {'train':args.ds_len_train,
+                                            'dev':args.ds_len_dev,
+                                            'test':args.ds_len_test})
     print ("Time to generate dataset and vocabulary %f" %
                     (time.time()-start_time))
     # initializing batcher class

@@ -112,8 +112,9 @@ def gen_dataset(src_dir, data_file, tags_type, max_len, w_vocab_size=0,
     dataset = split_dataset(get_dataset(src_dir, data_file))
     import pdb; pdb.set_trace()
     tags = dict()
-    for key, m_len in zip(dataset.keys(), max_len):
-        dataset[key] = _slice_dataset(dataset[key], m_len)
+    # for key, m_len in zip(dataset.keys(), max_len):
+    for key in dataset.keys():
+        dataset[key] = _slice_dataset(dataset[key], max_len[key])
         tags[key] = dataset[key]['tags']
 
     start_time = time.time()
