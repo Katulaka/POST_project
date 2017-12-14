@@ -77,6 +77,7 @@ def main(_):
     Config.time_out = args.time_out
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
+    print (args.ds_len_test)
     import pdb; pdb.set_trace()
 
     if (args.action == 'train'):
