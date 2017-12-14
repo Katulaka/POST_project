@@ -32,11 +32,15 @@ def main(_):
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--ds_len_train', type=int, default=np.inf, help='')
     parser.add_argument('--ds_len_dev', type=int, default=np.inf, help='')
-    parser.add_argument('--ds_len_test', nargs=2, type=int, default=[0,np.inf], help='')
+    # parser.add_argument('--ds_len_test', nargs=2, type=int, default=[0,np.inf], help='')
     # subparsers = parser.add_subparsers()
-    # parser_len = subparsers.add_parser('ds_len_test')
-    # parser_len.add_argument('--min', default=0, type=int)
-    # parser_len.add_argument('--max', default=np.inf, type=int)
+    # parser_len = subparsers.add_parser('ds_len')
+    parser.add_argument('--test_min', default=0, type=int)
+    parser.add_argument('--test_max', default=np.inf, type=int)
+    parser.add_argument('--dev_min', default=0, type=int)
+    parser.add_argument('--dev_max', default=np.inf, type=int)
+    parser.add_argument('--train_min', default=0, type=int)
+    parser.add_argument('--train_max', default=np.inf, type=int)
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
@@ -59,9 +63,12 @@ def main(_):
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.no_val_gap),
-                                            {'train':args.ds_len_train,
-                                            'dev':args.ds_len_dev,
-                                            'test':args.ds_len_test})
+                                            max_len = {'train':args.test_max,
+                                                        'dev':args.dev_max,
+                                                        'test':args.test_max},
+                                            min_len = {'train':args.train_min,
+                                                        'dev':args.dev_min,
+                                                        'test':args.test_min},)
     print ("Time to generate dataset and vocabulary %f" %
                     (time.time()-start_time))
     # initializing batcher class
