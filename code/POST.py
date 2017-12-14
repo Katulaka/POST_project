@@ -44,6 +44,7 @@ def main(_):
 
     args = parser.parse_args()
 
+    import pdb; pdb.set_trace()
     data_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
 
     # create vocabulary and array of dataset from train file
@@ -77,8 +78,6 @@ def main(_):
     Config.time_out = args.time_out
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
-    print (args.ds_len_test)
-    import pdb; pdb.set_trace()
 
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
