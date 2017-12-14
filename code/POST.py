@@ -59,7 +59,7 @@ def main(_):
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.no_val_gap),
-                                            max_len = {'train':args.test_max,
+                                            max_len = {'train':args.train_max,
                                                         'dev':args.dev_max,
                                                         'test':args.test_max},
                                             min_len = {'train':args.train_min,
