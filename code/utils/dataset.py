@@ -115,7 +115,7 @@ def gen_dataset(src_dir, data_file, tags_type, max_len,
     for key in dataset.keys():
         dataset[key] = _slice_dataset(dataset[key], max_len[key], min_len[key])
         tags[key] = dataset[key]['tags']
-
+    import pdb; pdb.set_trace()
     start_time = time.time()
     t_op = TagOp(*tags_type)
     for ds in dataset.values():
