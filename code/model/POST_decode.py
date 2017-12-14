@@ -93,9 +93,8 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()
                 import pdb; pdb.set_trace()
-                # with open('tmp', 'w') as outfile:
-                #     import pdb; pdb.set_trace()
-                #     json.dump(decoded_trees, outfile)
+                with open('tmp2', 'w') as outfile:
+                    json.dump(to_mrg(decoded_trees), outfile)
 
         decode_tags = to_mrg(decoded_trees)
     return decode_tags
