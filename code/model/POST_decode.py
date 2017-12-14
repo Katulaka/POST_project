@@ -86,13 +86,14 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 beam_pair, word_tokens = decode_bs(sess, model, config,
                                                     w_vocab, t_vocab, batcher,
                                                     batch, t_op)
+
+                import pdb; pdb.set_trace()
                 decoded_trees.append(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
                 f = open('tmp', 'wb')
                 cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()
-                import pdb; pdb.set_trace()
                 with open('tmp2', 'w') as outfile:
                     json.dump(to_mrg(decoded_trees), outfile)
 
