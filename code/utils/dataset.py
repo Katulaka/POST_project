@@ -95,24 +95,25 @@ def slice_dataset(all_dataset, max_len):
     print("Total time to slice sentences : %f" % (time.time()-start_time))
     return dataset
 
-def _slice_dataset(dataset, max_len):
+def _slice_dataset(dataset, max_len, min_len):
 
     start_time = time.time()
     _select = lambda A, i: list(np.array(A)[i])
-    indeces = [len(w) <= max_len for w in dataset['words']]
+    indeces = [min_len <= len(w) <= max_len for w in dataset['words']]
     dataset['words'] = _select(dataset['words'], indeces)
     dataset['tags'] = _select(dataset['tags'], indeces)
     print("Total time to slice sentences : %f" % (time.time()-start_time))
     return dataset
 
 
-def gen_dataset(src_dir, data_file, tags_type, max_len, w_vocab_size=0,
-                t_vocab_size=0,):
+def gen_dataset(src_dir, data_file, tags_type, max_len,
+                min_len={'train':0, 'dev':0, 'test':0},
+                w_vocab_size=0, t_vocab_size=0,):
 
     dataset = split_dataset(get_dataset(src_dir, data_file))
     tags = dict()
     for key in dataset.keys():
-        dataset[key] = _slice_dataset(dataset[key], max_len[key])
+        dataset[key] = _slice_dataset(dataset[key], max_len[key], min_len[key])
         tags[key] = dataset[key]['tags']
 
     start_time = time.time()
