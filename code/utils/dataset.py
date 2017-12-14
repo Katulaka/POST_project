@@ -99,14 +99,15 @@ def _slice_dataset(dataset, min_len, max_len):
 def gen_dataset(src_dir, data_file, tags_type, min_len, max_len,
                 w_vocab_size=0, t_vocab_size=0,):
 
-    dataset = split_dataset(get_dataset(src_dir, data_file))
-    gold_data = get_gold('../gold_data')
+    # dataset = split_dataset(get_dataset(src_dir, data_file))
+    # gold_data = get_gold('../gold_data', 'data/gold') #TODO mv the gold file to github
+    dataset = split_dataset(get_data_from_file(src_dir, data_file, data_to_dict))
+    gold_data =  get_data_from_file('../gold_data', 'data/gold', gold_to_list)
     tags = dict()
     indeces = dict()
     for key in dataset.keys():
         dataset[key], indeces[key] = _slice_dataset(dataset[key], min_len[key], max_len[key])
         tags[key] = dataset[key]['tags']
-    import pdb; pdb.set_trace()
     gold_data = _select(gold_data, indeces['test'])
     start_time = time.time()
     t_op = TagOp(*tags_type)
@@ -124,15 +125,29 @@ def gen_dataset(src_dir, data_file, tags_type, min_len, max_len,
             (time.time()-start_time))
     return w_vocab, t_vocab, dataset, t_op, tags
 
-def get_gold(gold_dir):
+def gold_to_list(gold_src_dir, gold_file):
     gold_data = []
-    for directory, dirnames, filenames in os.walk(gold_dir):
+    for directory, dirnames, filenames in os.walk(gold_src_dir):
         if directory[-1].isdigit() and int(directory[-2:])==23:
             for fname in sorted(filenames):
                 data_file = os.path.join(directory, fname)
                 with open(data_file) as f:
                     gold_data += [x.strip('\n') for x in f.readlines()]
+    with open(gold_file, 'w') as outfile:
+        json.dump(gold_data, outfile)
     return gold_data
+
+def get_data_from_file(src_dir, data_file, get_fn):
+
+    start_time = time.time()
+    if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
+        data = get_fn(src_dir, data_file)
+    else:
+        print ("Data file used: %s" % data_file)
+        with open (data_file, 'r') as outfile:
+            data = json.load(outfile)
+    print("Total time to load data: %f" % (time.time()-start_time))
+    return data
 
 #
 # def slice_dataset(all_dataset, max_len):
