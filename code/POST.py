@@ -31,7 +31,8 @@ def main(_):
     parser.add_argument('--add_w_pos_in', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--ds_len_train', type=int, default=np.inf, help='')
-    parser.add_argument('--ds_len_decode', type=int, default=np.inf, help='')
+    parser.add_argument('--ds_len_dev', type=int, default=np.inf, help='')
+    parser.add_argument('--ds_len_test', type=int, default=np.inf, help='')
     parser.add_argument('--beam', type=int, default=5, help='')
     parser.add_argument('--only_pos', action='store_true', help='')
     parser.add_argument('--keep_direction', action='store_true', help='')
@@ -53,8 +54,9 @@ def main(_):
                                             (args.only_pos,
                                             args.keep_direction,
                                             args.no_val_gap),
-                                            max_len_train=args.ds_len_train,
-                                            max_len_decode=args.ds_len_decode,)
+                                            (args.ds_len_train,
+                                            args.ds_len_dev,
+                                            args.ds_len_test))
     print ("Time to generate dataset and vocabulary %f" %
                     (time.time()-start_time))
     # initializing batcher class

@@ -106,15 +106,14 @@ def _slice_dataset(dataset, max_len):
     return dataset
 
 
-def gen_dataset(src_dir, data_file, tags_type, w_vocab_size=0, t_vocab_size=0,
-                max_len_train=np.inf, max_len_decode=np.inf):
+def gen_dataset(src_dir, data_file, tags_type, max_len, w_vocab_size=0,
+                t_vocab_size=0,):
 
     all_dataset = split_dataset(get_dataset(src_dir, data_file))
     import pdb; pdb.set_trace()
     dataset = slice_dataset(all_dataset, max_len_train)
-    dataset['train'] = _slice_dataset(all_dataset['train'], max_len_train)
-    dataset['dev'] = _slice_dataset(all_dataset['dev'], max_len_train)
-    dataset['decode'] = _slice_dataset(all_dataset['decode'], max_len_decode)
+    for ds, m_len in zip(all_dataset.values(), max_len):
+        ds = _slice_dataset(ds, m_len)
 
     tags = dict()
     for key, ds in dataset.items():
