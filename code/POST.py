@@ -75,7 +75,7 @@ def main(_):
     Config.w_attn = args.attn
     Config.reg_loss = args.reg_loss
     Config.time_out = args.time_out
-
+    Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
 
     if (args.action == 'train'):
