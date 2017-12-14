@@ -87,8 +87,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                                                     w_vocab, t_vocab, batcher,
                                                     batch, t_op)
 
-                import pdb; pdb.set_trace()
-                decoded_trees.append(decode_batch(beam_pair, word_tokens,
+                decoded_trees.extend(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
                 f = open('tmp', 'wb')
@@ -96,6 +95,7 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 f.close()
                 with open('tmp2', 'w') as outfile:
                     json.dump(to_mrg(decoded_trees), outfile)
+                import pdb; pdb.set_trace()
 
         decode_tags = to_mrg(decoded_trees)
     return decode_tags
