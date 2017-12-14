@@ -30,9 +30,6 @@ def main(_):
     parser.add_argument('--add_pos_in', action='store_true', help='')
     parser.add_argument('--add_w_pos_in', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
-    parser.add_argument('--ds_len_train', type=int, default=np.inf, help='')
-    parser.add_argument('--ds_len_dev', type=int, default=np.inf, help='')
-    # parser.add_argument('--ds_len_test', nargs=2, type=int, default=[0,np.inf], help='')
     # subparsers = parser.add_subparsers()
     # parser_len = subparsers.add_parser('ds_len')
     parser.add_argument('--test_min', default=0, type=int)
@@ -52,7 +49,6 @@ def main(_):
 
     args = parser.parse_args()
 
-    import pdb; pdb.set_trace()
     data_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
 
     # create vocabulary and array of dataset from train file
