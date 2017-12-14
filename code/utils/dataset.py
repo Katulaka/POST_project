@@ -109,15 +109,12 @@ def _slice_dataset(dataset, max_len):
 def gen_dataset(src_dir, data_file, tags_type, max_len, w_vocab_size=0,
                 t_vocab_size=0,):
 
-    all_dataset = split_dataset(get_dataset(src_dir, data_file))
+    dataset = split_dataset(get_dataset(src_dir, data_file))
     import pdb; pdb.set_trace()
-    dataset = slice_dataset(all_dataset, max_len_train)
-    for ds, m_len in zip(all_dataset.values(), max_len):
-        ds = _slice_dataset(ds, m_len)
-
     tags = dict()
-    for key, ds in dataset.items():
-        tags[key] = ds['tags']
+    for key, m_len in zip(dataset.keys(), max_len):
+        dataset[key] = _slice_dataset(dataset[key], m_len)
+        tags[key] = dataset[key]['tags']
 
     start_time = time.time()
     t_op = TagOp(*tags_type)
