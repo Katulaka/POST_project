@@ -33,7 +33,7 @@ def main(_):
     parser.add_argument('--ds_len_train', type=int, default=np.inf, help='')
     parser.add_argument('--ds_len_dev', type=int, default=np.inf, help='')
     # parser.add_ argument('--ds_len_test', nargs=2, type=int, default=[0,np.inf], help='')
-    subparsers = parsrer.add_subparsers()
+    subparsers = parser.add_subparsers()
     parser_len = subparsers.add_parser('ds_len_test')
     parser_len.add_argument('--min', default=0, type=int)
     parser_len.add_argument('--max', default=np.inf, type=int)
