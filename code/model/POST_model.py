@@ -28,6 +28,7 @@ class POSTModel(object):
         self.lr_decay_factor = learning_rate_decay_factor
         self.dtype = dtype
         self.mode = mode
+        self.pos = pos
         self.w_attn = w_attention
         self.reg_loss = reg_loss
 
@@ -67,6 +68,36 @@ class POSTModel(object):
                                                     self.pos_in,
                                                     name='pos-embed')
 
+    def _add_pos_bidi_lstm(self):
+        """ Bidirectional LSTM """
+        with tf.name_scope('pos-LSTM-Layer'):
+            # Forward and Backward direction cell
+            pos_lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
+                                    forget_bias=1.0, state_is_tuple=True)
+            pos_lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
+                                    forget_bias=1.0, state_is_tuple=True)
+            # Get lstm cell output
+            pos_bidi_out, pos_bidi_states = tf.nn.bidirectional_dynamic_rnn(
+                                        pos_lstm_fw_cell,
+                                        pos_lstm_fw_cell,
+                                        self.word_embed,
+                                        sequence_length=self.w_seq_len,
+                                        dtype=self.dtype,
+                                        scope='pos-bidi')
+            self.pos_bidi_out = tf.concat(pos_bidi_out, 2, name='pos_bidi_out')
+
+    def _add_pos_prediction(self):
+        with tf.name_scope('POS-prediction'):
+            self.pos_logits = tf.layers.dense(self.pos_bidi_out, self.t_vocab_size)
+            self.pos_in_pred = tf.argmax(self.pos_logits, 2, name='pos_in_pred')
+
+    def _add_pos_loss(self):
+        with tf.name_scope('POS-loss'):
+            self.pos_in_1hot = tf.one_hot(self.pos_in, self.t_vocab_size)
+            self.pos_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                                                    logits=self.pos_logits,
+                                                    labels=self.pos_in_1hot)
+            self.pos_loss = tf.reduce_mean(self.pos_cross_entropy)
 
     def _add_bidi_lstm(self):
         """ Bidirectional LSTM """
@@ -173,7 +204,6 @@ class POSTModel(object):
             self.logits = E_v + b_out
             self.mod_logits = E_v_E_t_E + b_out
             self.pred = tf.nn.softmax(self.logits, name='pred')
-            #TODO how to deal with minimum?
 
 
     def _add_loss(self):
@@ -186,14 +216,16 @@ class POSTModel(object):
             mod_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                                                     logits=self.mod_logits,
                                                     labels=targets_1hot)
-            self.loss = tf.reduce_mean(cross_entropy)
-            self.mod_loss = tf.reduce_mean(mod_cross_entropy)
-            self.comb_loss = tf.minimum(self.loss, self.mod_loss)
+            self.reg_loss = tf.reduce_mean(cross_entropy)
+            # self.mod_loss = tf.reduce_mean(mod_cross_entropy)
+            # self.comb_loss = tf.reduce_mean([loss, self.mod_loss]) #TODO
+            # self.loss = loss if self.reg_loss else self.comb_loss
 
 
     def _add_train_op(self):
-        self.learning_rate = tf.Variable(float(self.lr),
-                                trainable=False, dtype=self.dtype)
+
+        self.loss = self.pos_loss if self.pos else self.reg_loss
+        self.learning_rate = self.pos_lr if self.pos else self.reg_lr
         self.learning_rate_decay_op = self.learning_rate.assign(
                         self.learning_rate * self.lr_decay_factor)
         self.optimizer = tf.train.GradientDescentOptimizer(
@@ -201,27 +233,47 @@ class POSTModel(object):
                         self.loss, global_step=self.global_step)
 
     def build_graph(self, graph):
-        """ Function builds the computation graph """
         with graph.as_default():
             with tf.variable_scope(self.scope_name):
                 self.global_step = tf.Variable(0, trainable=False, name='g_step')
                 self._add_placeholders()
                 self._add_embeddings()
-                self._add_bidi_bridge()
-                self._add_bidi_lstm()
-                self._add_lstm_bridge()
-                self._add_lstm_layer()
-                if self.w_attn:
-                    self._add_attention()
-                else:
-                    self._add_project_bridge()
-                self._add_projection()
-                self._add_loss()
+                with tf.name_scope("POS"):
+                    self.build_pos_graph()
+                with tf.name_scope("SUPERTAGS"):
+                    self.build_suptag_graph()
                 if (self.mode == 'train'):
                     self._add_train_op()
+
             all_variables = [k for k in tf.global_variables()
                             if k.name.startswith(self.scope_name)]
-            self.saver = tf.train.Saver(all_variables)
+            self.saver = tf.train.Saver(all_variables, max_to_keep = 4)
+
+    def build_suptag_graph(self):
+        """ Function builds the computation graph """
+        self.suptag_step = tf.Variable(0, trainable=False, name='sup_step')
+        self._add_bidi_lstm()
+        self._add_lstm_bridge()
+        self._add_lstm_layer()
+        if self.w_attn:
+            self._add_attention()
+        else:
+            self._add_project_bridge()
+        self._add_projection()
+        if (self.mode == 'train'):
+            self._add_loss()
+            self.reg_lr = tf.Variable(float(self.lr), trainable=False,
+                                        dtype=self.dtype)
+
+    def build_pos_graph(self):
+        self.pos_step = tf.Variable(0, trainable=False, name='pos_step')
+        self._add_pos_bidi_lstm()
+        self._add_pos_prediction()
+        if (self.mode == 'train'):
+            self._add_pos_loss()
+            self.pos_lr = tf.Variable(float(self.lr), trainable=False,
+                                        dtype=self.dtype)
+
 
     def step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
         """ Training step, returns the prediction, loss"""
@@ -233,7 +285,11 @@ class POSTModel(object):
             self.t_in: t_in,
             self.pos_in : pos_in,
             self.targets: targets}
-        output_feed = [self.loss, self.optimizer]
+        if self.pos:
+            self.increment_step_op = tf.assign(self.pos_step, self.pos_step+1)
+        else:
+            self.increment_step_op = tf.assign(self.suptag_step, self.suptag_step+1)
+        output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
     def eval_step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
@@ -247,6 +303,13 @@ class POSTModel(object):
             self.targets: targets,
             self.pos_in: pos_in}
         output_feed = self.loss
+        return session.run(output_feed, input_feed)
+
+    def pos_decode(self, session, w_in, w_seq_len):
+        input_feed = {
+            self.w_in: w_in,
+            self.w_seq_len: w_seq_len}
+        output_feed = self.pos_in_pred
         return session.run(output_feed, input_feed)
 
     def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs):
