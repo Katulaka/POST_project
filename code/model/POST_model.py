@@ -10,7 +10,7 @@ class POSTModel(object):
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
                 tag_vocabulary_size, learning_rate, learning_rate_decay_factor,
-                add_pos_in, add_w_pos_in, w_attention, mode, reg_loss,
+                w_attention, pos, mode, reg_loss,
                 dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
@@ -28,8 +28,6 @@ class POSTModel(object):
         self.lr_decay_factor = learning_rate_decay_factor
         self.dtype = dtype
         self.mode = mode
-        self.add_pos_in = add_pos_in
-        self.add_w_pos_in = add_w_pos_in
         self.w_attn = w_attention
         self.reg_loss = reg_loss
 
@@ -69,48 +67,34 @@ class POSTModel(object):
                                                     self.pos_in,
                                                     name='pos-embed')
 
-    def _add_bidi_bridge(self):
-        with tf.name_scope('BiDi-Bridge'):
-            self.w_pos_embed = tf.concat([self.word_embed, self.pos_embed],
-                                            2, 'bidi-in')
-
-            if self.add_pos_in:
-                self.bidi_in = self.w_pos_embed
-            else:
-                self.bidi_in = self.word_embed
-            self.bidi_in_seq_len = self.w_seq_len
 
     def _add_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.name_scope('bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-
             lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
                                     forget_bias=1.0, state_is_tuple=True)
             lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
                                     forget_bias=1.0, state_is_tuple=True)
             # Get lstm cell output
+            self.bidi_in = tf.concat([self.word_embed, self.pos_embed], 2, 'bidi-in')
             self.bidi_out, self.bidi_states = tf.nn.bidirectional_dynamic_rnn(
-                                    lstm_fw_cell, lstm_bw_cell,
-                                    self.bidi_in,
-                                    sequence_length=self.bidi_in_seq_len,
-                                    dtype=self.dtype)
+                                        lstm_fw_cell,
+                                        lstm_bw_cell,
+                                        self.bidi_in,
+                                        sequence_length=self.w_seq_len,
+                                        dtype=self.dtype)
+            self._bidi_out = tf.concat(self.bidi_out, 2, name='lstm-init')
 
     def _add_lstm_bridge(self):
         with tf.name_scope('Bridge'):
             # LSTM
-            _bidi_out = tf.concat(self.bidi_out, 2, name='lstm-init')
-            bidi_out_w_pos = tf.concat([self.w_pos_embed, _bidi_out], 2)
-            self.attn_state = bidi_out_w_pos if self.add_w_pos_in else _bidi_out
+            self.attn_state = tf.concat([self.bidi_in, self._bidi_out], 2)
             self.bo_shape = tf.shape(self.attn_state)
-            if self.add_w_pos_in:
-                self.lstm_shape = self.w_embed_size + self.pos_embed_size + \
-                            self.n_hidden_fw + self.n_hidden_bw
-            else:
-                self.lstm_shape = self.n_hidden_fw + self.n_hidden_bw
+            self.lstm_shape = self.w_embed_size + self.pos_embed_size + \
+                                self.n_hidden_fw + self.n_hidden_bw
             self.dec_init_state = tf.reshape(self.attn_state,
                                                 [-1, self.lstm_shape])
-
 
     def _add_lstm_layer(self):
         """Generate sequences of tags"""
@@ -122,6 +106,7 @@ class POSTModel(object):
             lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.lstm_shape,
                                                     forget_bias=1.0,
                                                     state_is_tuple=True)
+
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
                                                 self.tag_embed,
                                                 initial_state=self.lstm_init,
@@ -211,14 +196,9 @@ class POSTModel(object):
                                 trainable=False, dtype=self.dtype)
         self.learning_rate_decay_op = self.learning_rate.assign(
                         self.learning_rate * self.lr_decay_factor)
-        loss = self.loss if self.reg_loss else self.comb_loss
         self.optimizer = tf.train.GradientDescentOptimizer(
                 self.learning_rate).minimize(
-                        loss, global_step=self.global_step)
-        # self.optimizer = tf.train.AdamOptimizer(
-        #     learning_rate=self.learning_rate).minimize(
-        #         self.loss, global_step=self.global_step)
-
+                        self.loss, global_step=self.global_step)
 
     def build_graph(self, graph):
         """ Function builds the computation graph """
@@ -251,9 +231,8 @@ class POSTModel(object):
             self.t_seq_len: t_seq_len,
             self.w_in: w_in,
             self.t_in: t_in,
+            self.pos_in : pos_in,
             self.targets: targets}
-        if self.add_pos_in:
-            input_feed[self.pos_in] = pos_in
         output_feed = [self.loss, self.optimizer]
         return session.run(output_feed, input_feed)
 
@@ -265,9 +244,8 @@ class POSTModel(object):
             self.t_seq_len: t_seq_len,
             self.w_in: w_in,
             self.t_in: t_in,
-            self.targets: targets}
-        if self.add_pos_in:
-            input_feed[self.pos_in] = pos_in
+            self.targets: targets,
+            self.pos_in: pos_in}
         output_feed = self.loss
         return session.run(output_feed, input_feed)
 
@@ -275,9 +253,9 @@ class POSTModel(object):
         """Return the top states from encoder for decoder."""
         input_feed = {
             self.w_in: enc_inputs,
-            self.w_seq_len: enc_len}
-        if self.add_pos_in:
-            input_feed[self.pos_in] = enc_aux_inputs
+            self.w_seq_len: enc_len,
+            self.pos_in: enc_aux_inputs
+            }
         output_feed = self.attn_state
         return session.run(output_feed, input_feed)
 

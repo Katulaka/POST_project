@@ -17,13 +17,12 @@ def get_model(session, config, graph, mode='decode'):
                         config.n_hidden_bw, config.n_hidden_lstm,
                         config.word_vocabulary_size,
                         config.tag_vocabulary_size, config.learning_rate,
-                        config.learning_rate_decay_factor, config.add_pos_in,
-                        config.add_w_pos_in, config.w_attn, mode,
-                        config.reg_loss,)
+                        config.learning_rate_decay_factor, config.w_attn,
+                        config.pos, mode, config.reg_loss,)
 
     model.build_graph(graph)
-
-    ckpt = tf.train.get_checkpoint_state(config.checkpoint_path)
+    checkpoint_path = config.checkpoint_path
+    ckpt = tf.train.get_checkpoint_state(checkpoint_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)

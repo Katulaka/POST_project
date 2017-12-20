@@ -26,8 +26,7 @@ def main(_):
     parser.add_argument('--cp_dir', type=str, default='stags', help='')
     parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
-    parser.add_argument('--add_pos_in', action='store_true', help='')
-    parser.add_argument('--add_w_pos_in', action='store_true', help='')
+    parser.add_argument('--pos', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--test_min', default=0, type=int)
     parser.add_argument('--test_max', default=np.inf, type=int)
@@ -74,17 +73,17 @@ def main(_):
     Config.beam_size = args.beam
     Config.tag_vocabulary_size = t_vocab.vocab_size()
     Config.word_vocabulary_size = w_vocab.vocab_size()
+    Config.cp_dir = args.cp_dir
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
-    Config.add_pos_in = args.add_pos_in
-    Config.add_w_pos_in = args.add_w_pos_in
     Config.w_attn = args.attn
     Config.reg_loss = args.reg_loss
     Config.time_out = args.time_out
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
+    Config.pos = args.pos
 
     if (args.action == 'train'):
-        POST_train.train_eval(Config, batcher_train, batcher_dev, args.cp_dir)
+        POST_train.train_eval(Config, batcher_train, batcher_dev)
 
     elif (args.action == 'decode'):
 

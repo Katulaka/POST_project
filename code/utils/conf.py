@@ -16,8 +16,6 @@ class Config(object):
 
     checkpoint_path = 'checkpoints'
 
-    add_pos_in = True
-    add_w_pos_in = True
     w_attn = True
     #use regular loss or modified with "covarience" relation
     reg_loss = False #TODO
@@ -37,7 +35,6 @@ class Config(object):
 
     #beam search or greedy beam search
     greedy = False
-
 
     src_data_dir = '../gold_data'
     dataset_dir = 'data'
