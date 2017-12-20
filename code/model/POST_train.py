@@ -28,8 +28,8 @@ def _train(config, batcher):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
                 w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
-                if not config.pos:
-                    pos_pred = model.pos_decode(sess, words, w_len)
+                if config.use_pos:
+                    pos = model.pos_decode(sess, words, w_len)
                 step_loss, _, _  = model.step(sess, w_len, t_len, words, pos,
                                                 tags, targets)
                 step_time += (time.time() - start_time)\
@@ -42,8 +42,7 @@ def _train(config, batcher):
                     perplex = math.exp(loss) if loss < 300 else float('inf')
                     print ("step %d learning rate %f step-time %.2f"
                            " perplexity %.6f (loss %.6f)" %
-                           (current_step,
-                           model.learning_rate.eval(),
+                           (current_step, model.learning_rate.eval(),
                            step_time, perplex, loss))
                     if current_step == 20:
                         sess.run(model.learning_rate_decay_op)

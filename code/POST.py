@@ -27,6 +27,7 @@ def main(_):
     parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
+    parser.add_argument('--use_pos', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--test_min', default=0, type=int)
     parser.add_argument('--test_max', default=np.inf, type=int)
@@ -81,6 +82,7 @@ def main(_):
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
     Config.pos = args.pos
+    Config.use_pos = args.use_pos
 
     if (args.action == 'train'):
         POST_train.train_eval(Config, batcher_train, batcher_dev)
