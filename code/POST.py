@@ -5,7 +5,6 @@ import os
 import json
 
 from utils.dataset import gen_dataset
-# import model.POST_main as POST_main
 import model.POST_decode as POST_decode
 import model.POST_train as POST_train
 from utils.conf import Config
@@ -30,8 +29,6 @@ def main(_):
     parser.add_argument('--add_pos_in', action='store_true', help='')
     parser.add_argument('--add_w_pos_in', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
-    # subparsers = parser.add_subparsers()
-    # parser_len = subparsers.add_parser('ds_len')
     parser.add_argument('--test_min', default=0, type=int)
     parser.add_argument('--test_max', default=np.inf, type=int)
     parser.add_argument('--dev_min', default=0, type=int)
