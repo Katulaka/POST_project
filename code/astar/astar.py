@@ -33,6 +33,16 @@ class AStar:
             return v
 
     @abstractmethod
+    def is_max_len(self, current, max_len, max_node):
+        """Keeps track of the max lenght node seen so far"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def print_fn(self, current):
+        """Prints currents node information"""
+        raise NotImplementedError
+
+    @abstractmethod
     def heuristic_cost(self, current, goal):
         """Computes the estimated (rough) distance between a node and the goal,
         this method must be implemented in a subclass. The second parameter is
@@ -75,6 +85,8 @@ class AStar:
         searchNodes = AStar.SearchNodeDict()
         openSet = []
         goals = []
+        max_len = 0
+        max_node = None
         for strt in  start:
             if self.is_goal_reached(strt, goal):
                 goals.append(strt)
@@ -84,8 +96,8 @@ class AStar:
         while (time.time() - start_time < time_out) and openSet and len(goals) < num_goals:
             current = heappop(openSet)
             if verbose > 0:
-                print "---------------------------------------------------"
-                print "current:", current.data.idx, current.data.rank, current.fscore
+                self.print_fn(current, 'current')
+                max_len, max_node = self.is_max_len(current.data, max_len, max_node)
             if self.is_goal_reached(current.data, goal):
                 goals.append(self.reconstruct_path(current, reverse_path))
             current.out_openset = True
@@ -102,6 +114,5 @@ class AStar:
                     neighbor.out_openset = False
                     heappush(openSet, neighbor)
                 if verbose > 1 :
-                    print ("neighbor:", neighbor.data.idx, neighbor.data.rank,
-                                                                neighbor.fscore)
-        return goals
+                    self.print_fn(neighbor, 'neighbor')
+        return goals, max_node

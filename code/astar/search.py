@@ -33,6 +33,16 @@ class Solver(AStar):
         self.cl = Solver.ClosedList()
         self.seen = []
 
+    def is_max_len(self, current, max_len, max_node):
+        if len(current.rank) > max_len:
+            return len(current.rank), current
+        else:
+            return max_len, max_node
+
+    def print_fn(self, current, name):
+        print ('%s: range %s, rank %s, score %f'
+                %(name, current.data.idx, current.data.rank, current.fscore))
+
     def heuristic_cost(self, current, goal):
         idx_range = range(current.rid) + range(current.lid, goal.lid)
         rank = [0] * len(idx_range)
@@ -79,7 +89,7 @@ def solve_tree_search(tags, num_goals, time_out, verbose=1):
     start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = TagNode(0, max_lid, [])
     # let's solve it
-    paths = Solver(tags).astar(start, goal, num_goals, time_out, verbose)
+    paths, max_path = Solver(tags).astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
     for path in paths:
         path = list(path)[-1]
