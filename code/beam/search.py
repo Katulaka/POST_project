@@ -106,8 +106,7 @@ class BeamSearch(object):
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
             atten_len = enc_seqlen[j] - 1
-            #TODO fix offset of input
-            for i, dec_in in enumerate(atten_state[:atten_len-1]):
+            for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),

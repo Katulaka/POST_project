@@ -4,7 +4,7 @@ import copy
 import numpy as np
 from itertools import islice
 
-from vocab import pad, add_go, add_eos, to_onehot
+from vocab import pad, add_go, add_eos, to_onehot, add_pad_vec
 from utils import operate_on_Narray, flatten_to_1D
 
 
@@ -57,7 +57,7 @@ class Batcher(object):
         return batch_data
 
     def process(self, bv):
-
+        #TODO do i really need the deepcopy?
         self._seq_len = self.seq_len(bv['words'].tolist())
 
         #Process words input batch
@@ -71,9 +71,12 @@ class Batcher(object):
         #Process tags input batch
         bv_t = copy.deepcopy(bv['tags'].tolist())
         bv_t_go = add_go(bv_t)
-        seq_len_t = np.reshape(pad(self.seq_len(bv_t_go), max_len_w), [-1])
+        seq_len_t_go = self.seq_len(bv_t_go)
+        seq_len_t_pad = pad(seq_len_t_go, max_len_w, l_pad_len=1)
+        seq_len_t = np.reshape(seq_len_t_pad, [-1])
         max_len_t = max(seq_len_t)
 
+        bv_t_go = add_pad_vec(bv_t_go)
         bv_t_pad = []
         for _bv_t in pad(bv_t_go, max_len_t):
             _bv_t = np.array(_bv_t)
