@@ -30,9 +30,6 @@ def data_to_dict(src_dir, data_file):
     all_data = dict()
     for directory, dirnames, filenames in os.walk(src_dir):
         if directory[-1].isdigit():
-            # data = dict()
-            # data['words'] =[]
-            # data['tags'] = []
             data = {'words' : [], 'tags' : []}
             for fname in sorted(filenames):
                 data_in = os.path.join(directory, fname)
@@ -148,43 +145,3 @@ def get_data_from_file(src_dir, data_file, get_fn):
             data = json.load(outfile)
     print("Total time to load data: %f" % (time.time()-start_time))
     return data
-
-#
-# def slice_dataset(all_dataset, max_len):
-#
-#     start_time = time.time()
-#     dataset = {'train': dict(), 'dev': dict(), 'test': dict()}
-#     _select = lambda A, i: list(np.array(A)[i])
-#     for key, ds in all_dataset.items():
-#         indeces = [len(w) <= max_len for w in ds['words']]
-#         dataset[key]['words'] = _select(ds['words'], indeces)
-#         dataset[key]['tags'] = _select(ds['tags'], indeces)
-#     print("Total time to slice sentences : %f" % (time.time()-start_time))
-#     return dataset
-# def _split_dataset(dataset, ratio):
-#     train_len = int(len(dataset[dataset.keys()[0]])*(1 - ratio))
-#     train = dict((k, v[:train_len]) for k, v in dataset.items())
-#     test = dict((k, v[train_len:]) for k, v in dataset.items())
-#     return train, test
-#
-# def split_to_tags_words(src_file, dst_file):
-#     data = dict()
-#     data['words'] =[]
-#     data['tags'] = []
-#     for tags, words in gen_tags(src_file):
-#         data['words'].append(words)
-#         data['tags'].append(tags)
-#     with open(dst_file, 'w') as outfile:
-#         jason.dump(data, outfile)
-#     # return data
-#
-# def split_all(src_dir, dst_root_dir):
-#     for directory, dirnames, filenames in os.walk(src_dir):
-#         if directory[-1].isdigit():
-#             dst_dir = os.path.join(dst_root_dir, directory[-2:])
-#             if not os.path.exists(dst_dir):
-#                 os.mkdir(dst_dir)
-#             for fname in sorted(filenames):
-#                 src_file = os.path.join(directory, fname)
-#                 dst_file = os.path.join(dst_dir, fname)
-#                 split_to_tags_words(src_file, dst_file)
