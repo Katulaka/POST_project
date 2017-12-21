@@ -20,7 +20,6 @@ def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
                     t_vocab.token_to_id('EOS'), config.dec_timesteps)
 
     w_len, _, words, pos, _, _, _ = batcher.process(batch)
-
     words_cp = copy.copy(words)
     w_len_cp = copy.copy(w_len)
     pos_cp = copy.copy(pos)
@@ -93,7 +92,6 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
                 f = open('decode_trees', 'wb')
                 cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()
-                import pdb; pdb.set_trace()
                 with open('decode_mrg', 'w') as outfile:
                     json.dump(to_mrg(decoded_trees), outfile)
 
