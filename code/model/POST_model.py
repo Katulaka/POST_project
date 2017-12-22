@@ -10,27 +10,30 @@ class POSTModel(object):
     def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
                 n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
                 tag_vocabulary_size, learning_rate, learning_rate_decay_factor,
-                w_attention, pos, mode, reg_loss,
+                w_attention, pos, mode, loss_type,
                 dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
+        self.dtype = dtype
+
         self.w_embed_size = word_embedding_size
         self.t_embed_size = tag_embedding_size
         self.pos_embed_size = tag_embedding_size
-        self.pos_vocab_size = tag_vocabulary_size
         self.w_vocab_size = word_vocabulary_size
         self.t_vocab_size = tag_vocabulary_size
+        self.pos_vocab_size = tag_vocabulary_size
+
         self.n_hidden_fw = n_hidden_fw
         self.n_hidden_bw = n_hidden_bw
         self.n_hidden_lstm = n_hidden_lstm
-        self.dtype = dtype
+
         self.lr = learning_rate
         self.lr_decay_factor = learning_rate_decay_factor
-        self.dtype = dtype
+
         self.mode = mode
         self.pos = pos
         self.w_attn = w_attention
-        self.reg_loss = reg_loss
+        self.loss_type = loss_type
 
     def _add_placeholders(self):
         """Inputs to be fed to the graph."""
@@ -302,6 +305,7 @@ class POSTModel(object):
             self.t_in: t_in,
             self.targets: targets,
             self.pos_in: pos_in}
+            self.loss = self.reg_loss
         output_feed = self.loss
         return session.run(output_feed, input_feed)
 
