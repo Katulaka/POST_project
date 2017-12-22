@@ -46,22 +46,18 @@ def main(_):
 
     args = parser.parse_args()
 
-    data_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
-
+    # ds_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
+    ds_dir = os.path.join(os.getcwd(), Config.ds_dir)
+    Config.gold_file = os.path.join(ds_dir, Config.gold_fname)
+    Config.ds_file = os.path.join(ds_dir, Config.ds_fname)
+    Config.tags_type = (args.only_pos, args.keep_direction, args.no_val_gap)
+    Config.ds_range = {'train': (args.train_min, args.train_max),
+                        'dev': (args.dev_min, args.dev_max),
+                        'test': (args.test_min, args.test_max)}
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
-    w_vocab, t_vocab, dataset, t_op, tags = gen_dataset(Config.src_data_dir,
-                                            data_file,
-                                            (args.only_pos,
-                                            args.keep_direction,
-                                            args.no_val_gap),
-                                            max_len = {'train':args.train_max,
-                                                        'dev':args.dev_max,
-                                                        'test':args.test_max},
-                                            min_len = {'train':args.train_min,
-                                                        'dev':args.dev_min,
-                                                        'test':args.test_min},)
+    w_vocab, t_vocab, dataset, t_op, tags, gold_data = gen_dataset(Config)
     print ("Time to generate dataset and vocabulary %f" %
                     (time.time()-start_time))
     # initializing batcher class

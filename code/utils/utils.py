@@ -1,5 +1,6 @@
 from multiprocessing import Process, Queue
 from itertools import chain
+import numpy as np
 
 def _operate_on_Narray(A, function): #recursive up to the element level
     if isinstance(A, list):
@@ -26,6 +27,9 @@ def arr_dim(arr):
 def flatten_to_1D(A):
     n =  arr_dim(A) - 1
     return flattenNd(A, n)
+
+def _select(A,i):
+    return list(np.array(A)[i])
 
 # def profile(fn, *args): #TODO
 #     import cProfile, pstats, StringIO

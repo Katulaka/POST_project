@@ -36,6 +36,7 @@ class Config(object):
     #beam search or greedy beam search
     greedy = False
 
-    src_data_dir = '../gold_data'
-    dataset_dir = 'data'
-    dataset_fname = 'data.txt'
+    src_dir = '../gold_data'
+    ds_dir = 'data'
+    ds_fname = 'data.txt'
+    gold_fname = 'gold'
