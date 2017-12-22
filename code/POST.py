@@ -89,7 +89,6 @@ def main(_):
         fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        import pdb; pdb.set_trace()
         decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
                                         batcher_test, t_op,)
         with open(dec_file, 'w') as outfile:
