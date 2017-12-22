@@ -88,12 +88,17 @@ def main(_):
         POST_train.train_eval(Config, batcher_train, batcher_dev)
 
     elif (args.action == 'decode'):
-
-        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab, batcher_test,
-                                        t_op,)
-
-        with open('decode_file', 'w') as outfile:
+        import datetime
+        now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
+        fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
+        dec_file = fname + '.test'
+        gold_file = fname + '.gold'
+        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
+                                        batcher_test, t_op,)
+        with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
+        with open(gold_file, 'w') as outfile:
+            json.dump(gold_data, outfile)
 
     elif(args.action == 'stats'):
         stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher_test, t_op,
