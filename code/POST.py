@@ -87,8 +87,9 @@ def main(_):
         import datetime
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
-        dec_file = fname + '.test'
-        gold_file = fname + '.gold'
+        dec_file = os.path.join('decode', fname + '.test')
+        gold_file = os.path.join('decode', fname + '.gold')
+        import pdb; pdb.set_trace()
         decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
                                         batcher_test, t_op,)
         with open(dec_file, 'w') as outfile:
