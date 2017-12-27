@@ -263,18 +263,18 @@ class POSTModel(object):
         else:
             self._add_project_bridge()
         self._add_projection()
-        if (self.mode == 'train'):
-            self._add_loss()
-            self.reg_lr = tf.Variable(float(self.lr), trainable=False,
-                                        dtype=self.dtype)
+        # if (self.mode == 'train'):
+        self._add_loss()
+        self.reg_lr = tf.Variable(float(self.lr), trainable=False,
+                                    dtype=self.dtype)
 
     def build_pos_graph(self):
         self.pos_step = tf.Variable(0, trainable=False, name='pos_step')
         self._add_pos_bidi_lstm()
         self._add_pos_prediction()
-        if (self.mode == 'train'):
-            self._add_pos_loss()
-            self.pos_lr = tf.Variable(float(self.lr), trainable=False,
+        # if (self.mode == 'train'):
+        self._add_pos_loss()
+        self.pos_lr = tf.Variable(float(self.lr), trainable=False,
                                         dtype=self.dtype)
 
 
@@ -305,8 +305,8 @@ class POSTModel(object):
             self.t_in: t_in,
             self.targets: targets,
             self.pos_in: pos_in}
-        self.loss = self.reg_loss
-        output_feed = self.loss
+        # self.loss = self.reg_loss
+        output_feed = self.reg_loss
         return session.run(output_feed, input_feed)
 
     def pos_decode(self, session, w_in, w_seq_len):
