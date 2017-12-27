@@ -46,20 +46,16 @@ def main(_):
 
     args = parser.parse_args()
 
-    # ds_file = os.path.join(os.getcwd(), Config.dataset_dir, Config.dataset_fname)
-    ds_dir = os.path.join(os.getcwd(), Config.ds_dir)
-    Config.gold_file = os.path.join(ds_dir, Config.gold_fname)
-    Config.ds_file = os.path.join(ds_dir, Config.ds_fname)
-    Config.tags_type = (args.only_pos, args.keep_direction, args.no_val_gap)
-    Config.ds_range = {'train': (args.train_min, args.train_max),
-                        'dev': (args.dev_min, args.dev_max),
-                        'test': (args.test_min, args.test_max)}
+    tags_type = (args.only_pos, args.keep_direction, args.no_val_gap)
+    ds_range = {'train': (args.train_min, args.train_max),
+                'dev': (args.dev_min, args.dev_max),
+                'test': (args.test_min, args.test_max)}
     # create vocabulary and array of dataset from train file
     print("Generating dataset and vocabulary")
     start_time = time.time()
-    w_vocab, t_vocab, dataset, t_op, tags, gold_data = gen_dataset(Config)
-    print ("Time to generate dataset and vocabulary %f" %
-                    (time.time()-start_time))
+    vocab, dataset, t_op, tags, gold = gen_dataset(Config, tags_type, ds_range)
+    print ("Time to get dataset and vocabulary %f" % (time.time()-start_time))
+
     # initializing batcher class
     batcher_train = Batcher(dataset['train'], args.batch, args.reverse)
     batcher_dev = Batcher(dataset['dev'], args.batch, args.reverse)
@@ -68,8 +64,8 @@ def main(_):
     # Update config variables
     Config.batch_size = args.batch
     Config.beam_size = args.beam
-    Config.tag_vocabulary_size = t_vocab.vocab_size()
-    Config.word_vocabulary_size = w_vocab.vocab_size()
+    Config.tag_vocabulary_size = vocab['tags'].vocab_size()
+    Config.word_vocabulary_size = vocab['words'].vocab_size()
     Config.cp_dir = args.cp_dir
     Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
     Config.w_attn = args.attn
@@ -89,15 +85,18 @@ def main(_):
         fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
-                                        batcher_test, t_op,)
+        # decode_tags = POST_decode.decode(Config, w_vocab, t_vocab,
+        #                                 batcher_test, t_op,)
+        decode_tags = POST_decode.decode(Config, vocab, batcher_test, t_op)
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
         with open(gold_file, 'w') as outfile:
-            json.dump(gold_data, outfile)
+            json.dump(gold, outfile)
 
     elif(args.action == 'stats'):
-        stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher_test, t_op,
+        # stats = POST_decode.stats(Config, w_vocab, t_vocab, batcher_test, t_op,
+        #                             args.stat_file)
+        stats = POST_decode.stats(Config, vocab, batcher_test, t_op,
                                     args.stat_file)
     elif(args.action == 'verify'):
         verify_tags = POST_decode.verify(t_vocab, batcher, t_op)

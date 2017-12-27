@@ -14,22 +14,27 @@ from utils.utils import ProcessWithReturnValue
 
 from POST_main import get_model
 
-def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
+# def decode_bs(sess, model, config, w_vocab, t_vocab, batcher, batch, t_op):
+def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
 
-    bs = BeamSearch(model, config.beam_size, t_vocab.token_to_id('GO'),
-                    t_vocab.token_to_id('EOS'), config.dec_timesteps)
+    # bs = BeamSearch(model, config.beam_size, t_vocab.token_to_id('GO'),
+    #                 t_vocab.token_to_id('EOS'), config.dec_timesteps)
+    bs = BeamSearch(model, config.beam_size, vocab['tags'].token_to_id('GO'),
+                    vocab['tags'].token_to_id('EOS'), config.dec_timesteps)
 
     w_len, _, words, pos, _, _, _ = batcher.process(batch)
     words_cp = copy.copy(words)
     w_len_cp = copy.copy(w_len)
     pos_cp = copy.copy(pos)
     best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp)
-    beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+    # beam_tags = t_op.combine_fn(t_vocab.to_tokens(best_beams['tokens']))
+    beam_tags = t_op.combine_fn(vocab['tags'].to_tokens(best_beams['tokens']))
     _beam_pair = map(lambda x, y: zip(x, y),
                                 beam_tags, best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)
     _words = [s[1:s_len-1].tolist() for s, s_len in zip(words, w_len)]
-    word_tokens = w_vocab.to_tokens(_words)
+    # word_tokens = w_vocab.to_tokens(_words)
+    word_tokens = vocab['words'].to_tokens(_words)
     return beam_pair, word_tokens
 
 def decode_batch(beam_pair, word_tokens, num_goals, time_out):
@@ -49,7 +54,8 @@ def decode_batch(beam_pair, word_tokens, num_goals, time_out):
         decode_trees.append(trees)
     return decode_trees
 
-def decode(config, w_vocab, t_vocab, batcher, t_op):
+# def decode(config, w_vocab, t_vocab, batcher, t_op):
+def decode(config, vocab, batcher, t_op):
 
     batch_list = batcher.get_batch()
 
@@ -62,8 +68,10 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
             twrv = [0] * num_batches
             res_q = [Queue()] * num_batches
             for i, batch in enumerate(batch_list):
-                beam_pair, word_tokens = decode_bs(sess, model, config, w_vocab,
-                                                t_vocab, batcher, batch, t_op)
+                # beam_pair, word_tokens = decode_bs(sess, model, config, w_vocab,
+                #                                 t_vocab, batcher, batch, t_op)
+                beam_pair, word_tokens = decode_bs(sess, model, config, vocab,
+                                                     batcher, batch, t_op)
 
 
                 twrv[i] = ProcessWithReturnValue(target=decode_batch, name=i,
@@ -82,23 +90,26 @@ def decode(config, w_vocab, t_vocab, batcher, t_op):
         else:
             decoded_trees = []
             for batch in batch_list:
-                beam_pair, word_tokens = decode_bs(sess, model, config,
-                                                    w_vocab, t_vocab, batcher,
-                                                    batch, t_op)
+                # beam_pair, word_tokens = decode_bs(sess, model, config,
+                #                                     w_vocab, t_vocab, batcher,
+                #                                     batch, t_op)
+                beam_pair, word_tokens = decode_bs(sess, model, config, vocab,
+                                                    batcher, batch, t_op)
 
                 decoded_trees.extend(decode_batch(beam_pair, word_tokens,
                                                 config.num_goals,
                                                 config.time_out))
-                f = open('decode_trees', 'wb')
-                cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
-                f.close()
-                with open('decode_mrg', 'w') as outfile:
-                    json.dump(to_mrg(decoded_trees), outfile)
+                # f = open('decode_trees', 'wb')
+                # cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
+                # f.close()
+                # with open('decode_mrg', 'w') as outfile:
+                #     json.dump(to_mrg(decoded_trees), outfile)
 
         decode_tags = to_mrg(decoded_trees)
     return decode_tags
 
-def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
+# def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
+def stats(config, vocab, batcher, t_op, data_file):
     stat_graph = tf.Graph()
     with tf.Session(graph=stat_graph) as sess:
         model = get_model(sess, config, stat_graph,)
@@ -110,8 +121,10 @@ def stats(config, w_vocab, t_vocab, batcher, t_op, data_file):
 
             bs = BeamSearch(model,
                             config.beam_size,
-                            t_vocab.token_to_id('GO'),
-                            t_vocab.token_to_id('EOS'),
+                            # t_vocab.token_to_id('GO'),
+                            # t_vocab.token_to_id('EOS'),
+                            vocab['tags'].token_to_id('GO'),
+                            vocab['tags'].token_to_id('EOS'),
                             config.dec_timesteps)
             words_cp = copy.copy(words)
             w_len_cp = copy.copy(w_len)

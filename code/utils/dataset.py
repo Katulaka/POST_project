@@ -1,8 +1,6 @@
 from __future__ import print_function
 
 import os
-import numpy as np
-from itertools import chain
 import json
 import time
 
@@ -80,18 +78,6 @@ def split_dataset(data):
                                         (time.time()-start_time))
     return dataset
 
-def get_vocab(dataset, w_vocab_size, t_vocab_size):
-    """ """
-    start_time = time.time()
-    w_vocab = Vocab(flatten_to_1D(dataset['train']['words']), w_vocab_size)
-    print ("Total time for word vocab %f" % (time.time()-start_time))
-    _tags = []
-    for ds in dataset.values(): #TODO
-        _tags.extend(flatten_to_1D(ds['tags']))
-    t_vocab = Vocab(_tags, t_vocab_size)
-    print ("Total time for tag vocab %f" % (time.time()-start_time))
-    return w_vocab, t_vocab
-
 def slice_dataset(dataset, ds_range):
     """ """
     start_time = time.time()
@@ -101,43 +87,57 @@ def slice_dataset(dataset, ds_range):
     print("Total time to slice sentences : %f" % (time.time()-start_time))
     return dataset, indeces
 
-
-def gen_dataset(config, w_vocab_size=0, t_vocab_size=0,):
+def gen_dataset(config, tags_type, ds_range, nwords=0, ntags=0, nchars=0):
     """ """
     data = get_data_from_file(config.src_dir, config.ds_file, data_to_dict)
+    #split dataset into train/dev/test
     ds = split_dataset(data)
-    gd =  get_data_from_file(config.src_dir, config.gold_file, gold_to_list)
     tags = dict()
     indeces = dict()
     for key in ds.keys():
-        ds[key], indeces[key] = slice_dataset(ds[key], config.ds_range[key])
+        ds[key], indeces[key] = slice_dataset(ds[key], ds_range[key])
         tags[key] = ds[key]['tags']
+
+    gd =  get_data_from_file(config.src_dir, config.gold_file, gold_to_list)
     gd = _select(gd, indeces['test'])
+
     start_time = time.time()
-    t_op = TagOp(*config.tags_type)
+    t_op = TagOp(*tags_type)
     for d in ds.values():
         d['tags'] = t_op.modify_fn(d['tags'])
+        d['chars'] = [[list(w) for w in s] for s in d['words'] ]
     print ("Total time to modify tags %f" % (time.time()-start_time))
 
-    w_vocab, t_vocab = get_vocab(ds, w_vocab_size, t_vocab_size)
+    vocab = get_vocab(ds, nwords, ntags, nchars)
 
     start_time = time.time()
     for d in ds.values():
-        d['words'] = w_vocab.to_ids(d['words'])
-        d['tags'] = t_vocab.to_ids(d['tags'])
+        for k in d.keys():
+            d[k] = vocab[k].to_ids(d[k])
+        # d['words'] = vocab['words'].to_ids(d['words'])
+        # d['tags'] = vocab['tags'].to_ids(d['tags'])
+        # d['chars'] = vocab['chars'].to_ids(d['chars']) #TODO
     print ("Total time to convert data from tokens to ids %f" %
             (time.time()-start_time))
-    return w_vocab, t_vocab, ds, t_op, tags, gd
+    return vocab, ds, t_op, tags, gd
 
+def get_vocab(ds, nwords, ntags, nchars):
+    """ """
+    vocab = dict()
+    start_time = time.time()
+    words = flatten_to_1D(ds['train']['words'])
+    vocab['words'] = Vocab(words, nwords)
+    print ("Total time for word vocab %f" % (time.time()-start_time))
 
-# def get_dataset(src_dir, data_file):
-#
-#     start_time = time.time()
-#     if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
-#         data = data_to_dict(src_dir, data_file)
-#     else:
-#         print ("Data file used: %s" % data_file)
-#         with open (data_file, 'r') as outfile:
-#             data = json.load(outfile)
-#     print("Total time to load data: %f" % (time.time()-start_time))
-#     return data
+    start_time = time.time()
+    tags = flatten_to_1D([d['tags'] for d in ds.values()])
+    vocab['tags'] = Vocab(tags, ntags)
+    print ("Total time for tag vocab %f" % (time.time()-start_time))
+
+    start_time = time.time()
+    chars = flatten_to_1D(ds['train']['chars'])
+    # chars = flatten_to_1D([list(w) for s in ds['train']['words'] for w in s])
+    vocab['chars'] = Vocab(chars, nchars)
+    print ("Total time for word vocab %f" % (time.time()-start_time))
+
+    return vocab

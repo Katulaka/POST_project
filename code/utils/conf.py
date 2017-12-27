@@ -1,3 +1,5 @@
+import os
+
 class Config(object):
 
     batch_size = 32
@@ -40,3 +42,5 @@ class Config(object):
     ds_dir = 'data'
     ds_fname = 'data.txt'
     gold_fname = 'gold'
+    gold_file = os.path.join(os.getcwd(), ds_dir, gold_fname)
+    ds_file = os.path.join(os.getcwd(), ds_dir, ds_fname)
