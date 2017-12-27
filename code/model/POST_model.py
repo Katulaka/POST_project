@@ -305,7 +305,7 @@ class POSTModel(object):
             self.t_in: t_in,
             self.targets: targets,
             self.pos_in: pos_in}
-        # self.loss = self.reg_loss
+        self.loss = self.reg_loss
         output_feed = self.loss
         return session.run(output_feed, input_feed)
 
