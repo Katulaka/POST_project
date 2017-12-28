@@ -24,7 +24,7 @@ def _train(config, batcher):
     with tf.Session(graph = train_graph) as sess:
         model = get_model(sess, config, train_graph, 'train')
         # current_step =  model.pos_step.eval() if config.ModelParms.pos else model.suptag_step.eval()
-        current_step = self._step.eval()
+        current_step = model._step.eval()
         for i in range(config.num_epochs):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
