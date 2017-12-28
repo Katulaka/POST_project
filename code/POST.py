@@ -19,7 +19,6 @@ def main(_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
     parser.add_argument('--cp_dir', type=str, default='stags', help='')
-    parser.add_argument('--stat_file', type=str, default='stats', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
     parser.add_argument('--use_pos', action='store_true', help='')
@@ -39,6 +38,7 @@ def main(_):
     parser.add_argument('--num_goals', type=int, default=1, help='')
     parser.add_argument('--comb_loss', action='store_true', help='')
     parser.add_argument('--time_out', type=float, default=100., help='')
+    # parser.add_argument('--stat_file', type=str, default='stats', help='')
 
     args = parser.parse_args()
 
@@ -92,9 +92,9 @@ def main(_):
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
 
-    elif(args.action == 'stats'):
-        stats = POST_decode.stats(Config, vocab, batcher_test, t_op,
-                                    args.stat_file)
+    # elif(args.action == 'stats'):
+    #     stats = POST_decode.stats(Config, vocab, batcher_test, t_op,
+    #                                 args.stat_file)
 
     # elif(args.action == 'verify'):
     #     verify_tags = POST_decode.verify(t_vocab, batcher, t_op)
