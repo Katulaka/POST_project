@@ -32,6 +32,7 @@ class POSTModel(object):
         self.lr_decay_factor = model_parms.lr_decay_factor
 
         self.pos = model_parms.pos
+        self.use_pos = model_parms.use_pos
         self.attn = model_parms.attn
         self.use_c_embed = model_parms.use_c_embed
         self.comb_loss = model_parms.comb_loss
@@ -252,7 +253,6 @@ class POSTModel(object):
 
     def _add_train_op(self):
 
-        self.loss = self.pos_loss if self.pos else self.reg_loss
         self.learning_rate = self.pos_lr if self.pos else self.reg_lr
         self.learning_rate_decay_op = self.learning_rate.assign(
                         self.learning_rate * self.lr_decay_factor)
@@ -274,6 +274,7 @@ class POSTModel(object):
                     self.build_pos_graph()
                 with tf.name_scope("SUPERTAGS"):
                     self.build_suptag_graph()
+                self.loss = self.pos_loss if self.pos else self.reg_loss
                 if (self.mode == 'train'):
                     self._add_train_op()
                     self._step = self.pos_step if self.pos else self.suptag_step
@@ -307,54 +308,54 @@ class POSTModel(object):
             self.pos_lr = tf.Variable(float(self.lr), trainable=False,
                                         dtype=self.dtype)
 
-    def step(self, session, word_len, tag_len, w_in, pos_in, t_in, targets, c_in, char_len):
+    def step(self, session, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgts):
         """ Training step, returns the prediction, loss"""
+        if self.use_pos:
+            p_in = self.pos_decode(session, w_in, w_len, c_len, c_in)
         input_feed = {
             self.w_in: w_in,
-            self.word_len: word_len,
+            self.word_len: w_len,
             self.char_in : c_in,
-            self.char_len : char_len,
-            self.pos_in : pos_in,
+            self.char_len : c_len,
+            self.pos_in : p_in,
             self.t_in: t_in,
-            self.tag_len: tag_len,
-            self.targets: targets}
+            self.tag_len: t_len,
+            self.targets: trgts}
         output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
-    def eval_step(self, session, word_len, tag_len, w_in, pos_in, t_in, targets, c_in, char_len):
+    def dev_step(self, sess, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgt):
         """ Training step, returns the prediction, loss"""
+        if self.use_pos:
+            p_in = self.pos_decode(sess, w_in, w_len, c_in, c_len)
+        input_feed = {self.w_in : w_in,
+                        self.word_len : w_len,
+                        self.char_in : c_in,
+                        self.char_len : c_len,
+                        self.pos_in : p_in,
+                        self.t_in : t_in,
+                        self.tag_len : t_len,
+                        self.targets : trgt}
+        output_feed = self.loss
+        return sess.run(output_feed, input_feed)
 
-        input_feed = {
-            self.word_len: word_len,
-            self.tag_len: tag_len,
-            self.w_in: w_in,
-            self.t_in: t_in,
-            self.targets: targets,
-            self.pos_in: pos_in,
-            self.char_in : c_in,
-            self.char_len : char_len}
-        output_feed = self.reg_loss
-        return session.run(output_feed, input_feed)
-
-    def pos_decode(self, session, w_in, word_len, c_in, char_len):
-        input_feed = {
-            self.w_in: w_in,
-            self.word_len: word_len,
-            self.char_in : c_in,
-            self.char_len : char_len}
+    def pos_decode(self, session, w_in, w_len, c_in, c_len):
+        input_feed = {self.w_in: w_in,
+                    self.word_len: w_len,
+                    self.char_in : c_in,
+                    self.char_len : c_len}
         output_feed = self.pos_pred
         return session.run(output_feed, input_feed)
 
-    def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs,
-                        enc_aux_ext_seqlen, enc_aux_ext):
+    def encode_top_state(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
         """Return the top states from encoder for decoder."""
-        input_feed = {
-            self.w_in: enc_inputs,
-            self.word_len: enc_len,
-            self.pos_in: enc_aux_inputs,
-            self.char_in : enc_aux_ext,
-            self.char_len : enc_aux_ext_seqlen
-            }
+        if self.use_pos:
+            enc_pin = self.pos_decode(sess, enc_win, enc_wlen, enc_cin, enc_clen)
+        input_feed = {self.w_in: enc_win,
+                    self.word_len: enc_wlen,
+                    self.char_in : enc_cin,
+                    self.char_len : enc_clen,
+                    self.pos_in: enc_pin}
         output_feed = self.attn_state
         return session.run(output_feed, input_feed)
 

@@ -65,8 +65,7 @@ def main(_):
     Config.ModelParms.comb_loss = args.comb_loss
     Config.ModelParms.pos = args.pos
     Config.ModelParms.use_c_embed = args.use_c_embed
-
-    Config.use_pos = args.use_pos
+    Config.ModelParms.use_pos = args.use_pos
 
     Config.time_out = args.time_out
     Config.num_goals = args.num_goals
