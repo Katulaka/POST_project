@@ -78,7 +78,7 @@ def main(_):
     Config.beam_size = args.beam
 
     if (args.action == 'train'):
-        POST_train.train_eval(Config, batcher_train, batcher_dev)
+        POST_train.train(Config, batcher_train, batcher_dev)
 
     elif (args.action == 'decode'):
         import datetime

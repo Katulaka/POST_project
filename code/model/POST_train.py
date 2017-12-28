@@ -23,19 +23,14 @@ def _train(config, batcher):
     train_graph = tf.Graph()
     with tf.Session(graph = train_graph) as sess:
         model = get_model(sess, config, train_graph, 'train')
-        # current_step =  model.pos_step.eval() if config.ModelParms.pos else model.suptag_step.eval()
         current_step = model._step.eval()
         for i in range(config.num_epochs):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
-                w_len, t_len, words, pos, _, tags, targets, c_len, chars = batcher._process(bv)
-                if config.use_pos:
-                    pos = model.pos_decode(sess, words, w_len, c_len, chars)
-                step_loss, _, _  = model.step(sess, w_len, t_len, words, pos,
-                                                tags, targets, chars, c_len)
-                step_time += (time.time() - start_time)\
-                                 / config.steps_per_checkpoint
-                loss += step_loss / config.steps_per_checkpoint
+                w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher._process(bv)
+                step_loss, _, _  = model.step(sess, w_in, w_len, c_in, c_len,
+                                                pos, t_in, t_len, trgts)
+
                 current_step += 1
                 step_time += (time.time() - start_time) / config.steps_per_ckpt
                 loss += step_loss / config.steps_per_ckpt
@@ -54,39 +49,32 @@ def _train(config, batcher):
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
 
-def _eval(config, batcher):
+def _dev(config, batcher):
+
     step_time, tot_loss = 0.0, 0.0
-    eval_graph = tf.Graph()
-    current_step =  0
-
-    with tf.Session(graph=eval_graph) as sess:
-        model = get_model(sess, config, eval_graph)
-
+    dev_graph = tf.Graph()
+    with tf.Session(graph=dev_graph) as sess:
+        model = get_model(sess, config, dev_graph)
+        current_step =  0
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            # w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
-            w_len, t_len, words, pos, _, tags, targets, c_len, chars = batcher._process(bv)
-            step_loss = model.eval_step(sess, w_len, t_len, words, pos, tags,
-                                        targets, c_len, chars)
+            w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher._process(bv)
+            step_loss = model.dev_step(sess, w_in, w_len, c_in, c_len, pos,
+                                        t_in, t_len, trgts)
             current_step += 1
             step_time = (time.time() - start_time) / current_step
             tot_loss += step_loss
-            loss = avg_loss = tot_loss / current_step
+            loss = tot_loss / current_step
             perplex = math.exp(loss) if loss < 300 else float('inf')
-            print ("global step %d step-time %.2f"
-                    " perplexity %.6f (loss %.6f)" %
+            print ("[[train_model(dev):]] global step %d step-time %.2f perplexity %.6f (loss %.6f)" %
                    (current_step, step_time, perplex, loss))
             sys.stdout.flush()
         return loss
 
-def train_eval(config, batcher_train, batcher_test):
+def train(config, batcher_train, batcher_dev):
 
     # This is the training loop.
-    eval_loss = np.inf
-    eval_losses = []
-    while eval_loss > config.th_loss:
+    dev_losses = [np.inf]
+    while dev_losses[-1] > config.th_loss:
         _train(config, batcher_train)
-
-        if not config.ModelParms.pos: #TODO maybe add eval for the training of POS?
-            eval_loss = _eval(config, batcher_test)
-            eval_losses.append(eval_loss)
+        dev_losses.append(_dev(config, batcher_dev))
