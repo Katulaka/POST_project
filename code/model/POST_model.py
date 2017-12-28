@@ -7,144 +7,174 @@ import tensorflow as tf
 
 class POSTModel(object):
 
-    def __init__(self, batch_size, word_embedding_size, tag_embedding_size,
-                n_hidden_fw, n_hidden_bw, n_hidden_lstm, word_vocabulary_size,
-                tag_vocabulary_size, learning_rate, learning_rate_decay_factor,
-                w_attention, pos, mode, loss_type,
-                dtype=tf.float32, scope_name='nn_model'):
+    def __init__ (self, model_parms, mode, dtype=tf.float32, scope_name='nn_model'):
 
         self.scope_name = scope_name
         self.dtype = dtype
-
-        self.w_embed_size = word_embedding_size
-        self.t_embed_size = tag_embedding_size
-        self.pos_embed_size = tag_embedding_size
-        self.w_vocab_size = word_vocabulary_size
-        self.t_vocab_size = tag_vocabulary_size
-        self.pos_vocab_size = tag_vocabulary_size
-
-        self.n_hidden_fw = n_hidden_fw
-        self.n_hidden_bw = n_hidden_bw
-        self.n_hidden_lstm = n_hidden_lstm
-
-        self.lr = learning_rate
-        self.lr_decay_factor = learning_rate_decay_factor
-
         self.mode = mode
-        self.pos = pos
-        self.w_attn = w_attention
-        self.loss_type = loss_type
+
+        self.dim_char = model_parms.dim_char
+        self.dim_word = model_parms.dim_word
+        self.dim_tag = model_parms.dim_tag
+        self.dim_pos = model_parms.dim_pos
+
+        self.nchars = model_parms.nchars
+        self.nwords = model_parms.nwords
+        self.ntags = model_parms.ntags
+        self.npos = model_parms.ntags
+
+        self.char_hidden = model_parms.char_hidden
+        self.pos_hidden = model_parms.pos_hidden
+        self.word_hidden = model_parms.word_hidden
+        self.tag_hidden = model_parms.tag_hidden
+
+        self.lr = model_parms.lr
+        self.lr_decay_factor = model_parms.lr_decay_factor
+
+        self.pos = model_parms.pos
+        self.attn = model_parms.attn
+        self.use_c_embed = model_parms.use_c_embed
+        self.comb_loss = model_parms.comb_loss
 
     def _add_placeholders(self):
         """Inputs to be fed to the graph."""
+        #shape = (batch_size, max length of sentence, max lenght of word)
+        self.char_in = tf.placeholder(tf.int32, [None, None], 'char-in')
+        self.char_len = tf.placeholder(tf.int32, [None], 'char-sequence-len')
+        #shape = (batch_size, max length of sentence)
         self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
+        #shape = (batch_size, max length of sentence)
         self.pos_in = tf.placeholder(tf.int32, [None, None], 'pos-input')
-        self.w_seq_len = tf.placeholder(tf.int32, [None], 'word-sequence-len')
+        #shape = (batch_size)
+        self.word_len = tf.placeholder(tf.int32, [None], 'word-sequence-len')
+        #shape = (batch_size * max length of sentence, max length of tag)
         self.t_in = tf.placeholder(tf.int32, [None, None], 'tag-input')
-        self.t_seq_len = tf.placeholder(tf.int32, [None], 'tag-sequence-len')
+        #shape = (batch_size * max length of sentence)
+        self.tag_len = tf.placeholder(tf.int32, [None], 'tag-sequence-len')
+        #shape = (batch_size * length of sentences)
         self.targets = tf.placeholder(tf.int32, [None], 'targets')
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
         with tf.name_scope('embedding'):
-            w_embed_mat_init = tf.random_uniform([self.w_vocab_size,
-                                                self.w_embed_size],
-                                                -1.0, 1.0)
-            w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embeddings')
+
+            ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
+                                    shape=[self.nchars,self.dim_char])
+            self.char_embed = tf.nn.embedding_lookup(ch_embed_mat,
+                                                    self.char_in,
+                                                    name='char-embed')
+
+            w_embed_mat = tf.get_variable('word-embeddings',
+                                    shape=[self.nwords,self.dim_word],
+                                    dtype=self.dtype)
             self.word_embed = tf.nn.embedding_lookup(w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
 
-            t_embed_mat_init = tf.random_uniform([self.t_vocab_size,
-                                                self.t_embed_size],
-                                                -1.0, 1.0)
-            t_embed_mat = tf.Variable(t_embed_mat_init, name='tag-embeddings')
+            t_embed_mat = tf.get_variable('tag-embeddings',
+                                    shape=[self.ntags,self.dim_tag],
+                                    dtype=self.dtype)
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                                     self.t_in,
                                                     name='tag-embed')
 
-            p_embed_mat_init = tf.random_uniform([self.pos_vocab_size,
-                                                self.pos_embed_size],
-                                                -1.0, 1.0)
-            pos_embed_mat = tf.Variable(p_embed_mat_init, name='pos-embeddings')
+            pos_embed_mat = tf.get_variable('pos-embeddings',
+                                shape=[self.npos,self.dim_pos],
+                                dtype=self.dtype)
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
+
+    def _add_char_lstm(self):
+        with tf.name_scope('char-LSTM-Layer'):
+            char_cell = tf.contrib.rnn.BasicLSTMCell(self.char_hidden)
+
+            _, ch_state = tf.nn.dynamic_rnn(char_cell,
+                                            self.char_embed,
+                                            sequence_length=self.char_len,
+                                            dtype=self.dtype,
+                                            scope='char-lstm')
+
+            W_char = tf.get_variable('W_char', dtype=self.dtype,
+                                shape=[self.char_hidden, self.dim_word])
+
+            char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
+            char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
+            self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
+                                        -1, 'mod_word_embed')
+            self.dim_word_f = self.dim_word * 2
+
+    def _add_char_bridge(self):
+        with tf.name_scope('char-Bridge'):
+            self.word_embed_f = self.word_embed
+            self.dim_word_f = self.dim_word
 
     def _add_pos_bidi_lstm(self):
         """ Bidirectional LSTM """
         with tf.name_scope('pos-LSTM-Layer'):
             # Forward and Backward direction cell
-            pos_lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
-                                    forget_bias=1.0, state_is_tuple=True)
-            pos_lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
-                                    forget_bias=1.0, state_is_tuple=True)
+            pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.pos_hidden)
+            pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.pos_hidden)
             # Get lstm cell output
-            pos_bidi_out, pos_bidi_states = tf.nn.bidirectional_dynamic_rnn(
-                                        pos_lstm_fw_cell,
-                                        pos_lstm_fw_cell,
-                                        self.word_embed,
-                                        sequence_length=self.w_seq_len,
-                                        dtype=self.dtype,
-                                        scope='pos-bidi')
-            self.pos_bidi_out = tf.concat(pos_bidi_out, 2, name='pos_bidi_out')
+            pos_out, _ = tf.nn.bidirectional_dynamic_rnn(
+                                                pos_cell_fw,
+                                                pos_cell_bw,
+                                                self.word_embed_f,
+                                                sequence_length=self.word_len,
+                                                dtype=self.dtype,
+                                                scope='pos-bidi')
+            self.pos_out = tf.concat(pos_out, -1, name='pos_out')
 
     def _add_pos_prediction(self):
         with tf.name_scope('POS-prediction'):
-            self.pos_logits = tf.layers.dense(self.pos_bidi_out, self.t_vocab_size)
-            self.pos_in_pred = tf.argmax(self.pos_logits, 2, name='pos_in_pred')
+            self.pos_logits = tf.layers.dense(self.pos_out, self.ntags)
+            self.pos_pred = tf.argmax(self.pos_logits, 2, name='pos_pred')
 
     def _add_pos_loss(self):
         with tf.name_scope('POS-loss'):
-            self.pos_in_1hot = tf.one_hot(self.pos_in, self.t_vocab_size)
-            self.pos_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            pos_in_1hot = tf.one_hot(self.pos_in, self.ntags)
+            pos_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                                                     logits=self.pos_logits,
-                                                    labels=self.pos_in_1hot)
-            self.pos_loss = tf.reduce_mean(self.pos_cross_entropy)
+                                                    labels=pos_in_1hot)
+            self.pos_loss = tf.reduce_mean(pos_cross_entropy)
 
-    def _add_bidi_lstm(self):
+    def _add_word_bidi_lstm(self):
         """ Bidirectional LSTM """
-        with tf.name_scope('bidirectional-LSTM-Layer'):
+        with tf.name_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_fw,
-                                    forget_bias=1.0, state_is_tuple=True)
-            lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self.n_hidden_bw,
-                                    forget_bias=1.0, state_is_tuple=True)
+            word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.word_hidden)
+            word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.word_hidden)
             # Get lstm cell output
-            self.bidi_in = tf.concat([self.word_embed, self.pos_embed], 2, 'bidi-in')
-            self.bidi_out, self.bidi_states = tf.nn.bidirectional_dynamic_rnn(
-                                        lstm_fw_cell,
-                                        lstm_bw_cell,
-                                        self.bidi_in,
-                                        sequence_length=self.w_seq_len,
-                                        dtype=self.dtype)
-            self._bidi_out = tf.concat(self.bidi_out, 2, name='lstm-init')
+            self.w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed],
+                                        -1, 'word-bidi-in')
+            w_bidi_out, _ = tf.nn.bidirectional_dynamic_rnn(
+                                                word_cell_fw,
+                                                word_cell_bw,
+                                                self.w_bidi_in,
+                                                sequence_length=self.word_len,
+                                                dtype=self.dtype)
+            self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
-    def _add_lstm_bridge(self):
-        with tf.name_scope('Bridge'):
+    def _add_tag_lstm_bridge(self):
+        with tf.name_scope('tag-LSTM-Bridge'):
             # LSTM
-            self.attn_state = tf.concat([self.bidi_in, self._bidi_out], 2)
-            self.bo_shape = tf.shape(self.attn_state)
-            self.lstm_shape = self.w_embed_size + self.pos_embed_size + \
-                                self.n_hidden_fw + self.n_hidden_bw
-            self.dec_init_state = tf.reshape(self.attn_state,
-                                                [-1, self.lstm_shape])
+            self.attn_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            self.attn_shape = tf.shape(self.attn_state)
+            self.lstm_shape = self.dim_word_f + self.dim_pos + self.word_hidden * 2
+            self.dec_init_state = tf.reshape(self.attn_state, [-1, self.lstm_shape])
 
-    def _add_lstm_layer(self):
+    def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
-        with tf.name_scope('LSTM-Layer'):
-            self.lstm_init = tf.contrib.rnn.LSTMStateTuple(
-                                        self.dec_init_state,
+        with tf.name_scope('tag-LSTM-Layer'):
+            self.tag_init = tf.contrib.rnn.LSTMStateTuple(self.dec_init_state,
                                         tf.zeros_like(self.dec_init_state))
 
-            lstm_cell = tf.contrib.rnn.BasicLSTMCell(self.lstm_shape,
-                                                    forget_bias=1.0,
-                                                    state_is_tuple=True)
+            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.lstm_shape)
 
-            self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(lstm_cell,
+            self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
-                                                initial_state=self.lstm_init,
-                                                sequence_length=self.t_seq_len,
+                                                initial_state=self.tag_init,
+                                                sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
     def _add_attention(self):
@@ -152,7 +182,7 @@ class POSTModel(object):
             lo_shape = tf.shape(self.lstm_out)
 
             self.atten_key = tf.reshape(self.lstm_out,
-                                [self.bo_shape[0], -1, lo_shape[-1]])
+                                [self.attn_shape[0], -1, lo_shape[-1]])
 
             # TODO: add feed forward layer for atten_key
 
@@ -163,28 +193,26 @@ class POSTModel(object):
 
             score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
 
-            con_lstm_score = tf.concat([self.lstm_out, score_tag], 2)
+            con_lstm_score = tf.concat([self.lstm_out, score_tag], -1)
 
-            w_att_uniform_dist = tf.random_uniform([self.lstm_shape * 2,
-                                                    self.n_hidden_lstm],
-                                                    -1.0, 1.0)
-            w_att = tf.Variable(w_att_uniform_dist, name='W-att')
-            # b_att = tf.Variable(tf.zeros([self.n_hidden_lstm]), name='b-att')
+            w_att = tf.get_variable('W-att', dtype = self.dtype,
+                                shape=[self.lstm_shape * 2, self.tag_hidden])
 
-            lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
+            # b_att = tf.Variable(tf.zeros([self.tag_hidden]), name='b-att')
+
+            # lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
 
             lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik', con_lstm_score,
                                                 w_att))
 
-            mask_t = tf.sequence_mask(self.t_seq_len)
+            mask_t = tf.sequence_mask(self.tag_len)
             self.proj_in = tf.boolean_mask(lstm_att_pad, mask_t)
 
     def _add_project_bridge(self):
-        w_dist = tf.random_uniform([self.lstm_shape, self.n_hidden_lstm],
-                                    -1.0, 1.0)
-        w_proj = tf.Variable(w_dist, name='W-dist')
+        w_proj = tf.get_variable('W-proj', dtype = self.dtype,
+                                shape = [self.lstm_shape, self.tag_hidden])
         proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
-        mask_t = tf.sequence_mask(self.t_seq_len)
+        mask_t = tf.sequence_mask(self.tag_len)
         self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
 
     def _add_projection(self):
@@ -192,15 +220,11 @@ class POSTModel(object):
         with tf.name_scope('predictions'):
 
             v = self.proj_in
-
             #E from notes
-            w_uniform_dist = tf.random_uniform([self.n_hidden_lstm,
-                                                self.t_vocab_size],
-                                                -1.0, 1.0)
-
-            E_out = tf.Variable(w_uniform_dist, name='E-out')
+            E_out = tf.get_variable('E-out', dtype=self.dtype,
+                                shape=[self.tag_hidden,self.ntags])
             E_out_t = tf.transpose(E_out, name='E-out-t')
-            b_out = tf.Variable(tf.zeros([self.t_vocab_size]), name='b-out')
+            b_out = tf.get_variable('b-out', shape=[self.ntags], dtype=self.dtype)
             E_t_E = tf.matmul(E_out_t, E_out)
             E_v = tf.matmul(v, E_out)
             E_v_E_t_E = tf.matmul(E_v, E_t_E)
@@ -208,11 +232,10 @@ class POSTModel(object):
             self.mod_logits = E_v_E_t_E + b_out
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
-
     def _add_loss(self):
 
         with tf.name_scope("loss"):
-            targets_1hot = tf.one_hot(self.targets, self.t_vocab_size)
+            targets_1hot = tf.one_hot(self.targets, self.ntags)
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                                                     logits=self.logits,
                                                     labels=targets_1hot)
@@ -220,9 +243,11 @@ class POSTModel(object):
                                                     logits=self.mod_logits,
                                                     labels=targets_1hot)
             self.reg_loss = tf.reduce_mean(cross_entropy)
-            # self.mod_loss = tf.reduce_mean(mod_cross_entropy)
-            # self.comb_loss = tf.reduce_mean([loss, self.mod_loss]) #TODO
-            # self.loss = loss if self.reg_loss else self.comb_loss
+
+            self.mod_loss = tf.reduce_mean(mod_cross_entropy)
+            self.mod_loss = (self.reg_loss + self.mod_loss)/2
+
+            self.reg_loss = self.mod_loss if self.comb_loss else self.reg_loss
 
 
     def _add_train_op(self):
@@ -241,13 +266,18 @@ class POSTModel(object):
                 self.global_step = tf.Variable(0, trainable=False, name='g_step')
                 self._add_placeholders()
                 self._add_embeddings()
+                if self.use_c_embed:
+                    self._add_char_lstm()
+                else:
+                    self._add_char_bridge()
                 with tf.name_scope("POS"):
                     self.build_pos_graph()
                 with tf.name_scope("SUPERTAGS"):
                     self.build_suptag_graph()
                 if (self.mode == 'train'):
                     self._add_train_op()
-
+                    self._step = self.pos_step if self.pos else self.suptag_step
+                    self.increment_step_op = tf.assign(self._step, self._step+1)
             all_variables = [k for k in tf.global_variables()
                             if k.name.startswith(self.scope_name)]
             self.saver = tf.train.Saver(all_variables, max_to_keep = 4)
@@ -255,73 +285,75 @@ class POSTModel(object):
     def build_suptag_graph(self):
         """ Function builds the computation graph """
         self.suptag_step = tf.Variable(0, trainable=False, name='sup_step')
-        self._add_bidi_lstm()
-        self._add_lstm_bridge()
-        self._add_lstm_layer()
-        if self.w_attn:
+        self._add_word_bidi_lstm()
+        self._add_tag_lstm_bridge()
+        self._add_tag_lstm_layer()
+        if self.attn:
             self._add_attention()
         else:
             self._add_project_bridge()
         self._add_projection()
-        # if (self.mode == 'train'):
         self._add_loss()
-        self.reg_lr = tf.Variable(float(self.lr), trainable=False,
+        if (self.mode == 'train'):
+            self.reg_lr = tf.Variable(float(self.lr), trainable=False,
                                     dtype=self.dtype)
 
     def build_pos_graph(self):
         self.pos_step = tf.Variable(0, trainable=False, name='pos_step')
         self._add_pos_bidi_lstm()
         self._add_pos_prediction()
-        # if (self.mode == 'train'):
         self._add_pos_loss()
-        self.pos_lr = tf.Variable(float(self.lr), trainable=False,
+        if (self.mode == 'train'):
+            self.pos_lr = tf.Variable(float(self.lr), trainable=False,
                                         dtype=self.dtype)
 
-
-    def step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
+    def step(self, session, word_len, tag_len, w_in, pos_in, t_in, targets, c_in, char_len):
         """ Training step, returns the prediction, loss"""
-
         input_feed = {
-            self.w_seq_len: w_seq_len,
-            self.t_seq_len: t_seq_len,
             self.w_in: w_in,
-            self.t_in: t_in,
+            self.word_len: word_len,
+            self.char_in : c_in,
+            self.char_len : char_len,
             self.pos_in : pos_in,
+            self.t_in: t_in,
+            self.tag_len: tag_len,
             self.targets: targets}
-        if self.pos:
-            self.increment_step_op = tf.assign(self.pos_step, self.pos_step+1)
-        else:
-            self.increment_step_op = tf.assign(self.suptag_step, self.suptag_step+1)
         output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
-    def eval_step(self, session, w_seq_len, t_seq_len, w_in, pos_in, t_in, targets):
+    def eval_step(self, session, word_len, tag_len, w_in, pos_in, t_in, targets, c_in, char_len):
         """ Training step, returns the prediction, loss"""
 
         input_feed = {
-            self.w_seq_len: w_seq_len,
-            self.t_seq_len: t_seq_len,
+            self.word_len: word_len,
+            self.tag_len: tag_len,
             self.w_in: w_in,
             self.t_in: t_in,
             self.targets: targets,
-            self.pos_in: pos_in}
-        # self.loss = self.reg_loss
+            self.pos_in: pos_in,
+            self.char_in : c_in,
+            self.char_len : char_len}
         output_feed = self.reg_loss
         return session.run(output_feed, input_feed)
 
-    def pos_decode(self, session, w_in, w_seq_len):
+    def pos_decode(self, session, w_in, word_len, c_in, char_len):
         input_feed = {
             self.w_in: w_in,
-            self.w_seq_len: w_seq_len}
-        output_feed = self.pos_in_pred
+            self.word_len: word_len,
+            self.char_in : c_in,
+            self.char_len : char_len}
+        output_feed = self.pos_pred
         return session.run(output_feed, input_feed)
 
-    def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs):
+    def encode_top_state(self, session, enc_inputs, enc_len, enc_aux_inputs,
+                        enc_aux_ext_seqlen, enc_aux_ext):
         """Return the top states from encoder for decoder."""
         input_feed = {
             self.w_in: enc_inputs,
-            self.w_seq_len: enc_len,
-            self.pos_in: enc_aux_inputs
+            self.word_len: enc_len,
+            self.pos_in: enc_aux_inputs,
+            self.char_in : enc_aux_ext,
+            self.char_len : enc_aux_ext_seqlen
             }
         output_feed = self.attn_state
         return session.run(output_feed, input_feed)
@@ -329,10 +361,10 @@ class POSTModel(object):
     def decode_topk(self, session, latest_tokens, dec_init_states, atten_state, k):
         """Return the topK results and new decoder states."""
         input_feed = {
-            self.lstm_init : dec_init_states,
+            self.tag_init : dec_init_states,
             self.t_in: np.array(latest_tokens),
             self.attn_state : atten_state,
-            self.t_seq_len: np.ones(1, np.int32)}
+            self.tag_len: np.ones(1, np.int32)}
         output_feed = [self.lstm_state, self.pred]
         states, probs = session.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]

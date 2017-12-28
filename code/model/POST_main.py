@@ -12,14 +12,7 @@ def get_model(session, config, graph, mode='decode'):
     """ Creates new model for restores existing model """
     start_time = time.time()
 
-    model = POSTModel(config.batch_size, config.word_embedding_size,
-                        config.tag_embedding_size, config.n_hidden_fw,
-                        config.n_hidden_bw, config.n_hidden_lstm,
-                        config.word_vocabulary_size,
-                        config.tag_vocabulary_size, config.learning_rate,
-                        config.learning_rate_decay_factor, config.w_attn,
-                        config.pos, mode, config.reg_loss,)
-
+    model = POSTModel(config.ModelParms, mode)
     model.build_graph(graph)
     checkpoint_path = config.checkpoint_path
     ckpt = tf.train.get_checkpoint_state(checkpoint_path)
