@@ -18,7 +18,7 @@ def main(_):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
-    parser.add_argument('--cp_dir', type=str, default='stags', help='')
+    parser.add_argument('--ckpt_dir', type=str, default='stags', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
     parser.add_argument('--use_pos', action='store_true', help='')
@@ -72,8 +72,8 @@ def main(_):
     Config.num_goals = args.num_goals
     Config.no_val_gap = args.no_val_gap
 
-    Config.cp_dir = args.cp_dir
-    Config.checkpoint_path = os.path.join(os.getcwd(), 'checkpoints', args.cp_dir)
+    Config.ckpt_dir = args.ckpt_dir
+    Config.ckpt_path = os.path.join(os.getcwd(), 'checkpoints', args.ckpt_dir)
 
     Config.beam_size = args.beam
 

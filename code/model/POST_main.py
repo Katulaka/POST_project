@@ -14,10 +14,9 @@ def get_model(session, config, graph, mode='decode'):
 
     model = POSTModel(config.ModelParms, mode)
     model.build_graph(graph)
-    checkpoint_path = config.checkpoint_path
-    ckpt = tf.train.get_checkpoint_state(checkpoint_path)
+    ckpt = tf.train.get_checkpoint_state(config.ckpt_path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-        print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+        print("[[get_model:]] Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
         print("Time to restore model: %.2f" % (time.time() - start_time))
     elif mode == 'train':

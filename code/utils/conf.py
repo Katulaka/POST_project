@@ -26,11 +26,11 @@ class Config(object):
         #use modified loss with "covarience" relation
         comb_loss = False
 
-    steps_per_checkpoint = 10
     beam_size = 5
     dec_timesteps = 20
 
-    checkpoint_path = 'checkpoints'
+    steps_per_ckpt = 10
+    ckpt_path = 'checkpoints'
 
     no_val_gap = False
 

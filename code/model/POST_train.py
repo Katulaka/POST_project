@@ -7,11 +7,11 @@ import numpy as np
 
 from POST_main import get_model
 
-def save_checkpoints(sess, model, checkpoint_path, cp_path):
-    ckpt_path = os.path.join(checkpoint_path, cp_path)
-    if not os.path.exists(checkpoint_path):
+def save_ckpt(sess, model, ckpt_path, ckpt_dir):
+    ckpt_path = os.path.join(ckpt_path, ckpt_dir)
+    if not os.path.exists(ckpt_path):
         try:
-            os.makedirs(os.path.abspath(checkpoint_path))
+            os.makedirs(os.path.abspath(ckpt_path))
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
@@ -37,20 +37,20 @@ def _train(config, batcher):
                                  / config.steps_per_checkpoint
                 loss += step_loss / config.steps_per_checkpoint
                 current_step += 1
+                step_time += (time.time() - start_time) / config.steps_per_ckpt
+                loss += step_loss / config.steps_per_ckpt
                 # Once in a while, we save checkpoint, print statistics
-                if current_step % config.steps_per_checkpoint == 0:
-                    # Print statistics for the previous epoch.
+                if current_step % config.steps_per_ckpt == 0:
+                     # Print statistics for the previous epoch.
                     perplex = math.exp(loss) if loss < 300 else float('inf')
-                    print ("step %d learning rate %f step-time %.2f"
-                           " perplexity %.6f (loss %.6f)" %
-                           (current_step, model.learning_rate.eval(),
-                           step_time, perplex, loss))
+                    # Save checkpoint and zero timer and loss.
+                    save_ckpt(sess, model, config.ckpt_path, config.ckpt_dir)
+                    print ("[[train_model:]] step %d learning rate %f step-time %.2f"
+                               " perplexity %.6f (loss %.6f)" %
+                               (current_step, model.learning_rate.eval(),
+                               step_time, perplex, loss))
                     if current_step == 20:
                         sess.run(model.learning_rate_decay_op)
-
-                    # Save checkpoint and zero timer and loss.
-                    save_checkpoints(sess, model, config.checkpoint_path,
-                                        config.cp_dir)
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
 
