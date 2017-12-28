@@ -71,31 +71,3 @@ class Vocab(object):
 
     def get_ctrl_tokens(self):
         return self._special_tokens
-
-
-def _pad(data, max_len, pad_token, l_pad_len):
-    r_pad_len = max_len - len(data) - l_pad_len
-    return np.lib.pad(data, (l_pad_len, r_pad_len), 'constant', constant_values=(pad_token)).tolist()
-
-def pad(data, max_len, pad_token=PAD[1], l_pad_len=0):
-    return operate_on_Narray(data, _pad, max_len, pad_token, l_pad_len)
-
-def add_pad_vec(data, pad_token=PAD[1]):
-    return [[[pad_token]] + bv for bv in data]
-
-def _add_go(data, go_token):
-    return [go_token] + data
-
-def add_go(data, go_token=GO[1]):
-    return operate_on_Narray(data, _add_go, go_token)
-
-def _add_eos(data, eos_token):
-    return data+[eos_token]
-
-def add_eos(data, eos_token=EOS[1]):
-    return operate_on_Narray(data, _add_eos, eos_token)
-
-def to_onehot(vec_in, max_len, size):
-    vec_out = np.zeros((max_len, size))
-    vec_out[np.arange(len(vec_in)), vec_in] = 1
-    return vec_out
