@@ -47,10 +47,13 @@ def main(_):
                 'dev': (args.dev_min, args.dev_max),
                 'test': (args.test_min, args.test_max)}
     # create vocabulary and array of dataset from train file
-    print("Generating dataset and vocabulary")
+    print('==================================================================')
+    print("[[POST:]] Generating dataset and vocabulary")
     start_time = time.time()
     vocab, dataset, t_op, tags, gold = gen_dataset(Config, tags_type, ds_range)
-    print ("Time to get dataset and vocabulary %f" % (time.time()-start_time))
+    print ("[[POST:]] %.3fs to get dataset and vocabulary " %
+                        (time.time()-start_time))
+
     # initializing batcher class
     batcher_train = Batcher(dataset['train'], args.batch, args.reverse)
     batcher_dev = Batcher(dataset['dev'], args.batch, args.reverse)
@@ -77,6 +80,8 @@ def main(_):
     Config.beam_size = args.beam
 
     if (args.action == 'train'):
+        print('==================================================================')
+        print("[[POST:]] Starting model training")
         POST_train.train(Config, batcher_train, batcher_dev)
 
     elif (args.action == 'decode'):

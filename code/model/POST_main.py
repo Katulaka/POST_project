@@ -18,11 +18,11 @@ def get_model(session, config, graph, mode='decode'):
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         print("[[get_model:]] Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        print("[[get_model:]] Time to restore model: %.2f" % (time.time() - start_time))
+        print("[[get_model:]] %.3fs to restore model" % (time.time() - start_time))
     elif mode == 'train':
         print("[[get_model:]] Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-        print("[[get_model:]] Time to create model: %.2f" % (time.time() - start_time))
+        print("[[get_model:]] %.3fs to create model" % (time.time() - start_time))
     else:
         raise ValueError('[[get_model:]] Model not found to restore.')
         return None
