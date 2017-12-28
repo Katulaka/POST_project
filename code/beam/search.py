@@ -82,32 +82,27 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
-
-    def beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs, enc_aux_ext_seqlen, enc_aux_ext):
+    def beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
         """Performs beam search for decoding.
 
          Args:
             sess: tf.Session, session
-            enc_inputs: ndarray of shape (enc_length, 1),
+            enc_win: ndarray of shape (enc_length, 1),
                         the document ids to encode
-            enc_seqlen: ndarray of shape (1), the length of the sequnce
+            enc_wlen: ndarray of shape (1), the length of the sequnce
 
          Returns:
             hyps: list of Hypothesis, the best hypotheses found by beam search,
                     ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        atten_state_batch = self._model.encode_top_state(sess,
-                                                    enc_inputs,
-                                                    enc_seqlen,
-                                                    enc_aux_inputs,
-                                                    enc_aux_ext_seqlen,
-                                                    enc_aux_ext)
+        atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
+                                                    enc_cin, enc_clen, enc_pin)
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_seqlen[j] - 1
+            atten_len = enc_wlen[j] - 1
             for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
@@ -183,32 +178,27 @@ class BeamSearch(object):
 #     self.tokens += [token]
 #     self.prob += [prob]
 #     self.state = new_state
-
-    def greedy_beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs, enc_aux_ext_seqlen, enc_aux_ext):
+    def greedy_beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
         """Performs beam search for decoding.
 
         Args:
           sess: tf.Session, session
-          enc_inputs: ndarray of shape (enc_length, 1), the document ids to encode
-          enc_seqlen: ndarray of shape (1), the length of the sequnce
+          enc_win: ndarray of shape (enc_length, 1), the document ids to encode
+          enc_wlen: ndarray of shape (1), the length of the sequnce
 
         Returns:
           hyps: list of Hypothesis, the best hypotheses found by beam search,
               ordered by score
         """
     # Run the encoder and extract the outputs and final state.
-        atten_state_batch = self._model.encode_top_state(sess,
-                                                    enc_inputs,
-                                                    enc_seqlen,
-                                                    enc_aux_inputs,
-                                                    enc_aux_ext_seqlen,
-                                                    enc_aux_ext)
+        atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
+                                                    enc_cin, enc_clen, enc_pin)
         # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_seqlen[j] - 1
+            atten_len = enc_wlen[j] - 1
             res = []
             # for i, dec_in in enumerate(atten_state[1:atten_len]):
             for i, dec_in in enumerate(atten_state[:atten_len-1]):

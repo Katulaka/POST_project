@@ -15,9 +15,7 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     bs = BeamSearch(model, config.beam_size, vocab['tags'].token_to_id('GO'),
                     vocab['tags'].token_to_id('EOS'), config.dec_timesteps)
 
-    w_len, _, words, pos, _, _, _, c_len, chars = batcher._process(batch)
-    if config.use_pos:
-        pos = model.pos_decode(sess, words, w_len, c_len, chars)
+    words, w_len, chars, c_len, pos, _, _, _, _ = batcher._process(batch)
 
     w_cp = copy.copy(words)
     wlen_cp = copy.copy(w_len)
@@ -25,7 +23,7 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     clen_cp = copy.copy(c_len)
     c_cp = copy.copy(chars)
 
-    best_beams = bs.beam_search(sess, w_cp, wlen_cp, pos_cp, clen_cp, c_cp)
+    best_beams = bs.beam_search(sess, w_cp, wlen_cp, c_cp, clen_cp, pos_cp)
     beam_tags = t_op.combine_fn(vocab['tags'].to_tokens(best_beams['tokens']))
     _beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)

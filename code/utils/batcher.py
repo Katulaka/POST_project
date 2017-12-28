@@ -175,8 +175,8 @@ class Batcher(object):
         bv_c = copy.deepcopy(bv['chars'].tolist())
         seq_len_c, bv_c_in = self.process_chars(bv_c, max_len_w)
 
-        return seq_len_w, seq_len_t, bv_w_in, bv_pos_in, bv_t, bv_t_in, bv_t_eos, seq_len_c, bv_c_in
-
+        return bv_w_in, seq_len_w, bv_c_in, seq_len_c, bv_pos_in, bv_t, bv_t_in, seq_len_t, bv_t_eos
+                
     def process(self, bv):
         #TODO do i really need the deepcopy?
         self._seq_len = self.seq_len(bv['words'].tolist())
