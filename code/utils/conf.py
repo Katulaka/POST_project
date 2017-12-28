@@ -10,10 +10,10 @@ class Config(object):
         dim_char = 32
         dim_pos = 64
         #NN dims
-        char_hidden = 32
-        pos_hidden = 128
-        word_hidden = 128
-        tag_hidden = 256
+        hidden_char = 32
+        hidden_pos = 128
+        hidden_word = 128
+        hidden_tag = 256
         #vocab size
         nwords = 0
         ntags = 0
@@ -25,6 +25,12 @@ class Config(object):
         attn = True
         #use modified loss with "covarience" relation
         comb_loss = False
+
+        def __repr__(self):
+            return "batch_size: {0}".format(batch_size)
+
+    # def __str__(self):
+    #     return "Vector3([{0},{1},{2}])".format(self.x, self.y, self.z)
 
     beam_size = 5
     dec_timesteps = 20

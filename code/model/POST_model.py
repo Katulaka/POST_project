@@ -23,10 +23,10 @@ class POSTModel(object):
         self.ntags = model_parms.ntags
         self.npos = model_parms.ntags
 
-        self.char_hidden = model_parms.char_hidden
-        self.pos_hidden = model_parms.pos_hidden
-        self.word_hidden = model_parms.word_hidden
-        self.tag_hidden = model_parms.tag_hidden
+        self.hidden_char = model_parms.hidden_char
+        self.hidden_pos = model_parms.hidden_pos
+        self.hidden_word = model_parms.hidden_word
+        self.hidden_tag = model_parms.hidden_tag
 
         self.lr = model_parms.lr
         self.lr_decay_factor = model_parms.lr_decay_factor
@@ -88,7 +88,7 @@ class POSTModel(object):
 
     def _add_char_lstm(self):
         with tf.name_scope('char-LSTM-Layer'):
-            char_cell = tf.contrib.rnn.BasicLSTMCell(self.char_hidden)
+            char_cell = tf.contrib.rnn.BasicLSTMCell(self.hidden_char)
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
@@ -97,7 +97,7 @@ class POSTModel(object):
                                             scope='char-lstm')
 
             W_char = tf.get_variable('W_char', dtype=self.dtype,
-                                shape=[self.char_hidden, self.dim_word])
+                                shape=[self.hidden_char, self.dim_word])
 
             char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
@@ -114,8 +114,8 @@ class POSTModel(object):
         """ Bidirectional LSTM """
         with tf.name_scope('pos-LSTM-Layer'):
             # Forward and Backward direction cell
-            pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.pos_hidden)
-            pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.pos_hidden)
+            pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
+            pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
             # Get lstm cell output
             pos_out, _ = tf.nn.bidirectional_dynamic_rnn(
                                                 pos_cell_fw,
@@ -143,8 +143,8 @@ class POSTModel(object):
         """ Bidirectional LSTM """
         with tf.name_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.word_hidden)
-            word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.word_hidden)
+            word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.hidden_word)
+            word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.hidden_word)
             # Get lstm cell output
             self.w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed],
                                         -1, 'word-bidi-in')
@@ -161,7 +161,7 @@ class POSTModel(object):
             # LSTM
             self.attn_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
             self.attn_shape = tf.shape(self.attn_state)
-            self.lstm_shape = self.dim_word_f + self.dim_pos + self.word_hidden * 2
+            self.lstm_shape = self.dim_word_f + self.dim_pos + self.hidden_word * 2
             self.dec_init_state = tf.reshape(self.attn_state, [-1, self.lstm_shape])
 
     def _add_tag_lstm_layer(self):
@@ -197,9 +197,9 @@ class POSTModel(object):
             con_lstm_score = tf.concat([self.lstm_out, score_tag], -1)
 
             w_att = tf.get_variable('W-att', dtype = self.dtype,
-                                shape=[self.lstm_shape * 2, self.tag_hidden])
+                                shape=[self.lstm_shape * 2, self.hidden_tag])
 
-            # b_att = tf.Variable(tf.zeros([self.tag_hidden]), name='b-att')
+            # b_att = tf.Variable(tf.zeros([self.hidden_tag]), name='b-att')
 
             # lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
 
@@ -211,7 +211,7 @@ class POSTModel(object):
 
     def _add_project_bridge(self):
         w_proj = tf.get_variable('W-proj', dtype = self.dtype,
-                                shape = [self.lstm_shape, self.tag_hidden])
+                                shape = [self.lstm_shape, self.hidden_tag])
         proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
         mask_t = tf.sequence_mask(self.tag_len)
         self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
@@ -223,7 +223,7 @@ class POSTModel(object):
             v = self.proj_in
             #E from notes
             E_out = tf.get_variable('E-out', dtype=self.dtype,
-                                shape=[self.tag_hidden,self.ntags])
+                                shape=[self.hidden_tag, self.ntags])
             E_out_t = tf.transpose(E_out, name='E-out-t')
             b_out = tf.get_variable('b-out', shape=[self.ntags], dtype=self.dtype)
             E_t_E = tf.matmul(E_out_t, E_out)
