@@ -81,7 +81,10 @@ def main(_):
 
     if (args.action == 'train'):
         print('==================================================================')
-        print("[[POST:]] Starting model training")
+        print("[[POST:]] Starting model training. Model Parameters:")
+        for k in sorted(Config.ModelParms.__dict__.iterkeys()):
+            if not k.startswith('__'):
+                print '[[POST:]] %s: %s' % (k, Config.ModelParms.__dict__[k])
         POST_train.train(Config, batcher_train, batcher_dev)
 
     elif (args.action == 'decode'):
