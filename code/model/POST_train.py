@@ -23,15 +23,16 @@ def _train(config, batcher):
     train_graph = tf.Graph()
     with tf.Session(graph = train_graph) as sess:
         model = get_model(sess, config, train_graph, 'train')
-        current_step =  model.pos_step.eval() if config.pos else model.suptag_step.eval()
+        # current_step =  model.pos_step.eval() if config.ModelParms.pos else model.suptag_step.eval()
+        current_step = self._step.eval()
         for i in range(config.num_epochs):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
-                w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
+                w_len, t_len, words, pos, _, tags, targets, c_len, chars = batcher._process(bv)
                 if config.use_pos:
-                    pos = model.pos_decode(sess, words, w_len)
+                    pos = model.pos_decode(sess, words, w_len, c_len, chars)
                 step_loss, _, _  = model.step(sess, w_len, t_len, words, pos,
-                                                tags, targets)
+                                                tags, targets, chars, c_len)
                 step_time += (time.time() - start_time)\
                                  / config.steps_per_checkpoint
                 loss += step_loss / config.steps_per_checkpoint
@@ -63,9 +64,10 @@ def _eval(config, batcher):
 
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
+            # w_len, t_len, words, pos, _, tags, targets = batcher.process(bv)
+            w_len, t_len, words, pos, _, tags, targets, c_len, chars = batcher._process(bv)
             step_loss = model.eval_step(sess, w_len, t_len, words, pos, tags,
-                                        targets)
+                                        targets, c_len, chars)
             current_step += 1
             step_time = (time.time() - start_time) / current_step
             tot_loss += step_loss
@@ -85,6 +87,6 @@ def train_eval(config, batcher_train, batcher_test):
     while eval_loss > config.th_loss:
         _train(config, batcher_train)
 
-        if not config.pos: #TODO maybe add eval for the training of POS?
+        if not config.ModelParms.pos: #TODO maybe add eval for the training of POS?
             eval_loss = _eval(config, batcher_test)
             eval_losses.append(eval_loss)
