@@ -40,7 +40,7 @@ def _train(config, batcher):
                     perplex = math.exp(loss) if loss < 300 else float('inf')
                     # Save checkpoint and zero timer and loss.
                     save_ckpt(sess, model, config.ckpt_path, config.ckpt_dir)
-                    print ("[[train_model:]] step %d learning rate %f step-time %.2f"
+                    print ("[[train_model:]] step %d learning rate %f step-time %.3f"
                                " perplexity %.6f (loss %.6f)" %
                                (current_step, model.learning_rate.eval(),
                                step_time, perplex, loss))
@@ -66,7 +66,7 @@ def _dev(config, batcher):
             tot_loss += step_loss
             loss = tot_loss / current_step
             perplex = math.exp(loss) if loss < 300 else float('inf')
-            print ("[[train_model(dev):]] global step %d step-time %.2f perplexity %.6f (loss %.6f)" %
+            print ("[[train_model(dev):]] step %d step-time %.3f perplexity %.6f (loss %.6f)" %
                    (current_step, step_time, perplex, loss))
             sys.stdout.flush()
         return loss
