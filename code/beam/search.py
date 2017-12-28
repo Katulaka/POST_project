@@ -83,7 +83,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs):
+    def beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs, enc_aux_ext_seqlen, enc_aux_ext):
         """Performs beam search for decoding.
 
          Args:
@@ -100,7 +100,9 @@ class BeamSearch(object):
         atten_state_batch = self._model.encode_top_state(sess,
                                                     enc_inputs,
                                                     enc_seqlen,
-                                                    enc_aux_inputs)
+                                                    enc_aux_inputs,
+                                                    enc_aux_ext_seqlen,
+                                                    enc_aux_ext)
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
@@ -182,7 +184,7 @@ class BeamSearch(object):
 #     self.prob += [prob]
 #     self.state = new_state
 
-    def greedy_beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs):
+    def greedy_beam_search(self, sess, enc_inputs, enc_seqlen, enc_aux_inputs, enc_aux_ext_seqlen, enc_aux_ext):
         """Performs beam search for decoding.
 
         Args:
@@ -198,7 +200,9 @@ class BeamSearch(object):
         atten_state_batch = self._model.encode_top_state(sess,
                                                     enc_inputs,
                                                     enc_seqlen,
-                                                    enc_aux_inputs)
+                                                    enc_aux_inputs,
+                                                    enc_aux_ext_seqlen,
+                                                    enc_aux_ext)
         # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(atten_state_batch)
