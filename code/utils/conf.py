@@ -2,25 +2,36 @@ import os
 
 class Config(object):
 
-    batch_size = 32
-    word_embedding_size = 128
-    tag_embedding_size = 128
-    n_hidden_fw = 128
-    n_hidden_bw = 128
-    n_hidden_lstm = 256
-    word_vocabulary_size = 48368
-    tag_vocabulary_size = 11390
-    learning_rate = 0.1
-    learning_rate_decay_factor = 0.1
+    class ModelParms(object):
+        batch_size = 32
+        #embedding size
+        dim_word = 128
+        dim_tag = 64
+        dim_char = 32
+        dim_pos = 64
+        #NN dims
+        char_hidden = 32
+        pos_hidden = 128
+        word_hidden = 128
+        tag_hidden = 256
+        #vocab size
+        nwords = 0
+        ntags = 0
+        nchars = 0
+        #learning rate
+        lr = 0.1
+        lr_decay_factor = 0.1
+        #use attention
+        attn = True
+        #use modified loss with "covarience" relation
+        comb_loss = False
+
     steps_per_checkpoint = 10
     beam_size = 5
     dec_timesteps = 20
 
     checkpoint_path = 'checkpoints'
 
-    w_attn = True
-    #use regular loss or modified with "covarience" relation
-    reg_loss = False #TODO
     no_val_gap = False
 
     #training loss threshold to stop
