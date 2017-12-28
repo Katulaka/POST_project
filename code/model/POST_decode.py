@@ -18,15 +18,16 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     w_len, _, words, pos, _, _, _, c_len, chars = batcher._process(batch)
     if config.use_pos:
         pos = model.pos_decode(sess, words, w_len, c_len, chars)
-    words_cp = copy.copy(words)
-    w_len_cp = copy.copy(w_len)
+
+    w_cp = copy.copy(words)
+    wlen_cp = copy.copy(w_len)
     pos_cp = copy.copy(pos)
-    c_len_cp = copy.copy(c_len)
-    chars_cp = copy.copy(chars)
-    best_beams = bs.beam_search(sess, words_cp, w_len_cp, pos_cp, c_len_cp, chars_cp)
+    clen_cp = copy.copy(c_len)
+    c_cp = copy.copy(chars)
+
+    best_beams = bs.beam_search(sess, w_cp, wlen_cp, pos_cp, clen_cp, c_cp)
     beam_tags = t_op.combine_fn(vocab['tags'].to_tokens(best_beams['tokens']))
-    _beam_pair = map(lambda x, y: zip(x, y),
-                                beam_tags, best_beams['scores'])
+    _beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)
     _words = [s[1:s_len-1].tolist() for s, s_len in zip(words, w_len)]
     word_tokens = vocab['words'].to_tokens(_words)
@@ -38,8 +39,7 @@ def decode_batch(beam_pair, word_tokens, num_goals, time_out):
     num_sentences = len(word_tokens)
     for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
         print ("Staring astar search for sentence %d /"
-                " %d [tag length %d]" %
-                (i+1, num_sentences, len(beam_tag)))
+                " %d [tag length %d]" %(i+1, num_sentences, len(beam_tag)))
 
         if all(beam_tag):
             tags = convert_to_TagTree(beam_tag, sent)
