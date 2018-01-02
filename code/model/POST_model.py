@@ -59,29 +59,45 @@ class POSTModel(object):
         """ Look up embeddings for inputs. """
         with tf.name_scope('embedding'):
 
-            ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
-                                    shape=[self.nchars,self.dim_char])
+            ch_embed_mat_init = tf.random_uniform([self.nchars, self.dim_char],
+                                                    -1.0, 1.0)
+            ch_embed_mat = tf.Variable(ch_embed_mat_init, name='char-embedding',
+                                        dtype = self.dtype)
+            # ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
+            #                         shape=[self.nchars,self.dim_char])
             self.char_embed = tf.nn.embedding_lookup(ch_embed_mat,
                                                     self.char_in,
                                                     name='char-embed')
 
-            self.w_embed_mat = tf.get_variable('word-embeddings',
-                                    shape=[self.nwords,self.dim_word],
-                                    dtype=self.dtype)
+            # self.w_embed_mat = tf.get_variable('word-embeddings',
+                                    # shape=[self.nwords,self.dim_word],
+                                    # dtype=self.dtype)
+            w_embed_mat_init = tf.random_uniform([self.nwords, self.dim_word],
+                                                    -1.0, 1.0)
+            self.w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embedding',
+                                        dtype = self.dtype)
             self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
 
-            t_embed_mat = tf.get_variable('tag-embeddings',
-                                    shape=[self.ntags,self.dim_tag],
-                                    dtype=self.dtype)
+            # t_embed_mat = tf.get_variable('tag-embeddings',
+            #                         shape=[self.ntags,self.dim_tag],
+            #                         dtype=self.dtype)
+            t_embed_mat_init = tf.random_uniform([self.ntags, self.dim_tag],
+                                                    -1.0, 1.0)
+            t_embed_mat = tf.Variable(t_embed_mat_init, name='tag-embedding',
+                                        dtype = self.dtype)
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                                     self.t_in,
                                                     name='tag-embed')
 
-            pos_embed_mat = tf.get_variable('pos-embeddings',
-                                shape=[self.npos,self.dim_pos],
-                                dtype=self.dtype)
+            # pos_embed_mat = tf.get_variable('pos-embeddings',
+            #                     shape=[self.npos,self.dim_pos],
+            #                     dtype=self.dtype)
+            p_embed_mat_init = tf.random_uniform([self.npos, self.dim_pos],
+                                                    -1.0, 1.0)
+            pos_embed_mat = tf.Variable(p_embed_mat_init, name='pos-embedding',
+                                        dtype = self.dtype)
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
@@ -97,7 +113,8 @@ class POSTModel(object):
                                             scope='char-lstm')
 
             W_char = tf.get_variable('W_char', dtype=self.dtype,
-                                shape=[self.hidden_char, self.dim_word])
+                            shape=[self.hidden_char, self.dim_word],
+                            initializer=tf.contrib.layers.xavier_initializer())
 
             char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
@@ -198,7 +215,8 @@ class POSTModel(object):
             con_lstm_score = tf.concat([self.lstm_out, score_tag], -1)
 
             w_att = tf.get_variable('W-att', dtype = self.dtype,
-                                shape=[self.lstm_shape * 2, self.hidden_tag])
+                            shape=[self.lstm_shape * 2, self.hidden_tag],
+                            initializer=tf.contrib.layers.xavier_initializer())
 
             # b_att = tf.Variable(tf.zeros([self.hidden_tag]), name='b-att')
 
@@ -212,7 +230,8 @@ class POSTModel(object):
 
     def _add_project_bridge(self):
         w_proj = tf.get_variable('W-proj', dtype = self.dtype,
-                                shape = [self.lstm_shape, self.hidden_tag])
+                            shape = [self.lstm_shape, self.hidden_tag],
+                            initializer=tf.contrib.layers.xavier_initializer())
         proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
         mask_t = tf.sequence_mask(self.tag_len)
         self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
@@ -224,9 +243,11 @@ class POSTModel(object):
             v = self.proj_in
             #E from notes
             E_out = tf.get_variable('E-out', dtype=self.dtype,
-                                shape=[self.hidden_tag, self.ntags])
+                            shape=[self.hidden_tag, self.ntags],
+                            initializer=tf.contrib.layers.xavier_initializer())
             E_out_t = tf.transpose(E_out, name='E-out-t')
-            b_out = tf.get_variable('b-out', shape=[self.ntags], dtype=self.dtype)
+            b_out = tf.get_variable('b-out', shape=[self.ntags], dtype=self.dtype,
+                            initializer=tf.contrib.layers.xavier_initializer())
             E_t_E = tf.matmul(E_out_t, E_out)
             E_v = tf.matmul(v, E_out)
             E_v_E_t_E = tf.matmul(E_v, E_t_E)
