@@ -117,7 +117,7 @@ class POSTModel(object):
             pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
             pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
             # Get lstm cell output
-            pos_out, _ = tf.nn.bidirectional_dynamic_rnn(
+            self._pos_out, self.pos_s = tf.nn.bidirectional_dynamic_rnn(
                                                 pos_cell_fw,
                                                 pos_cell_bw,
                                                 self.word_embed_f,
