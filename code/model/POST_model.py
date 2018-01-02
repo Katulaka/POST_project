@@ -65,10 +65,10 @@ class POSTModel(object):
                                                     self.char_in,
                                                     name='char-embed')
 
-            w_embed_mat = tf.get_variable('word-embeddings',
+            self.w_embed_mat = tf.get_variable('word-embeddings',
                                     shape=[self.nwords,self.dim_word],
                                     dtype=self.dtype)
-            self.word_embed = tf.nn.embedding_lookup(w_embed_mat,
+            self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
 
