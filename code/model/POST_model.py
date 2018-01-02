@@ -321,6 +321,7 @@ class POSTModel(object):
             self.t_in: t_in,
             self.tag_len: t_len,
             self.targets: trgts}
+        import pdb; pdb.set_trace()
         output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
