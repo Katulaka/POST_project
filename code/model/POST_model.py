@@ -310,6 +310,7 @@ class POSTModel(object):
 
     def step(self, session, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgts):
         """ Training step, returns the prediction, loss"""
+        import pdb; pdb.set_trace()
         if self.use_pos:
             p_in = self.pos_decode(session, w_in, w_len, c_in, c_len)
         input_feed = {
@@ -321,7 +322,6 @@ class POSTModel(object):
             self.t_in: t_in,
             self.tag_len: t_len,
             self.targets: trgts}
-        import pdb; pdb.set_trace()
         output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
