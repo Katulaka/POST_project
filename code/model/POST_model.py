@@ -124,7 +124,8 @@ class POSTModel(object):
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype,
                                                 scope='pos-bidi')
-            self.pos_out = tf.concat(pos_out, -1, name='pos_out')
+
+            self.pos_out = tf.concat(self._pos_out, -1, name='pos_out')
 
     def _add_pos_prediction(self):
         with tf.name_scope('POS-prediction'):
