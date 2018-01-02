@@ -311,7 +311,7 @@ class POSTModel(object):
     def step(self, session, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgts):
         """ Training step, returns the prediction, loss"""
         if self.use_pos:
-            p_in = self.pos_decode(session, w_in, w_len, c_len, c_in)
+            p_in = self.pos_decode(session, w_in, w_len, c_in, c_len)
         input_feed = {
             self.w_in: w_in,
             self.word_len: w_len,
@@ -345,7 +345,6 @@ class POSTModel(object):
                     self.char_in : c_in,
                     self.char_len : c_len}
         output_feed = self.pos_pred
-        import pdb; pdb.set_trace()
         return session.run(output_feed, input_feed)
 
     def encode_top_state(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
