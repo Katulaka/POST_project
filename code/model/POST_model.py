@@ -370,7 +370,6 @@ class POSTModel(object):
                     self.char_in : c_in,
                     self.char_len : c_len}
         output_feed = self.pos_pred
-        import pdb; pdb.set_trace()
         return session.run(output_feed, input_feed)
 
     def encode_top_state(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
