@@ -59,10 +59,6 @@ class POSTModel(object):
         """ Look up embeddings for inputs. """
         with tf.name_scope('embedding'):
 
-            # ch_embed_mat_init = tf.random_uniform([self.nchars, self.dim_char],
-            #                                         -1.0, 1.0)
-            # ch_embed_mat = tf.Variable(ch_embed_mat_init, name='char-embedding',
-            #                             dtype = self.dtype)
             ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
                             shape=[self.nchars,self.dim_char],
                             initializer=tf.contrib.layers.xavier_initializer())
@@ -73,10 +69,6 @@ class POSTModel(object):
             self.w_embed_mat = tf.get_variable('word-embeddings',
                             shape=[self.nwords,self.dim_word], dtype=self.dtype,
                             initializer=tf.contrib.layers.xavier_initializer())
-            # w_embed_mat_init = tf.random_uniform([self.nwords, self.dim_word],
-            #                                         -1.0, 1.0)
-            # self.w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embedding',
-                                        # dtype = self.dtype)
             self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
@@ -84,10 +76,6 @@ class POSTModel(object):
             t_embed_mat = tf.get_variable('tag-embeddings',
                             shape=[self.ntags,self.dim_tag],dtype=self.dtype,
                             initializer=tf.contrib.layers.xavier_initializer())
-            # t_embed_mat_init = tf.random_uniform([self.ntags, self.dim_tag],
-            #                                         -1.0, 1.0)
-            # t_embed_mat = tf.Variable(t_embed_mat_init, name='tag-embedding',
-            #                             dtype = self.dtype)
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                                     self.t_in,
                                                     name='tag-embed')
@@ -359,7 +347,6 @@ class POSTModel(object):
                         self.t_in : t_in,
                         self.tag_len : t_len,
                         self.targets : trgt}
-        import pdb; pdb.set_trace()
         output_feed = self.loss
         return sess.run(output_feed, input_feed)
 
