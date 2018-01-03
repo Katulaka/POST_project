@@ -69,12 +69,12 @@ class POSTModel(object):
                                                     self.char_in,
                                                     name='char-embed')
 
-            # self.w_embed_mat = tf.get_variable('word-embeddings',
-                                    # shape=[self.nwords,self.dim_word],
-                                    # dtype=self.dtype)
-            w_embed_mat_init = tf.random_uniform([self.nwords, self.dim_word],
-                                                    -1.0, 1.0)
-            self.w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embedding',
+            self.w_embed_mat = tf.get_variable('word-embeddings',
+                            shape=[self.nwords,self.dim_word], dtype=self.dtype,
+                            initializer=tf.contrib.layers.xavier_initializer()))
+            # w_embed_mat_init = tf.random_uniform([self.nwords, self.dim_word],
+            #                                         -1.0, 1.0)
+            # self.w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embedding',
                                         dtype = self.dtype)
             self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
                                                     self.w_in,
