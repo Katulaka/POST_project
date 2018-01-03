@@ -75,7 +75,7 @@ class POSTModel(object):
             # w_embed_mat_init = tf.random_uniform([self.nwords, self.dim_word],
             #                                         -1.0, 1.0)
             # self.w_embed_mat = tf.Variable(w_embed_mat_init, name='word-embedding',
-                                        dtype = self.dtype)
+                                        # dtype = self.dtype)
             self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
