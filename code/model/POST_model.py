@@ -59,12 +59,13 @@ class POSTModel(object):
         """ Look up embeddings for inputs. """
         with tf.name_scope('embedding'):
 
-            ch_embed_mat_init = tf.random_uniform([self.nchars, self.dim_char],
-                                                    -1.0, 1.0)
-            ch_embed_mat = tf.Variable(ch_embed_mat_init, name='char-embedding',
-                                        dtype = self.dtype)
-            # ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
-            #                         shape=[self.nchars,self.dim_char])
+            # ch_embed_mat_init = tf.random_uniform([self.nchars, self.dim_char],
+            #                                         -1.0, 1.0)
+            # ch_embed_mat = tf.Variable(ch_embed_mat_init, name='char-embedding',
+            #                             dtype = self.dtype)
+            ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
+                            shape=[self.nchars,self.dim_char],
+                            initializer=tf.contrib.layers.xavier_initializer())
             self.char_embed = tf.nn.embedding_lookup(ch_embed_mat,
                                                     self.char_in,
                                                     name='char-embed')
@@ -80,24 +81,24 @@ class POSTModel(object):
                                                     self.w_in,
                                                     name='word-embed')
 
-            # t_embed_mat = tf.get_variable('tag-embeddings',
-            #                         shape=[self.ntags,self.dim_tag],
-            #                         dtype=self.dtype)
-            t_embed_mat_init = tf.random_uniform([self.ntags, self.dim_tag],
-                                                    -1.0, 1.0)
-            t_embed_mat = tf.Variable(t_embed_mat_init, name='tag-embedding',
-                                        dtype = self.dtype)
+            t_embed_mat = tf.get_variable('tag-embeddings',
+                            shape=[self.ntags,self.dim_tag],dtype=self.dtype,
+                            initializer=tf.contrib.layers.xavier_initializer())
+            # t_embed_mat_init = tf.random_uniform([self.ntags, self.dim_tag],
+            #                                         -1.0, 1.0)
+            # t_embed_mat = tf.Variable(t_embed_mat_init, name='tag-embedding',
+            #                             dtype = self.dtype)
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                                     self.t_in,
                                                     name='tag-embed')
 
-            # pos_embed_mat = tf.get_variable('pos-embeddings',
-            #                     shape=[self.npos,self.dim_pos],
-            #                     dtype=self.dtype)
-            p_embed_mat_init = tf.random_uniform([self.npos, self.dim_pos],
-                                                    -1.0, 1.0)
-            pos_embed_mat = tf.Variable(p_embed_mat_init, name='pos-embedding',
-                                        dtype = self.dtype)
+            pos_embed_mat = tf.get_variable('pos-embeddings',
+                            shape=[self.npos,self.dim_pos], dtype=self.dtype,
+                            initializer=tf.contrib.layers.xavier_initializer())
+            # p_embed_mat_init = tf.random_uniform([self.npos, self.dim_pos],
+            #                                         -1.0, 1.0)
+            # pos_embed_mat = tf.Variable(p_embed_mat_init, name='pos-embedding',
+            #                             dtype = self.dtype)
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
