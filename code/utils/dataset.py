@@ -9,19 +9,6 @@ from tags.ptb_tags_convert import gen_tags
 from tags.tag_ops import TagOp
 from utils import flatten_to_1D, _select
 
-def get_raw_data(data_path):
-    """ """
-    print("[[get_raw_data:]] Getting raw data from corpora")
-    if not os.path.exists(data_path):
-        try:
-            os.makedirs(os.path.abspath(data_path))
-        except OSError as exc: # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-
-        scp_path = ("scp -r login.eecs.berkeley.edu:" +
-        "/project/eecs/nlp/corpora/EnglishTreebank/wsj/* ")
-        os.system(scp_path + data_path)
 
 def load_data(src_dir, data_file, get_fn):
     """ """
