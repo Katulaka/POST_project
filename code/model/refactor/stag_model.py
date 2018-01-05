@@ -338,13 +338,15 @@ class STAGModel(BasicModel):
         tag_score_pairs = map(lambda x, y: zip(x, y), tags, beams['scores'])
         return tag_score_pairs
 
-    def decode_batch(self, beam_pair, word_tokens, num_goals, time_out):
+    def decode_batch(self, beam_pair, word_tokens):
 
+        num_goals = self.config['num_goals']
+        time_out = self.config['time_out']
         decode_trees = []
-        num_sentences = len(word_tokens)
+        nsentences = len(word_tokens)
         for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
-            print ("Staring astar search for sentence %d /"
-                    " %d [tag length %d]" %(i+1, num_sentences, len(beam_tag)))
+            print ("Staring astar search for sentence %d/%d [tag length %d]"
+                        %(i+1, nsentences, len(beam_tag)))
 
             if all(beam_tag):
                 tags = convert_to_TagTree(beam_tag, sent)
@@ -363,8 +365,6 @@ class STAGModel(BasicModel):
             words_token = vocab['words'].to_tokens(words_id)
             tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
 
-            decoded_trees.extend(self.decode_batch(tag_score_pairs,
-                                                    words_token,
-                                                    self.config['num_goals'],
-                                                    self.config['time_out']))
+            decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
+
         return to_mrg(decoded_trees)
