@@ -368,7 +368,7 @@ class POSTModel(object):
                     self.char_len : enc_clen,
                     self.pos_in: enc_pin}
         output_feed = self.attn_state
-        return session.run(output_feed, input_feed)
+        return sess.run(output_feed, input_feed)
 
     def decode_topk(self, session, latest_tokens, dec_init_states, atten_state, k):
         """Return the topK results and new decoder states."""
