@@ -37,6 +37,7 @@ class NodeT(object):
         while ptr < len(trees_cp)-1:
             t_l = trees_cp[ptr]
             t_r = trees_cp[ptr+1]
+            import pdb; pdb.set_trace()
             #try combining left tree into right tree
             t_comb = self.combine_pair(t_r, t_l, CR, L)
             if t_comb:
