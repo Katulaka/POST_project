@@ -4,7 +4,6 @@ import copy
 import numpy as np
 from itertools import islice
 
-# from vocab import pad, add_go, add_eos, to_onehot, add_pad_vec
 from vocab import PAD, GO, EOS, UNK
 from utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
 
@@ -62,6 +61,35 @@ class Batcher(object):
 
     def add_eos(self, data, eos_token=EOS[1]):
         return operate_on_Narray(data, self._add_eos, eos_token)
+
+    def _remove_go(self, data, go_token):
+        idx = data.index(go_token)
+        return data[idx+1:]
+
+    def remove_go(self, data, go_token=GO[1]):
+        return operate_on_Narray(data, self._remove_go, go_token)
+
+    def _remove_eos(self, data, eos_token):
+        idx = data.index(eos_token)
+        return data[:idx]
+
+    def remove_eos(self, data, eos_token=EOS[1]):
+        return operate_on_Narray(data, self._remove_eos, eos_token)
+
+    def remove_delim(self, data, go_token, eos_token):
+        return remove_eos(remove_go(data, go_token), eos_token)
+
+    # def remove_delim_len(self, data, d_len):
+    #     return [d[1:l-1].tolist() for d, l in zip(data, d_len)]
+
+    def remove_delim_len(self, data):
+        return [d[1:l-1].tolist() for d, l in zip(data['in'], data['len'])]
+
+    # def remove_delim_len(self, *args):
+    #     if len(args) == 1:
+    #         return remove_delim_len_batch(self, *args)
+
+
 
     def get_random_batch(self):
         batch = dict()
@@ -184,6 +212,7 @@ class Batcher(object):
         batch.update({'char': {'in': bv_c_in, 'len': seq_len_c}})
 
         return batch
+
 
     def restore(self, batch):
         it = iter(batch)

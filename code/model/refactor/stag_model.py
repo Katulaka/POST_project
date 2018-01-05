@@ -359,8 +359,7 @@ class STAGModel(BasicModel):
         decoded_trees = []
         for bv in batcher.get_batch():
             bv = batcher._process(bv)
-            #TODO add function that removes paddin + EOS and GO
-            words_id = [w[1:l-1].tolist() for w, l in zip(bv['word']['in'], bv['word']['len'])]
+            words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
             tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
 
