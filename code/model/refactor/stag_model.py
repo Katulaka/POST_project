@@ -248,28 +248,6 @@ class STAGModel(BasicModel):
                 out = pos_g.get_tensor_by_name(op.name+':0')
         return tf.Session(graph = pos_g).run(out, input_feed)
 
-    # def pos_step(self, bv): #TODO to be deleted
-    #     with tf.Session() as sess:
-    #         # Load the POS model in the default graph
-    #         pos_saver = tf.train.import_meta_graph(self.config['pos_ckpt']+'.meta')
-    #         # Access the graph
-    #         pos_saver.restore(sess, self.config['pos_ckpt'])
-    #         # Retrieve  inputs
-    #         pos_cin = tf.get_collection('c_in')[0]
-    #         pos_clen = tf.get_collection('c_len')[0]
-    #         pos_win = tf.get_collection('w_in')[0]
-    #         pos_wlen = tf.get_collection('w_len')[0]
-    #
-    #         # Node want to connect graph
-    #         pos_out = tf.get_collection('pos_pred')[0]
-    #         # Stop the gradient for fine-tuning
-    #         pos_out_sg = tf.stop_gradient(pos_out) # It's an identity function
-    #         input_feed = {pos_cin : bv['char']['in'],
-    #                         pos_clen : bv['char']['len'],
-    #                         pos_win : bv['word']['in'],
-    #                         pos_wlen : bv['word']['len']}
-    #         return sess.run(pos_out_sg, input_feed)
-
     def step(self, bv, dev=False):
         """ Training step, returns the loss"""
         input_feed = {
