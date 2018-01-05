@@ -131,7 +131,7 @@ def _gen_dataset(config, nwords=0, ntags=0, nchars=0):
         ds[key], indeces[key] = slice_dataset(ds[key], config['ds_range'][key], key)
         tags[key] = ds[key]['tags']
 
-    gd =  load_data(config['src_dir'], config['gold_file'], gold_to_list)
+    gd = load_data(config['src_dir'], config['gold_file'], gold_to_list)
     gd = _select(gd, indeces['test'])
 
     start_time = time.time()

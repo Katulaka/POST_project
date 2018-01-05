@@ -28,7 +28,6 @@ class BasicModel(object):
         self.dtype = tf.float32
         self.initializer = tf.contrib.layers.xavier_initializer()
 
-
         self.optimizer_fn = tf.train.GradientDescentOptimizer
 
         self.model_name = self.config['model_name']
@@ -51,7 +50,6 @@ class BasicModel(object):
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()
-        # import pdb; pdb.set_trace()
 
         # def set_agent_props(self):
         # # This function is here to be overriden completely.
