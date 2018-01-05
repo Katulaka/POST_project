@@ -77,7 +77,6 @@ class BeamSearch(object):
           end_token: int, id of the token that completes an hypothesis
           max_steps: int, upper limit on the size of the hypothesis
         """
-        # self._model = STAGModel(Config)
         self._beam_size = beam_size
         self._start_token = start_token
         self._end_token = end_token
@@ -163,20 +162,7 @@ class BeamSearch(object):
         hyp_sort = sorted(hyps, key=lambda h: h.score, reverse=True)
         return hyp_sort[:self._beam_size]
 
-# def Extend(self, token, prob, new_state):
-#   """Extend the hypothesis with result from latest step.
-#
-#     Args:
-#       token: latest token from decoding.
-#       log_prob: log prob of the latest decoded tokens.
-#       new_state: decoder output state. Fed to the decoder for next step.
-#     Returns:
-#       New Hypothesis with the res from latest step.
-#   """
-#     self.tokens += [token]
-#     self.prob += [prob]
-#     self.state = new_state
-    def greedy_beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+    def greedy_beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 
         Args:
@@ -189,8 +175,7 @@ class BeamSearch(object):
               ordered by score
         """
     # Run the encoder and extract the outputs and final state.
-        atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
-                                                    enc_cin, enc_clen, enc_pin)
+        atten_state_batch = encode_top_state(enc_bv)
         # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(atten_state_batch)
@@ -210,7 +195,7 @@ class BeamSearch(object):
                     if latest_token[0][0] == self._end_token:
                         break
                     states = hyp.state
-                    ids, probs, new_state = self._model.decode_topk(sess,
+                    ids, probs, new_state = decode_topk(sess,
                                                     latest_token,
                                                     states,
                                                     [atten_state],
