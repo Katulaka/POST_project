@@ -1,5 +1,6 @@
 from astar import AStar
 from node_t import NodeT
+from tag_tree import convert_to_TagTree
 
 class Solver(AStar):
 
@@ -62,17 +63,17 @@ class Solver(AStar):
     def neighbors(self, node):
         neighbors = []
         for nb in self.cl.getr(node.lid):
-            nb_node = TagNode(node.rid, nb.lid, node.rank+nb.rank, node.tree + nb.tree)
+            nb_node = NodeT(node.rid, nb.lid, node.rank+nb.rank, node.tree + nb.tree)
             if nb_node.is_valid(self.tags) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
         for nb in self.cl.getl(node.rid):
-            nb_node = TagNode(nb.rid, node.lid, nb.rank+node.rank, nb.tree + node.tree)
+            nb_node = NodeT(nb.rid, node.lid, nb.rank+node.rank, nb.tree + node.tree)
             if nb_node.is_valid(self.tags) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
         if len(node.rank) == 1 and node.rank[0] < len(self.tags[node.rid]) - 1:
-            nb_node = TagNode(node.rid, node.lid, [node.rank[0] + 1])
+            nb_node = NodeT(node.rid, node.lid, [node.rank[0] + 1])
             if nb_node.is_valid(self.tags) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
@@ -84,10 +85,11 @@ class Solver(AStar):
             return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
         return False
 
-def solve_tree_search(tags, num_goals, time_out, verbose=1):
+def solve_tree_search(beam_tag, sent, num_goals, time_out, verbose=1):
+    tags = convert_to_TagTree(beam_tag, sent)
     max_lid = len(tags)
-    start = [TagNode(idx, idx+1, [0]) for idx in xrange(max_lid)]
-    goal = TagNode(0, max_lid, [])
+    start = [NodeT(idx, idx+1, [0]) for idx in xrange(max_lid)]
+    goal = NodeT(0, max_lid, [])
     # let's solve it
     paths, max_path = Solver(tags).astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
