@@ -1,8 +1,8 @@
 from astar import AStar
-# from node_t import NodeT
-# from tag_tree import convert_to_TagTree
-from refactor.node_t import NodeT #TODO new format
-from refactor.tree_t_s import convert_to_TreeTS #TODO new format
+from node_t import NodeT
+from tag_tree import convert_to_TagTree
+# from refactor.node_t import NodeT #TODO new format
+# from refactor.tree_t_s import convert_to_TreeTS #TODO new format
 
 class Solver(AStar):
 
@@ -84,13 +84,13 @@ class Solver(AStar):
     def is_goal_reached(self, current, goal):
         if current.idx == goal.idx and len(current.tree) == 1:
             ct = current.tree[0]
-            # return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
-            return ct.is_no_missing_leaves() #TODO new format
+            return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
+            # return ct.is_no_missing_leaves() #TODO new format
         return False
 
 def solve_tree_search(tag_score_mat, words, num_goals, time_out, verbose=1):
-    # ts_mat = convert_to_TagTree(tag_score_mat, words)
-    ts_mat = convert_to_TreeTS(tag_score_mat, words) #TODO new format
+    ts_mat = convert_to_TagTree(tag_score_mat, words)
+    # ts_mat = convert_to_TreeTS(tag_score_mat, words) #TODO new format
     max_lid = len(ts_mat)
     start = [NodeT(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = NodeT(0, max_lid, [])
