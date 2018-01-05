@@ -19,7 +19,7 @@ class NodeT(object):
     def __eq__(self, other):
         return self.rank == other.rank and self.idx == other.idx
 
-    def combine_pair(t_dst, t_src, comb_side, miss_side):
+    def combine_pair(self, t_dst, t_src, comb_side, miss_side):
         if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
             miss_tag = ANY if Config.no_val_gap else t_src.root_tag
             leaves = t_dst.get_missing_leaves_to(miss_val, miss_side)
@@ -38,14 +38,14 @@ class NodeT(object):
             t_l = trees_cp[ptr]
             t_r = trees_cp[ptr+1]
             #try combining left tree into right tree
-            t_comb = combine_pair(t_r, t_l, CR, L)
+            t_comb = self.combine_pair(t_r, t_l, CR, L)
             if t_comb:
                 trees_cp[ptr+1] = t_comb
                 del trees_cp[ptr]
                 if ptr > 0: ptr -= 1
             else:
                 #try combining right tree into left tree
-                t_comb = combine_pair(t_l, t_r, CL, R)
+                t_comb = self.combine_pair(t_l, t_r, CL, R)
                 if t_comb:
                     trees_cp[ptr] = t_comb
                     del trees_cp[ptr+1]
