@@ -29,8 +29,8 @@ class Solver(AStar):
         def getl(self, lid):
             return self.lindex.get(lid, [])
 
-    def __init__(self, tags):
-        self.tags = tags
+    def __init__(self, ts_mat):
+        self.ts_mat = ts_mat
         self.cl = Solver.ClosedList()
         self.seen = []
 
@@ -48,13 +48,13 @@ class Solver(AStar):
         idx_range = range(current.rid) + range(current.lid, goal.lid)
         rank = [0] * len(idx_range)
         pos = zip(idx_range ,rank)
-        return sum([self.tags[rng][rnk].score for rng, rnk in pos])
+        return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
 
     def real_cost(self, current):
-        if current.is_valid(self.tags):
+        if current.is_valid(self.ts_mat):
             idx_range = range(current.rid, current.lid)
             pos = zip(idx_range, current.rank)
-            return sum([self.tags[rng][rnk].score for rng, rnk in pos])
+            return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
         return .0
 
     def move_to_closed(self, current):
@@ -64,17 +64,17 @@ class Solver(AStar):
         neighbors = []
         for nb in self.cl.getr(node.lid):
             nb_node = NodeT(node.rid, nb.lid, node.rank+nb.rank, node.tree + nb.tree)
-            if nb_node.is_valid(self.tags) and nb_node not in self.seen:
+            if nb_node.is_valid(self.ts_mat) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
         for nb in self.cl.getl(node.rid):
             nb_node = NodeT(nb.rid, node.lid, nb.rank+node.rank, nb.tree + node.tree)
-            if nb_node.is_valid(self.tags) and nb_node not in self.seen:
+            if nb_node.is_valid(self.ts_mat) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
-        if len(node.rank) == 1 and node.rank[0] < len(self.tags[node.rid]) - 1:
+        if len(node.rank) == 1 and node.rank[0] < len(self.ts_mat[node.rid]) - 1:
             nb_node = NodeT(node.rid, node.lid, [node.rank[0] + 1])
-            if nb_node.is_valid(self.tags) and nb_node not in self.seen:
+            if nb_node.is_valid(self.ts_mat) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
         return neighbors
@@ -85,13 +85,13 @@ class Solver(AStar):
             return all([l.data.miss_side == '' for l in ct.leaves(ct.root)])
         return False
 
-def solve_tree_search(beam_tag, sent, num_goals, time_out, verbose=1):
-    tags = convert_to_TagTree(beam_tag, sent)
-    max_lid = len(tags)
+def solve_tree_search(tag_score_mat, words, num_goals, time_out, verbose=1):
+    ts_mat = convert_to_TagTree(tag_score_mat, words)
+    max_lid = len(ts_mat)
     start = [NodeT(idx, idx+1, [0]) for idx in xrange(max_lid)]
     goal = NodeT(0, max_lid, [])
     # let's solve it
-    paths, max_path = Solver(tags).astar(start, goal, num_goals, time_out, verbose)
+    paths, max_path = Solver(ts_mat).astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
     for path in paths:
         path = list(path)[-1]
