@@ -1,6 +1,6 @@
 import copy
 from treelib import Tree
-from tag_ops import R, L, CL, CR
+from utils.tags.tag_ops import R, L, CL, CR
 
 class TreeData(object):
     def __init__(self, height=0, lids=[], miss_side='', comb_side='', word =''):
