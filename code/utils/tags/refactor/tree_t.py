@@ -147,7 +147,7 @@ class TreeT(object):
         return self.tree[self.tree.root].tag
 
     def is_no_missing_leaves(self):
-        all([l.data.miss_side == '' for l in self.tree.leaves(self.tree.root)])
+        return all([l.data.miss_side == '' for l in self.tree.leaves(self.tree.root)])
 
     def combine_tree(self, _tree, comb_leaf):
         self.tree.paste(comb_leaf, _tree.tree)
