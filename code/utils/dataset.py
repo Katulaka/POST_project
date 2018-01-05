@@ -5,8 +5,8 @@ import json
 import time
 
 from vocab import Vocab
-from tags.trees_to_tags import gen_tags
-from tags.tag_ops import  TagOp
+from tags.ptb_tags_convert import gen_tags
+from tags.tag_ops import TagOp
 from utils import flatten_to_1D, _select
 
 def get_raw_data(data_path):

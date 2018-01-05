@@ -11,7 +11,7 @@ from basic_model import BasicModel
 from beam.search0 import BeamSearch
 from astar.search import solve_tree_search
 from utils.tags.tag_tree import convert_to_TagTree
-from utils.tags.trees_to_tags import to_mrg
+from utils.tags.ptb_tags_convert import trees_to_ptb
 
 
 class STAGModel(BasicModel):
@@ -367,4 +367,4 @@ class STAGModel(BasicModel):
 
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
 
-        return to_mrg(decoded_trees)
+        return trees_to_ptb(decoded_trees)
