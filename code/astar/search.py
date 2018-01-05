@@ -1,5 +1,5 @@
 from astar import AStar
-from utils.tags.tag_node import TagNode
+from node_t import NodeT
 
 class Solver(AStar):
 

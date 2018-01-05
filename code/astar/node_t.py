@@ -1,13 +1,13 @@
 import cPickle
 import copy
 
-from tag_symbols import R, L, CR, CL, ANY
+from utils.tags.tag_symbols import R, L, CR, CL, ANY
 from utils.conf import Config
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
 
-class TagNode(object):
+class NodeT(object):
 
     def __init__(self, rid, lid, rank, tree=[]):
         self.rid = rid
