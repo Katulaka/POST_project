@@ -1,7 +1,7 @@
 from astar import AStar
 from node_t import NodeT
 from tag_tree import convert_to_TagTree
-# from refactor.node_t0 import NodeT #TODO new format
+# from refactor.node_t import NodeT #TODO new format
 # from refactor.tree_t_s import convert_to_TreeTS #TODO new format
 
 class Solver(AStar):
