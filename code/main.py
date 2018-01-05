@@ -40,7 +40,8 @@ def main(_):
         print("[[POST]] Starting model decodeing")
         import datetime
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
-        fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
+        test_min, test_max = config['ds_range']['test']
+        fname = '_'.join(['ds', str(test_min), str(test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
         decode_tags = model.decode(vocab, batcher_test, t_op)
