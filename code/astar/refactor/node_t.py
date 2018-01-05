@@ -81,7 +81,6 @@ class NodeT(object):
 
             # if not combine:
             #     ptr += 1
-        import pdb; pdb.set_trace()
         return trees_cp
 
     def is_valid(self, tags):
