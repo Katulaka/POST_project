@@ -42,7 +42,6 @@ def decode_batch(beam_pair, word_tokens, num_goals, time_out):
         if all(beam_tag):
             # tags = convert_to_TagTree(beam_tag, sent)
             trees = solve_tree_search(beam_tag, sent, num_goals, time_out)
-            import pdb; pdb.set_trace()
         else:
             trees = []
         decode_trees.append(trees)
@@ -64,6 +63,7 @@ def decode(config, vocab, batcher, t_op):
             decoded_trees.extend(decode_batch(beam_pair, word_tokens,
                                             config.num_goals,
                                             config.time_out))
+            import pdb; pdb.set_trace()
             # f = open('decode_trees', 'wb')
             # cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
             # f.close()
