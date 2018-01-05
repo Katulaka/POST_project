@@ -120,6 +120,37 @@ def gen_dataset(config, tags_type, ds_range, nwords=0, ntags=0, nchars=0):
             (time.time()-start_time))
     return vocab, ds, t_op, tags, gd
 
+def _gen_dataset(config, nwords=0, ntags=0, nchars=0):
+    """ """
+    data = load_data(config['src_dir'], config['ds_file'], data_to_dict)
+    #split dataset into train/dev/test
+    ds = split_dataset(data)
+    tags = dict()
+    indeces = dict()
+    for key in ds.keys():
+        ds[key], indeces[key] = slice_dataset(ds[key], config['ds_range'][key], key)
+        tags[key] = ds[key]['tags']
+
+    gd =  load_data(config['src_dir'], config['gold_file'], gold_to_list)
+    gd = _select(gd, indeces['test'])
+
+    start_time = time.time()
+    t_op = TagOp(*config['tags_type'])
+    for d in ds.values():
+        d['tags'] = t_op.modify_fn(d['tags'])
+        d['chars'] = [[list(w) for w in s] for s in d['words'] ]
+    print ("[[gen_dataset:]] %.3fs to modify tags" % (time.time()-start_time))
+
+    vocab = get_vocab(ds, nwords, ntags, nchars)
+
+    start_time = time.time()
+    for d in ds.values():
+        for k in d.keys():
+            d[k] = vocab[k].to_ids(d[k])
+    print ("[[gen_dataset:]] %.3fs to convert data from tokens to ids" %
+            (time.time()-start_time))
+    return vocab, ds, t_op, tags, gd
+
 def get_vocab(ds, nwords, ntags, nchars):
     """ """
     vocab = dict()

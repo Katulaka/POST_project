@@ -15,7 +15,7 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     bs = BeamSearch(model, config.beam_size, vocab['tags'].token_to_id('GO'),
                     vocab['tags'].token_to_id('EOS'), config.dec_timesteps)
 
-    words, w_len, chars, c_len, pos, _, _, _, _ = batcher._process(batch)
+    words, w_len, chars, c_len, pos, _, _, _, _ = batcher.process(batch)
 
     w_cp = copy.copy(words)
     wlen_cp = copy.copy(w_len)

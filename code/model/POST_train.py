@@ -27,7 +27,7 @@ def _train(config, batcher):
         for i in range(config.num_epochs):
             for bv in batcher.get_permute_batch():
                 start_time = time.time()
-                w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher._process(bv)
+                w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher.process(bv)
                 step_loss, _, _  = model.step(sess, w_in, w_len, c_in, c_len,
                                                 pos, t_in, t_len, trgts)
 
@@ -58,7 +58,7 @@ def _dev(config, batcher):
         current_step =  0
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher._process(bv)
+            w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher.process(bv)
             step_loss = model.dev_step(sess, w_in, w_len, c_in, c_len, pos,
                                         t_in, t_len, trgts)
             current_step += 1

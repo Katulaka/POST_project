@@ -63,7 +63,6 @@ class Batcher(object):
     def add_eos(self, data, eos_token=EOS[1]):
         return operate_on_Narray(data, self._add_eos, eos_token)
 
-
     def get_random_batch(self):
         batch = dict()
         d_index = np.random.randint(self._d_size, size=self._batch_size)
@@ -87,17 +86,6 @@ class Batcher(object):
         chars = np.array_split(self._data['chars'], num_batches)
         return [dict(zip(('words','tags','chars'),(w,t,c)))
                         for w,t,c in zip(words, tags, chars)]
-
-    # def to_in_data_format(self, batch_data):
-    #     pad(batch_data)
-    #     batch_data = np.vstack([np.expand_dims(x, 0) for x in batch_data])
-    #     return batch_data
-
-
-    # def to_onehot(self, vec_in, max_len, size):
-    #     vec_out = np.zeros((max_len, size))
-    #     vec_out[np.arange(len(vec_in)), vec_in] = 1
-    #     return vec_out
 
     def process_words(self, bv_w):
 
@@ -162,7 +150,7 @@ class Batcher(object):
         seq_len_c = np.reshape(seq_len_c, [-1])
         return seq_len_c, bv_c_in
 
-    def _process(self, bv):
+    def process(self, bv):
         #TODO do i really need the deepcopy?
         bv_w = copy.deepcopy(bv['words'].tolist())
         self._seq_len = self.seq_len(bv_w)
@@ -176,44 +164,26 @@ class Batcher(object):
         seq_len_c, bv_c_in = self.process_chars(bv_c, max_len_w)
 
         return bv_w_in, seq_len_w, bv_c_in, seq_len_c, bv_pos_in, bv_t, bv_t_in, seq_len_t, bv_t_eos
-                
-    def process(self, bv):
+
+    def _process(self, bv):
+        batch = dict()
         #TODO do i really need the deepcopy?
-        self._seq_len = self.seq_len(bv['words'].tolist())
-
-        #Process words input batch
         bv_w = copy.deepcopy(bv['words'].tolist())
-        bv_w_delim = add_eos(add_go(bv_w))
-        seq_len_w = self.seq_len(bv_w_delim)
-        max_len_w = max(seq_len_w)
-        bv_w_pad = pad(bv_w_delim, max_len_w)
-        bv_w_in = np.vstack(bv_w_pad)
+        self._seq_len = self.seq_len(bv_w)
+        seq_len_w, bv_w_in, max_len_w = self.process_words(bv_w)
+        batch.update({'word': {'in': bv_w_in, 'len': seq_len_w}})
 
-        #Process tags input batch
         bv_t = copy.deepcopy(bv['tags'].tolist())
-        bv_t_go = add_go(bv_t)
-        seq_len_t_go = self.seq_len(bv_t_go)
-        seq_len_t_pad = pad(seq_len_t_go, max_len_w, l_pad_len=1)
-        seq_len_t = np.reshape(seq_len_t_pad, [-1])
-        max_len_t = max(seq_len_t)
+        seq_len_t, bv_t_in, bv_t_eos, bv_pos_in = self.process_tags(bv_t, max_len_w)
+        # bv_pos_in = self.process_pos(bv_t, max_len_w)
+        batch.update({'tag': {'in': bv_t_in, 'len': seq_len_t, 'out': bv_t_eos}})
+        batch.update({'pos': {'in': bv_pos_in, 'out': bv_pos_in}})
 
-        bv_t_go = add_pad_vec(bv_t_go)
-        bv_t_pad = []
-        for _bv_t in pad(bv_t_go, max_len_t):
-            _bv_t = np.array(_bv_t)
-            _bv_t.resize(max_len_w, max_len_t)
-            bv_t_pad.append(_bv_t.tolist())
-        bv_t_in = np.reshape(bv_t_pad, (-1, np.shape(bv_t_pad)[-1]))
+        bv_c = copy.deepcopy(bv['chars'].tolist())
+        seq_len_c, bv_c_in = self.process_chars(bv_c, max_len_w)
+        batch.update({'char': {'in': bv_c_in, 'len': seq_len_c}})
 
-        pos_id = 0 if self._revese else -1
-        bv_pos = self.get_pos(bv_t, pos_id)
-        bv_pos_delim = add_eos(add_go(bv_pos))
-        bv_pos_pad = pad(bv_pos_delim, max_len_w)
-        bv_pos_in = np.vstack(bv_pos_pad)
-
-        bv_t_eos = flatten_to_1D(add_eos(bv_t))
-        return seq_len_w, seq_len_t, bv_w_in, bv_pos_in, bv_t, bv_t_in, bv_t_eos
-
+        return batch
 
     def restore(self, batch):
         it = iter(batch)
