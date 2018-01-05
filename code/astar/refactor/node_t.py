@@ -22,7 +22,7 @@ class NodeT(object):
     def combine_pair(self, t_dst, t_src, comb_side, miss_side):
         if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
             miss_tag = ANY if Config.no_val_gap else t_src.root_tag
-            leaves = t_dst.get_missing_leaves_to(miss_val, miss_side)
+            leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
             if leaves:
                 t_dst_cp = fast_copy(t_dst)
                 t_dst_cp.combine_tree(t_src, leaves[-1])
