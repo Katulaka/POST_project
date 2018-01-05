@@ -5,7 +5,7 @@ import cPickle
 
 from astar.search import solve_tree_search
 from utils.tags.tag_tree import convert_to_TagTree
-from utils.tags.trees_to_tags import to_mrg
+from utils.tags.ptb_tags_convert import trees_to_ptb
 from beam.search import BeamSearch
 
 from POST_main import get_model
@@ -67,7 +67,7 @@ def decode(config, vocab, batcher, t_op):
             # cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
             # f.close()
             # with open('decode_mrg', 'w') as outfile:
-            #     json.dump(to_mrg(decoded_trees), outfile)
+            #     json.dump(trees_to_ptb(decoded_trees), outfile)
 
-    decode_tags = to_mrg(decoded_trees)
+    decode_tags = trees_to_ptb(decoded_trees)
     return decode_tags
