@@ -1,5 +1,12 @@
-from tag_symbols import L, R, UP, CL, CR, ANY, NA
 from utils.utils import operate_on_Narray, _operate_on_Narray
+
+R = '}'
+L = '{'
+CR = '>'
+CL = '<'
+UP = '+'
+NA = '|'
+ANY = '*'
 
 class TagOp(object):
 

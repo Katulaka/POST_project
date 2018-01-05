@@ -3,7 +3,7 @@ import copy
 
 from treelib import Node, Tree
 from nltk.tree import Tree as Tree_
-from tag_symbols import R, L, CL, CR
+from tag_ops import R, L, CL, CR
 from utils.utils import operate_on_Narray, _operate_on_Narray
 
 
