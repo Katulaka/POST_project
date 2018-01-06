@@ -36,6 +36,7 @@ def parse_cmdline():
     args = parser.parse_args()
 
     config = dict()
+    config['no_val_gap'] = args.no_val_gap #TODO maybe do something better with tag attributes
     config['tags_type'] = (args.only_pos, args.keep_direction, args.no_val_gap)
     config['ds_range'] = {'train': (args.train_min, args.train_max),
                             'dev': (args.dev_min, args.dev_max),

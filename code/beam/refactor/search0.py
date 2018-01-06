@@ -81,6 +81,7 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
+        
     def beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 

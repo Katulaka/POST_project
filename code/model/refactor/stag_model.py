@@ -340,8 +340,9 @@ class STAGModel(BasicModel):
 
     def decode_batch(self, beam_pair, word_tokens):
 
-        num_goals = self.config['num_goals']
-        time_out = self.config['time_out']
+        ngoals = self.config['num_goals']
+        t_out = self.config['time_out']
+        no_val = self.config['no_val_gap']
         decode_trees = []
         nsentences = len(word_tokens)
         for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
@@ -350,7 +351,7 @@ class STAGModel(BasicModel):
 
             if all(beam_tag):
                 # tags = convert_to_TagTree(beam_tag, sent)
-                trees = solve_tree_search(beam_tag, sent, num_goals, time_out)
+                trees = solve_tree_search(beam_tag, sent, no_val, ngoals, t_out)
             else:
                 trees = []
             decode_trees.append(trees)
