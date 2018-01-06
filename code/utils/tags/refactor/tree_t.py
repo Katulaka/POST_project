@@ -212,4 +212,4 @@ class TreeT(object):
         return (self.path_to_tags(path.values()), self.path_to_words(path.keys()))
 
 def trees_to_ptb(trees):
-    return _getter_operate_on_Narray(trees, 'from_tree_to_ptb')
+    return _getattr_operate_on_Narray(trees, 'from_tree_to_ptb')
