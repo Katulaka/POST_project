@@ -82,7 +82,8 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
-    def beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+    # def beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+    def beam_search(self, sess, enc_bv):
         """Performs beam search for decoding.
 
          Args:
@@ -96,13 +97,15 @@ class BeamSearch(object):
                     ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
-                                                    enc_cin, enc_clen, enc_pin)
+        # atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
+        #                                             enc_cin, enc_clen, enc_pin)
+        atten_state_batch = self._model.encode_top_state(sess, enc_bv)
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_wlen[j] - 1
+            # atten_len = enc_wlen[j] - 1
+            atten_len = enc_bv['word']['len'][j] - 1
             for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
@@ -178,7 +181,8 @@ class BeamSearch(object):
 #     self.tokens += [token]
 #     self.prob += [prob]
 #     self.state = new_state
-    def greedy_beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+    # def greedy_beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+    def greedy_beam_search(self, sess, enc_bv):
         """Performs beam search for decoding.
 
         Args:
@@ -191,17 +195,19 @@ class BeamSearch(object):
               ordered by score
         """
     # Run the encoder and extract the outputs and final state.
-        atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
-                                                    enc_cin, enc_clen, enc_pin)
+        # atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
+        #                                             enc_cin, enc_clen, enc_pin)
+        atten_state_batch = self._model.encode_top_state(sess, enc_bv)
         # Replicate the initial states K times for the first step.
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_wlen[j] - 1
+            # atten_len = enc_wlen[j] - 1
+            atten_len = enc_bv['word']['len'][j] - 1
             res = []
-            # for i, dec_in in enumerate(atten_state[1:atten_len]):
-            for i, dec_in in enumerate(atten_state[:atten_len-1]):
+            for i, dec_in in enumerate(atten_state[1:atten_len]):
+            # for i, dec_in in enumerate(atten_state[:atten_len-1]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),

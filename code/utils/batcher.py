@@ -89,8 +89,6 @@ class Batcher(object):
     #     if len(args) == 1:
     #         return remove_delim_len_batch(self, *args)
 
-
-
     def get_random_batch(self):
         batch = dict()
         d_index = np.random.randint(self._d_size, size=self._batch_size)
@@ -212,7 +210,6 @@ class Batcher(object):
         batch.update({'char': {'in': bv_c_in, 'len': seq_len_c}})
 
         return batch
-
 
     def restore(self, batch):
         it = iter(batch)
