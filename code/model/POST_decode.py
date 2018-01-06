@@ -28,8 +28,8 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     beam_tags = t_op.combine_fn(vocab['tags'].to_tokens(best_beams['tokens']))
     _beam_pair = map(lambda x, y: zip(x, y), beam_tags, best_beams['scores'])
     beam_pair = batcher.restore(_beam_pair)
-    _words = [s[1:s_len-1].tolist() for s, s_len in zip(words, w_len)]
-    word_tokens = vocab['words'].to_tokens(_words)
+    words = [w[1:l-1].tolist() for w, l in zip(bv['word']['in'], bv['word']['len'])]
+    word_tokens = vocab['words'].to_tokens(words)
     return beam_pair, word_tokens
 
 def decode_batch(beam_pair, word_tokens, no_val_gap, num_goals, time_out):
