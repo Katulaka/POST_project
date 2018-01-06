@@ -79,7 +79,7 @@ class TreeT(object):
 
         return True
 
-    def _from_tree_to_ptb(self, nid=self.tree.root):
+    def _from_tree_to_ptb(self, nid):
         # nid = tree.root
         nid = self.tree.subtree(nid).root
         if self.tree[nid].is_leaf():
@@ -92,8 +92,8 @@ class TreeT(object):
 
         return res + ')'
 
-    # def from_tree_to_ptb(self):
-    #     return self._from_tree_to_ptb(self.tree.root)
+    def from_tree_to_ptb(self):
+        return self._from_tree_to_ptb(self.tree.root)
 
     def from_tag_to_tree(self, tag, word, pos_id=0):
         parent_id = None
