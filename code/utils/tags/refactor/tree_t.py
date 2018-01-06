@@ -1,6 +1,7 @@
 import copy
 from treelib import Tree
 from utils.tags.tag_ops import R, L, CL, CR
+from utils.utils import _getattr_operate_on_Narray
 
 class TreeData(object):
     def __init__(self, height=0, lids=[], miss_side='', comb_side='', word =''):
