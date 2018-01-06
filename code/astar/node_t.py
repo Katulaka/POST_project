@@ -31,7 +31,7 @@ class NodeT(object):
         if len(self.tree) > 2:
             import pdb; pdb.set_trace()
         # trees_cp = copy.copy(self.tree)
-        tree_cp = fast_copy(self.tree)
+        trees_cp = fast_copy(self.tree)
         while ptr < len(trees_cp)-1:
             t_l = trees_cp[ptr]
             t_r = trees_cp[ptr+1]
