@@ -88,7 +88,8 @@ class TreeT(object):
         res = ' (' + self.tree[nid].tag
 
         for c_nid in sorted(self.tree.children(nid), key=lambda x: x.identifier):
-            res += self._from_tree_to_ptb(self, c_nid.identifier)
+            # res += self._from_tree_to_ptb(self, c_nid.identifier)
+            res += self._from_tree_to_ptb(c_nid.identifier)
 
         return res + ')'
 
