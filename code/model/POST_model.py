@@ -83,10 +83,6 @@ class POSTModel(object):
             pos_embed_mat = tf.get_variable('pos-embeddings',
                             shape=[self.npos,self.dim_pos], dtype=self.dtype,
                             initializer=tf.contrib.layers.xavier_initializer())
-            # p_embed_mat_init = tf.random_uniform([self.npos, self.dim_pos],
-            #                                         -1.0, 1.0)
-            # pos_embed_mat = tf.Variable(p_embed_mat_init, name='pos-embedding',
-            #                             dtype = self.dtype)
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
@@ -319,7 +315,6 @@ class POSTModel(object):
             self.pos_lr = tf.Variable(float(self.lr), trainable=False,
                                         dtype=self.dtype)
 
-    # def step(self, session, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgts):
     def step(self, session, bv):
         """ Training step, returns the prediction, loss"""
 
@@ -337,7 +332,6 @@ class POSTModel(object):
         output_feed = [self.loss, self.optimizer, self.increment_step_op]
         return session.run(output_feed, input_feed)
 
-    # def dev_step(self, session, w_in, w_len, c_in, c_len, p_in, t_in, t_len, trgt):
     def dev_step(self, session, bv):
         """ Training step, returns the prediction, loss"""
         input_feed = {self.w_in : bv['word']['in'],
@@ -353,7 +347,6 @@ class POSTModel(object):
         output_feed = self.loss
         return session.run(output_feed, input_feed)
 
-    # def pos_decode(self, session, w_in, w_len, c_in, c_len):
     def pos_decode(self, session, bv):
         input_feed = {self.w_in: bv['word']['in'],
                     self.word_len: bv['word']['len'],
@@ -362,7 +355,6 @@ class POSTModel(object):
         output_feed = self.pos_pred
         return session.run(output_feed, input_feed)
 
-    # def encode_top_state(self, session, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
     def encode_top_state(self, session, enc_bv):
         """Return the top states from encoder for decoder."""
         input_feed = {self.w_in: enc_bv['word']['in'],

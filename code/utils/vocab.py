@@ -55,7 +55,6 @@ class Vocab(object):
 
     def to_ids(self, sentences):
         return _operate_on_Narray(sentences, self.token_to_id)
-        # return operate_on_Narray(sentences, self.tokens_to_ids)
 
     def id_to_token(self, token_id):
         if token_id not in self._id_to_token:
@@ -66,7 +65,6 @@ class Vocab(object):
         return [self.id_to_token(el) for el in token_id_list]
 
     def to_tokens(self, ids):
-        # return operate_on_Narray(ids, self.id_to_token)
         return operate_on_Narray(ids, self.ids_to_tokens)
 
     def get_ctrl_tokens(self):

@@ -81,7 +81,7 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
-        
+
     def beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 
@@ -184,8 +184,7 @@ class BeamSearch(object):
             print ("Starting batch %d / %d" % (j+1, dec_len))
             atten_len = enc_wlen[j] - 1
             res = []
-            # for i, dec_in in enumerate(atten_state[1:atten_len]):
-            for i, dec_in in enumerate(atten_state[:atten_len-1]):
+            for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),

@@ -151,7 +151,6 @@ class STAGModel(BasicModel):
             # b_att = tf.Variable(tf.zeros([self.hidden_tag]), name='b-att')
 
             # lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
-
             lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik', con_lstm_score, w_att))
 
             mask_t = tf.sequence_mask(self.tag_len)

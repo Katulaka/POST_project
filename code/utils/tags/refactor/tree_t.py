@@ -81,7 +81,6 @@ class TreeT(object):
         return True
 
     def _from_tree_to_ptb(self, nid):
-        # nid = tree.root
         nid = self.tree.subtree(nid).root
         if self.tree[nid].is_leaf():
             return  ' (' + self.tree[nid].tag + ' ' + self.tree[nid].data.word + ')'

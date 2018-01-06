@@ -26,11 +26,6 @@ class Config(object):
         #use modified loss with "covarience" relation
         comb_loss = False
 
-        def __repr__(self):
-            return "batch_size: {0}".format(batch_size)
-
-    # def __str__(self):
-    #     return "Vector3([{0},{1},{2}])".format(self.x, self.y, self.z)
 
     beam_size = 5
     dec_timesteps = 20

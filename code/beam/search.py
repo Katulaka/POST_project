@@ -82,7 +82,7 @@ class BeamSearch(object):
         self._start_token = start_token
         self._end_token = end_token
         self._max_steps = max_steps
-    # def beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
+
     def beam_search(self, sess, enc_bv):
         """Performs beam search for decoding.
 
@@ -97,14 +97,11 @@ class BeamSearch(object):
                     ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        # atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
-        #                                             enc_cin, enc_clen, enc_pin)
         atten_state_batch = self._model.encode_top_state(sess, enc_bv)
         decs = []
         dec_len = len(atten_state_batch)
         for j, atten_state in enumerate(atten_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            # atten_len = enc_wlen[j] - 1
             atten_len = enc_bv['word']['len'][j] - 1
             for i, dec_in in enumerate(atten_state[1:atten_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
@@ -168,20 +165,6 @@ class BeamSearch(object):
         hyp_sort = sorted(hyps, key=lambda h: h.score, reverse=True)
         return hyp_sort[:self._beam_size]
 
-# def Extend(self, token, prob, new_state):
-#   """Extend the hypothesis with result from latest step.
-#
-#     Args:
-#       token: latest token from decoding.
-#       log_prob: log prob of the latest decoded tokens.
-#       new_state: decoder output state. Fed to the decoder for next step.
-#     Returns:
-#       New Hypothesis with the res from latest step.
-#   """
-#     self.tokens += [token]
-#     self.prob += [prob]
-#     self.state = new_state
-    # def greedy_beam_search(self, sess, enc_win, enc_wlen, enc_cin, enc_clen, enc_pin):
     def greedy_beam_search(self, sess, enc_bv):
         """Performs beam search for decoding.
 
@@ -194,9 +177,7 @@ class BeamSearch(object):
           hyps: list of Hypothesis, the best hypotheses found by beam search,
               ordered by score
         """
-    # Run the encoder and extract the outputs and final state.
-        # atten_state_batch = self._model.encode_top_state(sess, enc_win, enc_wlen,
-        #                                             enc_cin, enc_clen, enc_pin)
+        # Run the encoder and extract the outputs and final state.
         atten_state_batch = self._model.encode_top_state(sess, enc_bv)
         # Replicate the initial states K times for the first step.
         decs = []
@@ -207,7 +188,6 @@ class BeamSearch(object):
             atten_len = enc_bv['word']['len'][j] - 1
             res = []
             for i, dec_in in enumerate(atten_state[1:atten_len]):
-            # for i, dec_in in enumerate(atten_state[:atten_len-1]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),

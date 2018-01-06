@@ -37,9 +37,8 @@ class BasicModel(object):
         self.graph = self.build_graph()
 
         with self.graph.as_default():
-            # import pdb; pdb.set_trace()
-            all_variables = [k for k in tf.global_variables()
-                            if k.name.startswith(self.config['scope_name'])]
+            # all_variables = [k for k in tf.global_variables()
+            #                 if k.name.startswith(self.config['scope_name'])]
             # self.saver = tf.train.Saver(all_variables, max_to_keep=4)
             self.saver = tf.train.Saver(max_to_keep=4)
             self.init_op = tf.global_variables_initializer()
