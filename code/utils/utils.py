@@ -1,6 +1,7 @@
 from multiprocessing import Process, Queue
 from itertools import chain
 import numpy as np
+import cPickle
 
 def _operate_on_Narray(A, function, *kwarg): #recursive up to the element level
     if isinstance(A, list):
@@ -17,6 +18,8 @@ def operate_on_Narray(A, function, *kwarg): #recursive up to the list level
         return function(A, *kwarg)
     return [operate_on_Narray(a, function, *kwarg) for a in A]
 
+def fast_copy(src):
+    return cPickle.loads(cPickle.dumps(src))
 
 def repeated(f, n):
     def repeat(arg):

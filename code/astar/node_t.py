@@ -1,11 +1,8 @@
-import cPickle
 import copy
 
 from utils.tags.tag_ops import R, L, CR, CL, ANY
-# from utils.conf import Config
+from utils.utils import fast_copy
 
-def fast_copy(src):
-    return cPickle.loads(cPickle.dumps(src))
 
 class NodeT(object):
 
