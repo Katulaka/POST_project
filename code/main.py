@@ -8,7 +8,8 @@ from model.refactor.stag_model import STAGModel
 from utils.batcher import Batcher
 from utils.dataset import _gen_dataset
 from utils.parse_cmdline import parse_cmdline
-
+# from utils.tags.ptb_tags_convert import trees_to_ptb
+from utils.tags.refactor.tree_t import trees_to_ptb
 
 def main(_):
     config = parse_cmdline()
@@ -44,7 +45,8 @@ def main(_):
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        decode_tags = model.decode(vocab, batcher_test, t_op)
+        decode_trees = model.decode(vocab, batcher_test, t_op)
+        decoded_tags = trees_to_ptb(decode_tags)
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
         with open(gold_file, 'w') as outfile:

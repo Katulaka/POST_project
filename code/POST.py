@@ -9,7 +9,8 @@ import model.POST_decode as POST_decode
 import model.POST_train as POST_train
 from utils.conf import Config
 from utils.batcher import Batcher
-
+from utils.tags.ptb_tags_convert import trees_to_ptb
+# from utils.tags.refactor.tree_t import trees_to_ptb
 
 def main(_):
     seed = int(time.time())
@@ -93,7 +94,8 @@ def main(_):
         fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        decode_tags = POST_decode.decode(Config, vocab, batcher_test, t_op)
+        decoded_trees = POST_decode.decode(Config, vocab, batcher_test, t_op)
+        decoded_tags = trees_to_ptb(decoded_trees)
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
         with open(gold_file, 'w') as outfile:

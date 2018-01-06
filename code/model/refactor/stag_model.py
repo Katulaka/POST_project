@@ -5,13 +5,13 @@ import copy
 import math
 import sys
 import time
+
 import numpy as np
 import tensorflow as tf
+
 from basic_model import BasicModel
 from beam.search0 import BeamSearch
 from astar.search import solve_tree_search
-# from utils.tags.tag_tree import convert_to_TagTree
-from utils.tags.ptb_tags_convert import trees_to_ptb
 
 
 class STAGModel(BasicModel):
@@ -350,7 +350,6 @@ class STAGModel(BasicModel):
                         %(i+1, nsentences, len(beam_tag)))
 
             if all(beam_tag):
-                # tags = convert_to_TagTree(beam_tag, sent)
                 trees = solve_tree_search(beam_tag, sent, no_val, ngoals, t_out)
             else:
                 trees = []
@@ -368,4 +367,4 @@ class STAGModel(BasicModel):
 
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
 
-        return trees_to_ptb(decoded_trees)
+        return decoded_trees

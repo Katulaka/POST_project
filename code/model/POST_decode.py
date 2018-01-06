@@ -4,9 +4,6 @@ import json
 import cPickle
 
 from astar.search import solve_tree_search
-# from utils.tags.tag_tree import convert_to_TagTree
-from utils.tags.ptb_tags_convert import trees_to_ptb
-# from utils.tags.refactor.tree_t import trees_to_ptb
 from beam.search import BeamSearch
 
 from POST_main import get_model
@@ -41,7 +38,6 @@ def decode_batch(beam_pair, word_tokens, no_val_gap, num_goals, time_out):
                 " %d [tag length %d]" %(i+1, num_sentences, len(beam_tag)))
 
         if all(beam_tag):
-            # tags = convert_to_TagTree(beam_tag, sent)
             trees = solve_tree_search(beam_tag, sent, no_val_gap, num_goals, time_out)
         else:
             trees = []
@@ -72,5 +68,5 @@ def decode(config, vocab, batcher, t_op):
             # with open('decode_mrg', 'w') as outfile:
             #     json.dump(trees_to_ptb(decoded_trees), outfile)
 
-    decode_tags = trees_to_ptb(decoded_trees)
+    # decode_tags = trees_to_ptb(decoded_trees)
     return decode_tags
