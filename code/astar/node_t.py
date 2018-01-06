@@ -2,7 +2,7 @@ import cPickle
 import copy
 
 from utils.tags.tag_ops import R, L, CR, CL, ANY
-from utils.conf import Config
+# from utils.conf import Config
 
 def fast_copy(src):
     return cPickle.loads(cPickle.dumps(src))
@@ -19,9 +19,9 @@ class NodeT(object):
     def __eq__(self, other):
         return self.rank == other.rank and self.idx == other.idx
 
-    def combine_pair(self, t_dst, t_src, comb_side, miss_side):
+    def combine_pair(self, t_dst, t_src, comb_side, miss_side, miss_tag_any):
         if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
-            miss_tag = ANY if Config.no_val_gap else t_src.root_tag
+            miss_tag = ANY if miss_tag_any else t_src.root_tag
             leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
             if leaves:
                 t_dst_cp = fast_copy(t_dst)
@@ -29,7 +29,7 @@ class NodeT(object):
                 return t_dst_cp
         return None
 
-    def combine_trees(self):
+    def combine_trees(self, miss_tag_any):
         ptr = 0
         if len(self.tree) > 2:
             import pdb; pdb.set_trace()
@@ -38,14 +38,14 @@ class NodeT(object):
             t_l = trees_cp[ptr]
             t_r = trees_cp[ptr+1]
             #try combining left tree into right tree
-            t_comb = self.combine_pair(t_r, t_l, CR, L)
+            t_comb = self.combine_pair(t_r, t_l, CR, L, miss_tag_any)
             if t_comb:
                 trees_cp[ptr+1] = t_comb
                 del trees_cp[ptr]
                 if ptr > 0: ptr -= 1
             else:
                 #try combining right tree into left tree
-                t_comb = self.combine_pair(t_l, t_r, CL, R)
+                t_comb = self.combine_pair(t_l, t_r, CL, R, miss_tag_any)
                 if t_comb:
                     trees_cp[ptr] = t_comb
                     del trees_cp[ptr+1]
@@ -55,13 +55,13 @@ class NodeT(object):
 
         return trees_cp
 
-    def is_valid(self, tags):
+    def is_valid(self, tags, miss_tag_any):
         if self.tree == [] and len(self.rank) == 1:
             self.tree = [tags[self.rid][self.rank[0]].tree]
             return True
         if len(self.tree) == 1:
             return True
-        ct = self.combine_trees()
+        ct = self.combine_trees(miss_tag_any)
         if len(ct) == 1 :
             self.tree = ct
             return True

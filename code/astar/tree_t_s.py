@@ -5,7 +5,6 @@ class TreeTS(object):
     def __init__(self, tag, score, word, pos_id=0):
         self.tag = tag
         self.score = score
-        # self.tree, self.max_pos_id = tag_to_tree(pos_id, tag, word)
         self.tree = TreeT()
         self.max_pos_id = self.tree.from_tag_to_tree(tag, word, pos_id)
 

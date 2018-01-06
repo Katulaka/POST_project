@@ -32,7 +32,7 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     word_tokens = vocab['words'].to_tokens(_words)
     return beam_pair, word_tokens
 
-def decode_batch(beam_pair, word_tokens, num_goals, time_out):
+def decode_batch(beam_pair, word_tokens, no_val_gap, num_goals, time_out):
 
     decode_trees = []
     num_sentences = len(word_tokens)
@@ -42,7 +42,7 @@ def decode_batch(beam_pair, word_tokens, num_goals, time_out):
 
         if all(beam_tag):
             # tags = convert_to_TagTree(beam_tag, sent)
-            trees = solve_tree_search(beam_tag, sent, num_goals, time_out)
+            trees = solve_tree_search(beam_tag, sent, no_val_gap, num_goals, time_out)
         else:
             trees = []
         decode_trees.append(trees)
@@ -62,6 +62,7 @@ def decode(config, vocab, batcher, t_op):
                                                 batcher, batch, t_op)
 
             decoded_trees.extend(decode_batch(beam_pair, word_tokens,
+                                            config.no_val_gap,
                                             config.num_goals,
                                             config.time_out))
             import pdb; pdb.set_trace()
