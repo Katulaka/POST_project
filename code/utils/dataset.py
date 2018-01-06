@@ -5,9 +5,9 @@ import json
 import time
 
 from vocab import Vocab
-from tags.ptb_tags_convert import gen_tags
-# from utils.tags.tree_t import TreeT
-# from nltk.tree import Tree as Tree_
+# from tags.ptb_tags_convert import gen_tags
+from utils.tags.tree_t import TreeT
+from nltk.tree import Tree as Tree_
 from tags.tag_ops import TagOp
 from utils import flatten_to_1D, _select
 
@@ -24,38 +24,36 @@ def load_data(src_dir, data_file, get_fn):
     print("[[gen_dataset/load_data:]] %.3fs to load data" % (time.time()-start_time))
     return data
 
-# def get_dependancies(fin, penn_path='code/utils/tags/pennconverter.jar'):
-#
-#     dep_dict_file = []
-#     dep_dict_tree = {}
-#     lines = os.popen("java -jar "+penn_path+"< "+fin+" -splitSlash=false").read().split('\n')
-#
-#     for line in lines:
-#         words = line.split()
-#         if words:
-#             dep_dict_tree[int(words[0])] = int(words[6])
-#         else:
-#             dep_dict_file.append(dep_dict_tree)
-#             dep_dict_tree = {}
-#
-#     return dep_dict_file
-#
-# def gen_tags(fin):
-#
-#     tree_deps = get_dependancies(fin)
-#     with open(fin) as f:
-#         # lines = [x.strip('\n') for x in f.readlines()]
-#         for i, line in enumerate(f.readlines()):
-#
-#             line = line.strip('\n')
-#             #max_id is the number of words in line + 1.
-#             # This is index kept in order to number words from 1 to num of words
-#             max_id = len(Tree_.fromstring(line).leaves()) + 1
-#             line = line.replace('(', ' ( ').replace(')', ' ) ').split()
-#             tree = TreeT()
-#             tree.from_ptb_to_tree(line, max_id)
-#             tree.add_height(tree_deps[i])
-#             return tree.from_tree_to_tag()
+def get_dependancies(fin, penn_path='code/utils/tags/pennconverter.jar'):
+
+    dep_dict_file = []
+    dep_dict_tree = {}
+    lines = os.popen("java -jar "+penn_path+"< "+fin+" -splitSlash=false").read().split('\n')
+
+    for line in lines:
+        words = line.split()
+        if words:
+            dep_dict_tree[int(words[0])] = int(words[6])
+        else:
+            dep_dict_file.append(dep_dict_tree)
+            dep_dict_tree = {}
+
+    return dep_dict_file
+
+def gen_tags(fin):
+
+    tree_deps = get_dependancies(fin)
+    with open(fin) as f:
+        # lines = [x.strip('\n') for x in f.readlines()]
+        for i, line in enumerate(f.readlines()):
+
+            line = line.strip('\n')
+            #max_id is the number of words in line + 1.
+            # This is index kept in order to number words from 1 to num of words
+            max_id = len(Tree_.fromstring(line).leaves()) + 1
+            line = line.replace('(', ' ( ').replace(')', ' ) ').split()
+            tree = TreeT()
+            return tree.from_ptb_to_tag(line, max_id, tree_deps[i])
 
 def data_to_dict(src_dir, data_file):
     """ If src dir is empty or not a file will result in empty file """
