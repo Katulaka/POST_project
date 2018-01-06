@@ -1,4 +1,4 @@
-import copy
+# import copy
 
 from utils.tags.tag_ops import R, L, CR, CL, ANY
 from utils.utils import fast_copy
