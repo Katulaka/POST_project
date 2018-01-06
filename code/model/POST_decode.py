@@ -6,6 +6,7 @@ import cPickle
 from astar.search import solve_tree_search
 # from utils.tags.tag_tree import convert_to_TagTree
 from utils.tags.ptb_tags_convert import trees_to_ptb
+# from utils.tags.refactor.tree_t import trees_to_ptb
 from beam.search import BeamSearch
 
 from POST_main import get_model
@@ -69,6 +70,6 @@ def decode(config, vocab, batcher, t_op):
             # f.close()
             # with open('decode_mrg', 'w') as outfile:
             #     json.dump(trees_to_ptb(decoded_trees), outfile)
-    
+
     decode_tags = trees_to_ptb(decoded_trees)
     return decode_tags
