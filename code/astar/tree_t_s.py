@@ -1,4 +1,4 @@
-from utils.tags.refactor.tree_t import TreeT
+from utils.tags.tree_t import TreeT
 
 class TreeTS(object):
 

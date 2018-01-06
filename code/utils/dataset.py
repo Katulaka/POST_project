@@ -6,7 +6,7 @@ import time
 
 from vocab import Vocab
 from tags.ptb_tags_convert import gen_tags
-# from utils.tags.refactor.tree_t import TreeT
+# from utils.tags.tree_t import TreeT
 # from nltk.tree import Tree as Tree_
 from tags.tag_ops import TagOp
 from utils import flatten_to_1D, _select

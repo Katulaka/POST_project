@@ -9,7 +9,7 @@ from utils.batcher import Batcher
 from utils.dataset import _gen_dataset
 from utils.parse_cmdline import parse_cmdline
 # from utils.tags.ptb_tags_convert import trees_to_ptb
-from utils.tags.refactor.tree_t import trees_to_ptb
+from utils.tags.tree_t import trees_to_ptb
 
 def main(_):
     config = parse_cmdline()

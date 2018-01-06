@@ -10,7 +10,7 @@ import model.POST_train as POST_train
 from utils.conf import Config
 from utils.batcher import Batcher
 from utils.tags.ptb_tags_convert import trees_to_ptb
-# from utils.tags.refactor.tree_t import trees_to_ptb
+# from utils.tags.tree_t import trees_to_ptb
 
 def main(_):
     seed = int(time.time())
