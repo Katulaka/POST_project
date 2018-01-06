@@ -30,7 +30,7 @@ def _train(config, batcher):
                 # w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher.process(bv)
                 # step_loss, _, _  = model.step(sess, w_in, w_len, c_in, c_len,
                 # pos, t_in, t_len, trgts)
-                step_loss, _, _  = model.step(sess, batcher._process(bv))
+                step_loss, _, _  = model.step(sess, batcher.process(bv))
                 current_step += 1
                 step_time += (time.time() - start_time) / config.steps_per_ckpt
                 loss += step_loss / config.steps_per_ckpt
@@ -61,7 +61,7 @@ def _dev(config, batcher):
             # w_in, w_len, c_in, c_len, pos, _, t_in, t_len, trgts = batcher.process(bv)
             # step_loss = model.dev_step(sess, w_in, w_len, c_in, c_len, pos,
             #                             t_in, t_len, trgts)
-            step_loss = model.dev_step(sess, batcher._process(bv))
+            step_loss = model.dev_step(sess, batcher.process(bv))
             current_step += 1
             step_time = (time.time() - start_time) / current_step
             tot_loss += step_loss

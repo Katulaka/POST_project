@@ -176,22 +176,22 @@ class Batcher(object):
         seq_len_c = np.reshape(seq_len_c, [-1])
         return seq_len_c, bv_c_in
 
+    # def process(self, bv):
+    #     #TODO do i really need the deepcopy?
+    #     bv_w = copy.deepcopy(bv['words'].tolist())
+    #     self._seq_len = self.seq_len(bv_w)
+    #     seq_len_w, bv_w_in, max_len_w = self.process_words(bv_w)
+    #
+    #     bv_t = copy.deepcopy(bv['tags'].tolist())
+    #     seq_len_t, bv_t_in, bv_t_eos, bv_pos_in = self.process_tags(bv_t, max_len_w)
+    #     # bv_pos_in = self.process_pos(bv_t, max_len_w)
+    #
+    #     bv_c = copy.deepcopy(bv['chars'].tolist())
+    #     seq_len_c, bv_c_in = self.process_chars(bv_c, max_len_w)
+    #
+    #     return bv_w_in, seq_len_w, bv_c_in, seq_len_c, bv_pos_in, bv_t, bv_t_in, seq_len_t, bv_t_eos
+
     def process(self, bv):
-        #TODO do i really need the deepcopy?
-        bv_w = copy.deepcopy(bv['words'].tolist())
-        self._seq_len = self.seq_len(bv_w)
-        seq_len_w, bv_w_in, max_len_w = self.process_words(bv_w)
-
-        bv_t = copy.deepcopy(bv['tags'].tolist())
-        seq_len_t, bv_t_in, bv_t_eos, bv_pos_in = self.process_tags(bv_t, max_len_w)
-        # bv_pos_in = self.process_pos(bv_t, max_len_w)
-
-        bv_c = copy.deepcopy(bv['chars'].tolist())
-        seq_len_c, bv_c_in = self.process_chars(bv_c, max_len_w)
-
-        return bv_w_in, seq_len_w, bv_c_in, seq_len_c, bv_pos_in, bv_t, bv_t_in, seq_len_t, bv_t_eos
-
-    def _process(self, bv):
         batch = dict()
         #TODO do i really need the deepcopy?
         bv_w = copy.deepcopy(bv['words'].tolist())

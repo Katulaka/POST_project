@@ -155,7 +155,7 @@ class POSModel(BasicModel):
         steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            step_loss, _ = self.step(batcher._process(bv), dev)
+            step_loss, _ = self.step(batcher.process(bv), dev)
             current_step += 1
             step_time += (time.time() - start_time) / steps_per_ckpt
             loss += step_loss / steps_per_ckpt

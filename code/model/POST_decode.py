@@ -20,7 +20,7 @@ def decode_bs(sess, model, config, vocab, batcher, batch, t_op):
     # pos_cp = copy.copy(pos)
     # clen_cp = copy.copy(c_len)
     # c_cp = copy.copy(chars)
-    bv = batcher._process(batch)
+    bv = batcher.process(batch)
     bv_cp = copy.copy(bv)
 
     # best_beams = bs.beam_search(sess, w_cp, wlen_cp, c_cp, clen_cp, pos_cp)
