@@ -85,7 +85,7 @@ class TreeT(object):
         if self.tree[nid].is_leaf():
             return  ' (' + self.tree[nid].tag + ' ' + self.tree[nid].data.word + ')'
 
-        res = ' (' + tree[nid].tag
+        res = ' (' + self.tree[nid].tag
 
         for c_nid in sorted(self.tree.children(nid), key=lambda x: x.identifier):
             res += self.from_tree_to_ptb(self, c_nid.identifier)
@@ -210,3 +210,6 @@ class TreeT(object):
             path = {}
             self.tree_to_path(tree.root, path)
             return (self.path_to_tags(path.values()), self.path_to_words(path.keys()))
+
+def trees_to_ptb(trees):
+    return _operate_on_Narray(trees, getattr, 'from_tree_to_ptb')
