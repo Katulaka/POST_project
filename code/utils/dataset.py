@@ -24,7 +24,7 @@ def load_data(src_dir, data_file, get_fn):
     print("[[gen_dataset/load_data:]] %.3fs to load data" % (time.time()-start_time))
     return data
 
-def get_dependancies(fin, penn_path='code/utils/tags/pennconverter.jar'):
+def get_dependancies(fin, penn_path='code/utils/pennconverter.jar'):
 
     dep_dict_file = []
     dep_dict_tree = {}
