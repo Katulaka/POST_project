@@ -39,7 +39,7 @@ class TreeT(object):
         line = line[2:]
 
         while line[0] != ')':
-            offset, max_id, leaf_id = self.from_ptb_to_tree(self, line, max_id, leaf_id, parent_id)
+            offset, max_id, leaf_id = self.from_ptb_to_tree(line, max_id, leaf_id, parent_id)
             total_offset += offset
             line = line[offset:]
 
@@ -88,7 +88,6 @@ class TreeT(object):
         res = ' (' + self.tree[nid].tag
 
         for c_nid in sorted(self.tree.children(nid), key=lambda x: x.identifier):
-            # res += self._from_tree_to_ptb(self, c_nid.identifier)
             res += self._from_tree_to_ptb(c_nid.identifier)
 
         return res + ')'
@@ -165,7 +164,7 @@ class TreeT(object):
         flag = CR
         for child in self.tree.children(nid):
             cid = child.identifier
-            leaf_id, height = self.tree_to_path(self, cid, path)
+            leaf_id, height = self.tree_to_path(cid, path)
 
             if (height == 0):
                 # Reached end of path can add flag
@@ -186,31 +185,31 @@ class TreeT(object):
 
         return ret_leaf_id, ret_height
 
-        def path_to_tags(self, path):
-            tags = []
-            for p in path:
-                _res = []
-                _p = copy.copy(p)
-                if _p[0] in [CL, CR]:
-                    _res.append(_p[0])
-                    _p = _p[1:]
-                while _p[:-1]:
-                    el_p = _p.pop(0)
-                    _res.append(self.tree[el_p].tag)
-                    for c in self.tree.children(el_p):
-                        if c.identifier != _p[0]:
-                            _res.append(R+c.tag if c.identifier > _p[0] else L+c.tag)
-                _res.append(self.tree[_p[0]].tag)
-                tags.append(_res)
-            return tags
+    def path_to_tags(self, path):
+        tags = []
+        for p in path:
+            _res = []
+            _p = copy.copy(p)
+            if _p[0] in [CL, CR]:
+                _res.append(_p[0])
+                _p = _p[1:]
+            while _p[:-1]:
+                el_p = _p.pop(0)
+                _res.append(self.tree[el_p].tag)
+                for c in self.tree.children(el_p):
+                    if c.identifier != _p[0]:
+                        _res.append(R+c.tag if c.identifier > _p[0] else L+c.tag)
+            _res.append(self.tree[_p[0]].tag)
+            tags.append(_res)
+        return tags
 
-        def path_to_words(self, path):
-            return [self.tree[k].tag for k in path]
+    def path_to_words(self, path):
+        return [self.tree[k].tag for k in path]
 
-        def from_tree_to_tag(self):
-            path = {}
-            self.tree_to_path(tree.root, path)
-            return (self.path_to_tags(path.values()), self.path_to_words(path.keys()))
+    def from_tree_to_tag(self):
+        path = {}
+        self.tree_to_path(tree.root, path)
+        return (self.path_to_tags(path.values()), self.path_to_words(path.keys()))
 
 def trees_to_ptb(trees):
-    return _operate_on_Narray(trees, getattr, 'from_tree_to_ptb')
+    return _getter_operate_on_Narray(trees, 'from_tree_to_ptb')

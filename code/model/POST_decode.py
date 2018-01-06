@@ -69,6 +69,6 @@ def decode(config, vocab, batcher, t_op):
             # f.close()
             # with open('decode_mrg', 'w') as outfile:
             #     json.dump(trees_to_ptb(decoded_trees), outfile)
-
+    
     decode_tags = trees_to_ptb(decoded_trees)
     return decode_tags

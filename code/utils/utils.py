@@ -7,6 +7,11 @@ def _operate_on_Narray(A, function, *kwarg): #recursive up to the element level
         return [_operate_on_Narray(a, function, *kwarg) for a in A]
     return function(A, *kwarg)
 
+def _getter_operate_on_Narray(A, function, *kwarg): #recursive up to the element level
+    if isinstance(A, list):
+        return [_operate_on_Narray(a, function, *kwarg) for a in A]
+    return getter(A, function)(*kwarg)
+
 def operate_on_Narray(A, function, *kwarg): #recursive up to the list level
     if isinstance(A, list) and all(not isinstance(el, list) for el in A):
         return function(A, *kwarg)
