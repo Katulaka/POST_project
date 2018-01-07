@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 
 from basic_model import BasicModel
-from beam.search import BeamSearch
+from beam.refactor.search import BeamSearch
 from astar.search import solve_tree_search
 
 
