@@ -36,6 +36,12 @@ def parse_cmdline():
     args = parser.parse_args()
 
     config = dict()
+
+    config['btch'] = {}
+    config['btch']['batch_size'] = args.batch
+    config['btch']['reverse'] = args.reverse
+
+
     config['no_val_gap'] = args.no_val_gap #TODO maybe do something better with tag attributes
     config['tags_type'] = (args.only_pos, args.keep_direction, args.no_val_gap)
     config['ds_range'] = {'train': (args.train_min, args.train_max),
@@ -54,8 +60,7 @@ def parse_cmdline():
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
     config['steps_per_ckpt'] = 10
     # Update config variables
-    config['batch_size'] = args.batch
-    config['reverse'] = args.reverse
+
     config['attn'] = args.attn
     config['comb_loss'] = args.comb_loss
     config['pos'] = args.pos

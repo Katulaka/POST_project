@@ -10,10 +10,12 @@ from utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
 
 class Batcher(object):
 
-    def __init__(self, data, batch_size, reverse):
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, '_'+k, v)
+
+    def use_data(self, data):
         self._data = data
-        self._batch_size = batch_size
-        self._revese = reverse
         self._d_size = len(data.values()[0])
 
     def get_batch_size(self):
@@ -156,7 +158,7 @@ class Batcher(object):
 
     def process_pos(self, bv_t, max_len_w):
 
-        pos_id = 0 if self._revese else -1
+        pos_id = 0 if self._reverse else -1
         bv_pos = self.get_pos(bv_t, pos_id)
         bv_pos_delim = self.add_eos(self.add_go(bv_pos))
         bv_pos_pad = self.pad(bv_pos_delim, max_len_w)

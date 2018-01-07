@@ -46,6 +46,8 @@ def main(_):
     ds_range = {'train': (args.train_min, args.train_max),
                 'dev': (args.dev_min, args.dev_max),
                 'test': (args.test_min, args.test_max)}
+    batch_prop = {'batch_size' : args.batch, 'reverse' : args.reverse}
+
     # create vocabulary and array of dataset from train file
     print('==================================================================')
     print("[[POST:]] Generating dataset and vocabulary")
@@ -55,9 +57,7 @@ def main(_):
                         (time.time()-start_time))
 
     # initializing batcher class
-    batcher_train = Batcher(dataset['train'], args.batch, args.reverse)
-    batcher_dev = Batcher(dataset['dev'], args.batch, args.reverse)
-    batcher_test = Batcher(dataset['test'], args.batch, args.reverse)
+    batcher = Batcher(**batch_prop)
 
     # Update config variables
     Config.ModelParms.batch_size = args.batch
@@ -85,7 +85,7 @@ def main(_):
         for k in sorted(Config.ModelParms.__dict__.iterkeys()):
             if not k.startswith('__'):
                 print '[[POST:]] %s: %s' % (k, Config.ModelParms.__dict__[k])
-        POST_train.train(Config, batcher_train, batcher_dev)
+        POST_train.train(Config, batcher, ds.dataset)
 
     elif (args.action == 'decode'):
         import datetime
@@ -93,7 +93,8 @@ def main(_):
         fname = '_'.join(['ds', str(args.test_min), str(args.test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        decoded_trees = POST_decode.decode(Config, vocab, batcher_test, t_op)
+        batcher.use_data(ds.dataset['test'])
+        decoded_trees = POST_decode.decode(Config, ds.vocab, batcher, ds.t_op)
         decoded_tags = trees_to_ptb(decoded_trees)
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)

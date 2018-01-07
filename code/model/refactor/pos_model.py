@@ -175,13 +175,15 @@ class POSModel(BasicModel):
                 sys.stdout.flush()
         return ret_loss
 
-    def train(self, batcher_train, batcher_dev):
+    def train(self, batcher, dataset):
         dev_loss = np.inf
         while dev_loss > self.config['th_loss']:
+            batcher.use_data(dataset['train'])
             for epoch_id in range(0, self.num_epochs):
-                self.train_epoch(batcher_train)
+                self.train_epoch(batcher)
+            batcher.use_data(dataset['dev'])
             for epoch_id in range(0, self.num_epochs):
-                dev_loss = self.train_epoch(batcher_dev, True)
+                dev_loss = self.train_epoch(batcher, True)
 
     def decode(self, w_in, w_len, c_in, c_len):
         input_feed = {self.w_in: bv['word']['in'],

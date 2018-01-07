@@ -31,7 +31,6 @@ def decode_batch(beam_pair, word_tokens, no_val_gap, num_goals, time_out):
     for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
         print ("Staring astar search for sentence %d /"
                 " %d [tag length %d]" %(i+1, num_sentences, len(beam_tag)))
-
         if all(beam_tag):
             trees = solve_tree_search(beam_tag, sent, no_val_gap, num_goals, time_out)
         else:

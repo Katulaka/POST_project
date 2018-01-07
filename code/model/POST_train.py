@@ -66,10 +66,12 @@ def _dev(config, batcher):
             sys.stdout.flush()
         return loss
 
-def train(config, batcher_train, batcher_dev):
+def train(config, batcher, dataset):
 
     # This is the training loop.
     dev_losses = [np.inf]
     while dev_losses[-1] > config.th_loss:
-        _train(config, batcher_train)
-        dev_losses.append(_dev(config, batcher_dev))
+        batcher.use_data(dataset['train'])
+        _train(config, batcher)
+        batcher.use_data(dataset['dev'])
+        dev_losses.append(_dev(config, batcher))

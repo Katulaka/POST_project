@@ -21,19 +21,18 @@ def main(_):
     config['nwords'] = vocab['words'].vocab_size()
     config['nchars'] = vocab['chars'].vocab_size()
     print ("[[POST]] %.3f to get dataset and vocabulary" %(time.time()-start_t))
+    # initializing batcher class
+    batcher = Batcher(**config['btch'])
+
 
     model = POSModel(config) if config['pos'] else STAGModel(config)
-    # initializing batcher class
-    batcher_train = Batcher(dataset['train'], config['batch_size'], config['reverse'])
-    batcher_dev = Batcher(dataset['dev'], config['batch_size'], config['reverse'])
-    batcher_test = Batcher(dataset['test'], config['batch_size'], config['reverse'])
 
     if (config['mode'] == 'train'):
         print('==================================================================')
         print("[[POST]] Starting model training.")
         for k,v in config.items():
             print '[[Model Params]] %s: %s' % (k, v)
-        model.train(batcher_train, batcher_dev)
+        model.train(batcher, ds.dataset)
 
     elif (config['mode'] == 'decode'):
         print('==================================================================')
@@ -44,7 +43,8 @@ def main(_):
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')
-        decode_trees = model.decode(vocab, batcher_test, t_op)
+        batcher.use_data(ds.dataset['test'])
+        decode_trees = model.decode(ds.vocab, batcher, ds.t_op)
         decoded_tags = trees_to_ptb(decode_tags)
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
