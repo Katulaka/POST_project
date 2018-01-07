@@ -10,10 +10,9 @@ ANY = '*'
 
 class TagOp(object):
 
-    def __init__(self, pos, direction, no_val_gap):
-        self.direction = direction
-        self.pos = pos
-        self.no_val_gap = no_val_gap
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, v)
 
     def _mod_tag(self, tag, l_sym, r_sym):
         return tag.replace(L, l_sym+L+r_sym).replace(R, l_sym+R+r_sym)

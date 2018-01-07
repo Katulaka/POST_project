@@ -6,24 +6,24 @@ import json
 from model.refactor.pos_model import POSModel
 from model.refactor.stag_model import STAGModel
 from utils.batcher import Batcher
-from utils.dataset import _gen_dataset
+from utils.dataset import Dataset
 from utils.parse_cmdline import parse_cmdline
 from utils.tags.tree_t import trees_to_ptb
 
 def main(_):
     config = parse_cmdline()
-    # create vocabulary and array of dataset from train file
     print('==================================================================')
-    print("[[POST:]] Generating dataset and vocabulary")
-    start_t = time.time()
-    vocab, dataset, t_op, tags, gold = _gen_dataset(config)
-    config['npos'] = config['ntags'] = vocab['tags'].vocab_size()
-    config['nwords'] = vocab['words'].vocab_size()
-    config['nchars'] = vocab['chars'].vocab_size()
-    print ("[[POST]] %.3f to get dataset and vocabulary" %(time.time()-start_t))
+    # create vocabulary and array of dataset from train file
+    ds = Dataset(config['ds'])
+    data = ds.gen_dataset()
+    gold = ds.gen_gold()
+    print('==================================================================')
     # initializing batcher class
     batcher = Batcher(**config['btch'])
 
+    for k in ds.vocab.keys():
+        config['n'+k] = ds.nsize[k]
+    config['npos'] = config['ntags']
 
     model = POSModel(config) if config['pos'] else STAGModel(config)
 
@@ -39,7 +39,7 @@ def main(_):
         print("[[POST]] Starting model decodeing")
         import datetime
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
-        test_min, test_max = config['ds_range']['test']
+        test_min, test_max = config['ds']['ds_range']['test']
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
         dec_file = os.path.join('decode', fname + '.test')
         gold_file = os.path.join('decode', fname + '.gold')

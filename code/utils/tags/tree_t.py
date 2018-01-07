@@ -1,7 +1,8 @@
 import copy
+from nltk.tree import Tree as Tree_
 from treelib import Tree
-from utils.tags.tag_ops import R, L, CL, CR
 from utils.utils import _getattr_operate_on_Narray
+from utils.tags.tag_ops import R, L, CL, CR
 
 class TreeData(object):
     def __init__(self, height=0, lids=[], miss_side='', comb_side='', word =''):
@@ -218,3 +219,34 @@ class TreeT(object):
 
 def trees_to_ptb(trees):
     return _getattr_operate_on_Narray(trees, 'from_tree_to_ptb')
+
+def get_dependancies(fin, penn_path='code/utils/pennconverter.jar'):
+
+    dep_dict_file = []
+    dep_dict_tree = {}
+    lines = os.popen("java -jar "+penn_path+"< "+fin+" -splitSlash=false").read().split('\n')
+
+    for line in lines:
+        words = line.split()
+        if words:
+            dep_dict_tree[int(words[0])] = int(words[6])
+        else:
+            dep_dict_file.append(dep_dict_tree)
+            dep_dict_tree = {}
+
+    return dep_dict_file
+
+def gen_tags(fin):
+
+    tree_deps = get_dependancies(fin)
+    with open(fin) as f:
+        # lines = [x.strip('\n') for x in f.readlines()]
+        for i, line in enumerate(f.readlines()):
+
+            line = line.strip('\n')
+            #max_id is the number of words in line + 1.
+            # This is index kept in order to number words from 1 to num of words
+            max_id = len(Tree_.fromstring(line).leaves()) + 1
+            line = line.replace('(', ' ( ').replace(')', ' ) ').split()
+            tree = TreeT()
+            return tree.from_ptb_to_tag(line, max_id, tree_deps[i])

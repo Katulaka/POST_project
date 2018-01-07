@@ -37,23 +37,33 @@ def parse_cmdline():
 
     config = dict()
 
+    config['ds'] = {}
+    config['ds']['tags_type'] = {'direction': args.keep_direction,
+                                'pos': args.only_pos,
+                                'no_val_gap': args.no_val_gap}
+
+    config['ds']['ds_range'] = {'train': (args.train_min, args.train_max),
+                                'dev': (args.dev_min, args.dev_max),
+                                'test': (args.test_min, args.test_max)}
+
+    config['ds']['dir_range'] = {'train': (2,22),
+                                'dev': (22,23),
+                                'test': (23,24)}
+
+    config['ds']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
+    ds_dir = 'data'
+    ds_fname = 'data.txt'
+    gold_fname = 'gold'
+    config['ds']['ds_file'] = os.path.join(os.getcwd(), ds_dir, ds_fname)
+    config['ds']['src_dir'] = '../gold_data'
+    config['ds']['gold_file'] = os.path.join(os.getcwd(), ds_dir, gold_fname)
+
     config['btch'] = {}
     config['btch']['batch_size'] = args.batch
     config['btch']['reverse'] = args.reverse
 
 
     config['no_val_gap'] = args.no_val_gap #TODO maybe do something better with tag attributes
-    config['tags_type'] = (args.only_pos, args.keep_direction, args.no_val_gap)
-    config['ds_range'] = {'train': (args.train_min, args.train_max),
-                            'dev': (args.dev_min, args.dev_max),
-                            'test': (args.test_min, args.test_max)}
-
-    config['src_dir'] = '../gold_data'
-    config['ds_dir'] = 'data'
-    config['ds_fname'] = 'data.txt'
-    config['gold_fname'] = 'gold'
-    config['gold_file'] = os.path.join(os.getcwd(), config['ds_dir'], config['gold_fname'])
-    config['ds_file'] = os.path.join(os.getcwd(), config['ds_dir'], config['ds_fname'])
 
     config['model_name'] = args.model_name
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)

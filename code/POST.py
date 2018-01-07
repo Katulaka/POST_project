@@ -4,7 +4,7 @@ import time
 import os
 import json
 
-from utils.dataset import gen_dataset
+from utils.dataset import Dataset
 import model.POST_decode as POST_decode
 import model.POST_train as POST_train
 from utils.conf import Config
@@ -42,28 +42,36 @@ def main(_):
 
     args = parser.parse_args()
 
-    tags_type = (args.only_pos, args.keep_direction, args.no_val_gap)
-    ds_range = {'train': (args.train_min, args.train_max),
-                'dev': (args.dev_min, args.dev_max),
-                'test': (args.test_min, args.test_max)}
+    tags_type = {'direction' : args.keep_direction,'pos' : args.only_pos,
+                'no_val_gap' : args.no_val_gap}
+    ds_range = {'train' : (args.train_min, args.train_max),
+                'dev' : (args.dev_min, args.dev_max),
+                'test' : (args.test_min, args.test_max)}
+    dir_range = {'train' : (2,22), 'dev' : (22,23), 'test' : (23,24)}
+    nsize = {'tags' : 0, 'words' : 0, 'chars' : 0}
+    config_ds = {'tags_type' : tags_type, 'ds_range' : ds_range,
+                'nsize' : nsize, 'dir_range' : dir_range,
+                'ds_file' : Config.ds_file, 'gold_file' : Config.gold_file}
+
     batch_prop = {'batch_size' : args.batch, 'reverse' : args.reverse}
 
     # create vocabulary and array of dataset from train file
     print('==================================================================')
     print("[[POST:]] Generating dataset and vocabulary")
     start_time = time.time()
-    vocab, dataset, t_op, tags, gold = gen_dataset(Config, tags_type, ds_range)
-    print ("[[POST:]] %.3fs to get dataset and vocabulary " %
-                        (time.time()-start_time))
+    ds = Dataset(config_ds)
+    data = ds.gen_dataset()
+    gold = ds.gen_gold()
+    print ("[[POST:]] %.3fs to get dataset and vocabulary " % (time.time()-start_time))
 
     # initializing batcher class
     batcher = Batcher(**batch_prop)
 
     # Update config variables
     Config.ModelParms.batch_size = args.batch
-    Config.ModelParms.ntags = vocab['tags'].vocab_size()
-    Config.ModelParms.nwords = vocab['words'].vocab_size()
-    Config.ModelParms.nchars = vocab['chars'].vocab_size()
+    Config.ModelParms.ntags = ds.nsize['tags']
+    Config.ModelParms.nwords = ds.nsize['words']
+    Config.ModelParms.nchars = ds.nsize['chars']
     Config.ModelParms.attn = args.attn
     Config.ModelParms.comb_loss = args.comb_loss
     Config.ModelParms.pos = args.pos
