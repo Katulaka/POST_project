@@ -15,7 +15,6 @@ class Dataset(object):
     def __init__(self, config):
         for name, value in config.items():
             setattr(self, name, config[name])
-        import pdb; pdb.set_trace()
         for name in ['dataset', 'vocab', 'size', 'idx']:
             setattr(self, name, dict())
 
