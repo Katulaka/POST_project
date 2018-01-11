@@ -86,12 +86,12 @@ class Dataset(object):
                             (time.time()-start_time, k, self.size[k]))
 
     def slice(self, ds_range):
+        import pdb; pdb.set_trace()
         for k, ds in self.dataset.items():
             start_time = time.time()
             self.idx[k] = [ds_range[k][0] <= len(w) <= ds_range[k][1] for w in ds['words']]
-            import pdb; pdb.set_trace()
-            for d in ds.values():
-                d = _select(d, self.idx[k])
+            for kd in ds.keys():
+                ds[kd] = _select(ds[kd], self.idx[k])
             print ("[[Dataset.slice]] %.5f to keep %s data in range %s" %
                             (time.time()-start_time, k, ds_range[k]))
 
