@@ -97,7 +97,6 @@ class Dataset(object):
     def modify(self, tags_type):
         start_time = time.time()
         self.t_op = TagOp(**tags_type)
-        import pdb; pdb.set_trace()
         for d in self.dataset.values():
             d['tags'] = self.t_op.modify_fn(d['tags'])
             d['chars'] = [[list(w) for w in s] for s in d['words']]
@@ -142,6 +141,7 @@ class Dataset(object):
         self.modify(self.tags_type)
         self.to_ids(self.nsize)
         print("[[Dataset.gen_dataset]] Total time %.3f"  % (time.time()-start_time))
+        import pdb; pdb.set_trace()
         return data
 
     def gen_gold(self):
