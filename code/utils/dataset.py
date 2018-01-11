@@ -91,8 +91,9 @@ class Dataset(object):
             self.idx[k] = [ds_range[k][0] <= len(w) <= ds_range[k][1] for w in ds['words']]
             for kd in ds.keys():
                 ds[kd] = _select(ds[kd], self.idx[k])
-            print ("[[Dataset.slice]] %.5f to keep %s data in range %s" %
-                            (time.time()-start_time, k, ds_range[k]))
+            self.size[k] = len(self.dataset[k]['words'])
+            print ("[[Dataset.slice]] %.5f to slice %s in range %s: %s entries" %
+                            (time.time()-start_time, k, ds_range[k], self.size[k]))
 
     def modify(self, tags_type):
         start_time = time.time()
@@ -141,7 +142,6 @@ class Dataset(object):
         self.modify(self.tags_type)
         self.to_ids(self.nsize)
         print("[[Dataset.gen_dataset]] Total time %.3f"  % (time.time()-start_time))
-        import pdb; pdb.set_trace()
         return data
 
     def gen_gold(self):
