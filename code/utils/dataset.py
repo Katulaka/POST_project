@@ -86,7 +86,6 @@ class Dataset(object):
                             (time.time()-start_time, k, self.size[k]))
 
     def slice(self, ds_range):
-        import pdb; pdb.set_trace()
         for k, ds in self.dataset.items():
             start_time = time.time()
             self.idx[k] = [ds_range[k][0] <= len(w) <= ds_range[k][1] for w in ds['words']]
@@ -98,6 +97,7 @@ class Dataset(object):
     def modify(self, tags_type):
         start_time = time.time()
         self.t_op = TagOp(**tags_type)
+        import pdb; pdb.set_trace()
         for d in self.dataset.values():
             d['tags'] = self.t_op.modify_fn(d['tags'])
             d['chars'] = [[list(w) for w in s] for s in d['words']]
