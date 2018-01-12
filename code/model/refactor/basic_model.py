@@ -43,9 +43,13 @@ class BasicModel(object):
             self.saver = tf.train.Saver(max_to_keep=4)
             self.init_op = tf.global_variables_initializer()
 
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        sessConfig = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.Session(config=sessConfig, graph=self.graph)
+        # gpu_options = tf.GPUOptions(allow_growth=True)
+        # sessConfig = tf.ConfigProto(gpu_options=gpu_options)
+        sess_config = tf.ConfigProto(allow_soft_placement=True)
+        sess_config.gpu_options.allocator_type = 'BFC'
+        sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
+        sess_config.gpu_options.allow_growth=True
+        self.sess = tf.Session(config=sess_config, graph=self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()

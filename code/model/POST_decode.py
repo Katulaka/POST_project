@@ -43,7 +43,11 @@ def decode(config, vocab, batcher, t_op):
     batch_list = batcher.get_batch()
 
     decode_graph = tf.Graph()
-    with tf.Session(graph=decode_graph) as sess:
+    sess_config = tf.ConfigProto(allow_soft_placement=True)
+    sess_config.gpu_options.allocator_type = 'BFC'
+    sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
+    sess_config.gpu_options.allow_growth=True
+    with tf.Session(config=sess_config, graph=decode_graph) as sess:
         model = get_model(sess, config, decode_graph)
 
         decoded_trees = []
@@ -56,8 +60,8 @@ def decode(config, vocab, batcher, t_op):
                                             config.num_goals,
                                             config.time_out))
             import pdb; pdb.set_trace()
-            # f = open('decode_trees', 'wb')
-            # cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
-            # f.close()
+            f = open('decode_trees', 'wb')
+            cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
+            f.close()
 
     return decoded_trees

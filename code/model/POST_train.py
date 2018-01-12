@@ -17,11 +17,11 @@ def save_ckpt(sess, model, ckpt_path, ckpt_dir):
                 raise
     model.saver.save(sess, ckpt_path, global_step=model.global_step)
 
-def _train(config, batcher):
+def _train(config, batcher, sess_config):
 
     step_time, loss = 0.0, 0.0
     train_graph = tf.Graph()
-    with tf.Session(graph = train_graph) as sess:
+    with tf.Session(config=sess_config, graph = train_graph) as sess:
         model = get_model(sess, config, train_graph, 'train')
         current_step = model._step.eval()
         for i in range(config.num_epochs):
@@ -46,11 +46,11 @@ def _train(config, batcher):
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
 
-def _dev(config, batcher):
+def _dev(config, batcher, sess_config):
 
     step_time, tot_loss = 0.0, 0.0
     dev_graph = tf.Graph()
-    with tf.Session(graph=dev_graph) as sess:
+    with tf.Session(config= sess_config, graph=dev_graph) as sess:
         model = get_model(sess, config, dev_graph)
         current_step =  0
         for bv in batcher.get_permute_batch():
@@ -70,8 +70,12 @@ def train(config, batcher, dataset):
 
     # This is the training loop.
     dev_losses = [np.inf]
+    sess_config = tf.ConfigProto(allow_soft_placement=True)
+    sess_config.gpu_options.allocator_type = 'BFC'
+    sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
+    sess_config.gpu_options.allow_growth=True
     while dev_losses[-1] > config.th_loss:
         batcher.use_data(dataset['train'])
-        _train(config, batcher)
+        _train(config, batcher, sess_config)
         batcher.use_data(dataset['dev'])
-        dev_losses.append(_dev(config, batcher))
+        dev_losses.append(_dev(config, batcher, sess_config))
