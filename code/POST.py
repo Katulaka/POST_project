@@ -105,7 +105,7 @@ def main(_):
         decoded_trees = POST_decode.decode(Config, ds.vocab, batcher, ds.t_op)
         decoded_tags = trees_to_ptb(decoded_trees)
         with open(dec_file, 'w') as outfile:
-            json.dump(decode_tags, outfile)
+            json.dump(decoded_tags, outfile)
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
 
