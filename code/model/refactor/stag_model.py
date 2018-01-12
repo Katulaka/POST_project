@@ -21,6 +21,9 @@ class STAGModel(BasicModel):
         self.initializer = tf.contrib.layers.xavier_initializer()
         self.optimizer_fn = tf.train.GradientDescentOptimizer(self.lr)
         self.init_op = tf.global_variables_initializer()
+        if self.config['use_pretrained_pos']:
+            self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
+            self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
@@ -231,21 +234,22 @@ class STAGModel(BasicModel):
 
         """"TRAIN Part """
     def pos_step(self, bv):
-        pos_g = self.load_graph(self.config['frozen_graph_fname'])
+        # pos_g = self.load_graph(self.config['frozen_graph_fname'])
         input_feed = {}
-        for op in pos_g.get_operations():
+        for op in self.pos_g.get_operations():
             #get only name wihtout the scope
             op_key = op.name.split('/')[-1]
             #if operation is placeholder
             #get the tensor from graph and assign the input batch vector
             if 'placeholders' in op.name:
-                tf_key = pos_g.get_tensor_by_name(op.name+':0')
+                tf_key = self.pos_g.get_tensor_by_name(op.name+':0')
                 bv_key = op_key.split('-')
                 input_feed[tf_key] = bv[bv_key[0]][bv_key[-1]]
             #if operation is the prediction get the tensor from grapg
             if op_key == 'pos_pred':
-                out = pos_g.get_tensor_by_name(op.name+':0')
-        return tf.Session(config = self.sess_config, graph = pos_g).run(out, input_feed)
+                out = self.pos_g.get_tensor_by_name(op.name+':0')
+        # return tf.Session(config = self.sess_config, graph = pos_g).run(out, input_feed)
+        return self.pos_sess.run(out, input_feed)
 
     def step(self, bv, dev=False):
         """ Training step, returns the loss"""
