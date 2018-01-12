@@ -155,6 +155,7 @@ class POSModel(BasicModel):
         steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
         for bv in batcher.get_permute_batch():
             start_time = time.time()
+            import pdb; pdb.set_trace()
             step_loss, _ = self.step(batcher.process(bv), dev)
             current_step += 1
             step_time += (time.time() - start_time) / steps_per_ckpt
@@ -185,6 +186,7 @@ class POSModel(BasicModel):
             for epoch_id in range(0, self.num_epochs):
                 dev_loss = self.train_epoch(batcher, True)
 
+    #TODO have decode like stag
     def decode(self, w_in, w_len, c_in, c_len):
         input_feed = {self.w_in: bv['word']['in'],
                     self.word_len: w_len,
