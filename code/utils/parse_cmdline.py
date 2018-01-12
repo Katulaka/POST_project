@@ -12,7 +12,7 @@ def parse_cmdline():
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
     parser.add_argument('--model_name', type=str, default='stags', help='')
-    parser.add_argument('--pos_model', type=str, default='pos', help='')
+    parser.add_argument('--pos_model', type=str, default=None, help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
     parser.add_argument('--use_pos', action='store_true', help='')
@@ -75,7 +75,8 @@ def parse_cmdline():
     config['comb_loss'] = args.comb_loss
     config['pos'] = args.pos
     config['use_c_embed'] = args.use_c_embed
-    config['use_pretrained_pos'] = args.use_pos
+    # config['use_pretrained_pos'] = args.use_pos
+    config['use_pretrained_pos'] = args.pos_model != None
     config['mode'] = args.action
 
     #embedding size
