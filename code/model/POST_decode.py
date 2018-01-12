@@ -59,7 +59,6 @@ def decode(config, vocab, batcher, t_op):
                                             config.no_val_gap,
                                             config.num_goals,
                                             config.time_out))
-            import pdb; pdb.set_trace()
             f = open('decode_trees', 'wb')
             cPickle.dump(decoded_trees, f, protocol=cPickle.HIGHEST_PROTOCOL)
             f.close()
