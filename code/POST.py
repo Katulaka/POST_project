@@ -108,7 +108,8 @@ def main(_):
             json.dump(decoded_tags, outfile)
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
-
+    elif(args.action == 'debug'):
+        import pdb; pdb.set_trace()
     # elif(args.action == 'stats'):
     #     stats = POST_decode.stats(Config, vocab, batcher_test, t_op,
     #                                 args.stat_file)
