@@ -30,7 +30,7 @@ def main(_):
         print('==================================================================')
         print("[[POST]] Starting model training.")
         for k,v in config.items():
-            print '[[Model Params]] %s: %s' % (k, v)
+            print ('[[Model Params]] %s: %s' % (k, v))
         model.train(batcher, ds.dataset)
 
     elif (config['mode'] == 'decode'):
