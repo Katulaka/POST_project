@@ -146,8 +146,8 @@ class POSModel(BasicModel):
         if not dev:
             output_feed = [self.loss, self.optimizer]
         else:
-            output_feed = self.loss
-        return self.sess.run(output_feed, input_feed)
+            output_feed = [self.loss]
+        return self.sess.run(output_feed, input_feed)[0]
 
     def train_epoch(self, batcher, dev=False):
         step_time, loss = 0.0, 0.0
@@ -155,9 +155,7 @@ class POSModel(BasicModel):
         steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            if dev:
-                import pdb; pdb.set_trace()
-            step_loss, _ = self.step(batcher.process(bv), dev)
+            step_loss = self.step(batcher.process(bv), dev)
             current_step += 1
             step_time += (time.time() - start_time) / steps_per_ckpt
             loss += step_loss / steps_per_ckpt
