@@ -245,7 +245,7 @@ class STAGModel(BasicModel):
             #if operation is the prediction get the tensor from grapg
             if op_key == 'pos_pred':
                 out = pos_g.get_tensor_by_name(op.name+':0')
-        return tf.Session(graph = pos_g).run(out, input_feed)
+        return tf.Session(config = self.sess_config, graph = pos_g).run(out, input_feed)
 
     def step(self, bv, dev=False):
         """ Training step, returns the loss"""

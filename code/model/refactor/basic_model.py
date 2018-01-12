@@ -45,11 +45,11 @@ class BasicModel(object):
 
         # gpu_options = tf.GPUOptions(allow_growth=True)
         # sessConfig = tf.ConfigProto(gpu_options=gpu_options)
-        sess_config = tf.ConfigProto(allow_soft_placement=True)
-        sess_config.gpu_options.allocator_type = 'BFC'
-        sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
-        sess_config.gpu_options.allow_growth=True
-        self.sess = tf.Session(config=sess_config, graph=self.graph)
+        self.sess_config = tf.ConfigProto(allow_soft_placement=True)
+        self.sess_config.gpu_options.allocator_type = 'BFC'
+        self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
+        self.sess_config.gpu_options.allow_growth=True
+        self.sess = tf.Session(config=self.sess_config, graph=self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()
