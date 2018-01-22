@@ -13,10 +13,14 @@ class Batcher(object):
     def __init__(self, **kwargs):
         for k,v in kwargs.items():
             setattr(self, '_'+k, v)
+        self._vocab = []
 
     def use_data(self, data):
         self._data = data
         self._d_size = len(data.values()[0])
+
+    def use_vocab(self, vocab):
+        self._vocab = vocab
 
     def get_batch_size(self):
         return self._batch_size
@@ -115,9 +119,22 @@ class Batcher(object):
         return [dict(zip(('words','tags','chars'),(w,t,c)))
                         for w,t,c in zip(words, tags, chars)]
 
+    def id_to_unk(self, _id, vocab):
+        rnd_val = np.random.random()
+        prob = 1./(1+vocab.get_count(_id))
+        unk_id = vocab.get_unk_id()
+        return _id if rnd_val > prob else unk_id
+
+    def to_unks(self, bv, vocab):
+        return _operate_on_Narray(bv, self.id_to_unk, vocab)
+
+    # def process_words(self, bv_w, vocab):
     def process_words(self, bv_w):
 
         #Process words input batch
+        import pdb; pdb.set_trace()
+        if self._vocab != []:
+            bv_w = self.to_unks(bv_w, self._vocab['words'])
         #Add GO tken and EOS token
         bv_w_delim = self.add_eos(self.add_go(bv_w))
         #Find lenght of each sentence in batch
@@ -178,12 +195,14 @@ class Batcher(object):
         seq_len_c = np.reshape(seq_len_c, [-1])
         return seq_len_c, bv_c_in
 
+    # def process(self, bv, vocab):
     def process(self, bv):
         batch = dict()
         #TODO do i really need the deepcopy?
         bv_w = copy.deepcopy(bv['words'].tolist())
         self._seq_len = self.seq_len(bv_w)
         seq_len_w, bv_w_in, max_len_w = self.process_words(bv_w)
+        # seq_len_w, bv_w_in, max_len_w = self.process_words(bv_w, vocab['words'])
         batch.update({'word': {'in': bv_w_in, 'len': seq_len_w}})
 
         bv_t = copy.deepcopy(bv['tags'].tolist())

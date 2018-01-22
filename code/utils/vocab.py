@@ -69,3 +69,9 @@ class Vocab(object):
 
     def get_ctrl_tokens(self):
         return self._special_tokens
+
+    def get_unk_id(self):
+        return UNK[1]
+
+    def get_count(self, ids):
+        return self._count[ids][1]

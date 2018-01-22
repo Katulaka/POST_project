@@ -93,6 +93,7 @@ def main(_):
         for k in sorted(Config.ModelParms.__dict__.iterkeys()):
             if not k.startswith('__'):
                 print '[[POST:]] %s: %s' % (k, Config.ModelParms.__dict__[k])
+        batcher.use_vocab(ds.vocab)
         POST_train.train(Config, batcher, ds.dataset)
 
     elif (args.action == 'decode'):
@@ -109,6 +110,36 @@ def main(_):
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
     elif(args.action == 'debug'):
+        import pdb; pdb.set_trace()
+    elif(args.action == 'evalb'):
+        pdir = '~/Berkeley/Research/Tagger'
+        evalb = os.path.join(pdir, 'EVALB', 'evalb')
+        pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
+        # ds_0_20_2018-01-12_07_23
+        # ds_21_40_2018-01-12_23_22
+        # ds_41_inf_2018-01-13_01_00
+        # for fname in ['ds_0_20_2018-01-12_07_23', 'ds_21_40_2018-01-12_23_22', 'ds_41_inf_2018-01-13_01_00']:
+        #     rng = '_'.join(fname.split('_')[1:2])
+        #     test_file = os.path.join(pdir, 'POST', 'decode', fname+'.test')
+        #     gold_file = os.path.join(pdir, 'POST', 'decode', fname+'.gold')
+        #     with open(gold_file, 'r') as gf:
+        #         gold = json.load(gf)
+        #     with open(test_file, 'r') as tf:
+        #         test = json.load(tf)
+        #     with open(rng+'.gold', 'w') as f:
+        #         for g in gold:
+        #             f.write(g+'\n')
+        #     with open(rng+'.test', 'w') as f:
+        #         for t in test:
+        #             t_ = t[0] if t!=[] else '';
+        #             f.write(t_+'\n')
+        #
+        #     gfile = os.path.join(path, rng+'.gold')
+        #     tfile = os.path.join(path, rng+'.test')
+        #     os.popen('%s -p %s %s %s > %s.eval' % (evalb, pfile, gfile, tfile, rng))
+        test_file = os.path.join(pdir, 'POST', 'decode', 'ds_0_20_2018-01-12_07_23.test')
+        with open(test_file, 'r') as tf:
+                test = json.load(tf)
         import pdb; pdb.set_trace()
     # elif(args.action == 'stats'):
     #     stats = POST_decode.stats(Config, vocab, batcher_test, t_op,
