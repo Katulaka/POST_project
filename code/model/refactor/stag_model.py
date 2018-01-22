@@ -234,7 +234,6 @@ class STAGModel(BasicModel):
 
         """"TRAIN Part """
     def pos_step(self, bv):
-        # pos_g = self.load_graph(self.config['frozen_graph_fname'])
         input_feed = {}
         for op in self.pos_g.get_operations():
             #get only name wihtout the scope
@@ -248,7 +247,6 @@ class STAGModel(BasicModel):
             #if operation is the prediction get the tensor from grapg
             if op_key == 'pos_pred':
                 out = self.pos_g.get_tensor_by_name(op.name+':0')
-        # return tf.Session(config = self.sess_config, graph = pos_g).run(out, input_feed)
         return self.pos_sess.run(out, input_feed)
 
     def step(self, bv, dev=False):
@@ -274,7 +272,6 @@ class STAGModel(BasicModel):
         steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
         for bv in batcher.get_permute_batch():
             start_time = time.time()
-            # step_loss, _ = self.step(batcher.process(bv), dev)
             step_loss = self.step(batcher.process(bv), dev)
             current_step += 1
             step_time += (time.time() - start_time) / steps_per_ckpt
