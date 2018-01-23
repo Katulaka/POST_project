@@ -66,10 +66,24 @@ class POSTModel(object):
                                                     self.char_in,
                                                     name='char-embed')
 
-            self.w_embed_mat = tf.get_variable('word-embeddings',
+            ch_embed_mat_pos = tf.get_variable('char-embedding-pos', dtype=self.dtype,
+                            shape=[self.nchars,self.dim_char],
+                            initializer=tf.contrib.layers.xavier_initializer())
+            self.char_embed_pos = tf.nn.embedding_lookup(ch_embed_mat_pos,
+                                                    self.char_in,
+                                                    name='char-embed-pos')
+
+            w_embed_mat_pos = tf.get_variable('word-embeddings-pos',
                             shape=[self.nwords,self.dim_word], dtype=self.dtype,
                             initializer=tf.contrib.layers.xavier_initializer())
-            self.word_embed = tf.nn.embedding_lookup(self.w_embed_mat,
+            self.word_embed_pos = tf.nn.embedding_lookup(w_embed_mat_pos,
+                                                    self.w_in,
+                                                    name='word-embed-pos')
+
+            w_embed_mat = tf.get_variable('word-embeddings',
+                            shape=[self.nwords,self.dim_word], dtype=self.dtype,
+                            initializer=tf.contrib.layers.xavier_initializer())
+            self.word_embed = tf.nn.embedding_lookup(w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
 
@@ -86,6 +100,64 @@ class POSTModel(object):
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
+    '''POS Graph elemnts'''
+
+    def _add_char_lstm_pos(self):
+        with tf.name_scope('char-LSTM-Layer-pos'):
+            char_cell = tf.contrib.rnn.BasicLSTMCell(self.hidden_char)
+
+            _, ch_state = tf.nn.dynamic_rnn(char_cell,
+                                            self.char_embed_pos,
+                                            sequence_length=self.char_len,
+                                            dtype=self.dtype,
+                                            scope='char-lstm-pos')
+
+            W_char = tf.get_variable('W_char-pos', dtype=self.dtype,
+                            shape=[self.hidden_char, self.dim_word],
+                            initializer=tf.contrib.layers.xavier_initializer())
+
+            char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
+            char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed_pos))
+            self.word_embed_f_pos = tf.concat([self.word_embed_pos, char_out_reshape],
+                                        -1, 'mod_word_embed')
+            self.dim_word_f_pos = self.dim_word * 2
+
+    def _add_char_bridge_pos(self):
+        with tf.name_scope('char-Bridge-pos'):
+            self.word_embed_f_pos = self.word_embed_pos
+            self.dim_word_f_pos = self.dim_word
+
+    def _add_pos_bidi_lstm(self):
+        """ Bidirectional LSTM """
+        with tf.name_scope('pos-LSTM-Layer'):
+            # Forward and Backward direction cell
+            pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
+            pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
+            # Get lstm cell output
+            self._pos_out, self.pos_s = tf.nn.bidirectional_dynamic_rnn(
+                                                pos_cell_fw,
+                                                pos_cell_bw,
+                                                self.word_embed_f_pos,
+                                                sequence_length=self.word_len,
+                                                dtype=self.dtype,
+                                                scope='pos-bidi')
+
+            self.pos_out = tf.concat(self._pos_out, -1, name='pos_out')
+
+    def _add_pos_prediction(self):
+        with tf.name_scope('POS-prediction'):
+            self.pos_logits = tf.layers.dense(self.pos_out, self.ntags)
+            self.pos_pred = tf.argmax(self.pos_logits, 2, name='pos_pred')
+
+    def _add_pos_loss(self):
+        with tf.name_scope('POS-loss'):
+            pos_in_1hot = tf.one_hot(self.pos_in, self.ntags)
+            pos_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                                                    logits=self.pos_logits,
+                                                    labels=pos_in_1hot)
+            self.pos_loss = tf.reduce_mean(pos_cross_entropy)
+
+    '''STAGS Graph elemnts'''
 
     def _add_char_lstm(self):
         with tf.name_scope('char-LSTM-Layer'):
@@ -111,36 +183,6 @@ class POSTModel(object):
         with tf.name_scope('char-Bridge'):
             self.word_embed_f = self.word_embed
             self.dim_word_f = self.dim_word
-
-    def _add_pos_bidi_lstm(self):
-        """ Bidirectional LSTM """
-        with tf.name_scope('pos-LSTM-Layer'):
-            # Forward and Backward direction cell
-            pos_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
-            pos_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.hidden_pos)
-            # Get lstm cell output
-            self._pos_out, self.pos_s = tf.nn.bidirectional_dynamic_rnn(
-                                                pos_cell_fw,
-                                                pos_cell_bw,
-                                                self.word_embed_f,
-                                                sequence_length=self.word_len,
-                                                dtype=self.dtype,
-                                                scope='pos-bidi')
-
-            self.pos_out = tf.concat(self._pos_out, -1, name='pos_out')
-
-    def _add_pos_prediction(self):
-        with tf.name_scope('POS-prediction'):
-            self.pos_logits = tf.layers.dense(self.pos_out, self.ntags)
-            self.pos_pred = tf.argmax(self.pos_logits, 2, name='pos_pred')
-
-    def _add_pos_loss(self):
-        with tf.name_scope('POS-loss'):
-            pos_in_1hot = tf.one_hot(self.pos_in, self.ntags)
-            pos_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                                                    logits=self.pos_logits,
-                                                    labels=pos_in_1hot)
-            self.pos_loss = tf.reduce_mean(pos_cross_entropy)
 
     def _add_word_bidi_lstm(self):
         """ Bidirectional LSTM """
@@ -273,10 +315,6 @@ class POSTModel(object):
                 self.global_step = tf.Variable(0, trainable=False, name='g_step')
                 self._add_placeholders()
                 self._add_embeddings()
-                if self.use_c_embed:
-                    self._add_char_lstm()
-                else:
-                    self._add_char_bridge()
                 with tf.name_scope("POS"):
                     self.build_pos_graph()
                 with tf.name_scope("SUPERTAGS"):
@@ -293,6 +331,10 @@ class POSTModel(object):
     def build_suptag_graph(self):
         """ Function builds the computation graph """
         self.suptag_step = tf.Variable(0, trainable=False, name='sup_step')
+        if self.use_c_embed:
+            self._add_char_lstm()
+        else:
+            self._add_char_bridge()
         self._add_word_bidi_lstm()
         self._add_tag_lstm_bridge()
         self._add_tag_lstm_layer()
@@ -308,6 +350,10 @@ class POSTModel(object):
 
     def build_pos_graph(self):
         self.pos_step = tf.Variable(0, trainable=False, name='pos_step')
+        if self.use_c_embed:
+            self._add_char_lstm_pos()
+        else:
+            self._add_char_bridge_pos()
         self._add_pos_bidi_lstm()
         self._add_pos_prediction()
         self._add_pos_loss()
