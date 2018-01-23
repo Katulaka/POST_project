@@ -132,7 +132,6 @@ class Batcher(object):
     def process_words(self, bv_w):
 
         #Process words input batch
-        import pdb; pdb.set_trace()
         if self._vocab != []:
             bv_w = self.to_unks(bv_w, self._vocab['words'])
         #Add GO tken and EOS token
