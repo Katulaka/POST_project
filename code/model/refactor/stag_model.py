@@ -46,29 +46,25 @@ class STAGModel(BasicModel):
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
-        with tf.variable_scope('embedding', initializer=self.initializer):
+        with tf.variable_scope('embedding', initializer=self.initializer, dtype=self.dtype):
 
             ch_mat_shape = [self.config['nchars'], self.config['dim_char']]
-            ch_embed_mat = tf.get_variable('ch-embed-mat', dtype=self.dtype,
-                                            shape=ch_mat_shape)
+            ch_embed_mat = tf.get_variable('ch-embed-mat', shape=ch_mat_shape)
             self.char_embed = tf.nn.embedding_lookup(ch_embed_mat, self.char_in,
                                                     name='char-embed')
 
             w_mat_shape = [self.config['nwords'], self.config['dim_word']]
-            w_embed_mat = tf.get_variable('word-embed-mat', dtype=self.dtype,
-                                            shape=w_mat_shape)
+            w_embed_mat = tf.get_variable('word-embed-mat', shape=w_mat_shape)
             self.word_embed = tf.nn.embedding_lookup(w_embed_mat, self.w_in,
                                                     name='word-embed')
 
             t_mat_shape = [self.config['ntags'], self.config['dim_tag']]
-            t_embed_mat = tf.get_variable('tag-embed-mat', dtype=self.dtype,
-                                            shape=t_mat_shape)
+            t_embed_mat = tf.get_variable('tag-embed-mat', shape=t_mat_shape)
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat, self.t_in,
                                                     name='tag-embed')
 
             pos_mat_shape = [self.config['npos'], self.config['dim_pos']]
-            pos_embed_mat = tf.get_variable('pos-embed-mat', dtype=self.dtype,
-                                            shape=pos_mat_shape)
+            pos_embed_mat = tf.get_variable('pos-embed-mat', shape=pos_mat_shape)
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat, self.pos_in,
                                                     name='pos-embed')
 
@@ -81,10 +77,10 @@ class STAGModel(BasicModel):
                                             sequence_length=self.char_len,
                                             dtype=self.dtype,
                                             scope='char-lstm')
-            W_ch_shape = [self.config['hidden_char'], self.config['dim_word']]
-            W_ch = tf.get_variable('W_ch', dtype=self.dtype, shape=W_ch_shape)
 
-            char_out = tf.einsum('aj,jk->ak', ch_state[1], W_ch)
+            char_out = tf.layers.dense(ch_state[1], self.config['dim_word'],
+                                        use_bias=False)
+                                        # kernel_initializer= self.init)
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
             self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
@@ -111,21 +107,18 @@ class STAGModel(BasicModel):
                                                             dtype=self.dtype)
             self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
-    def _add_tag_lstm_bridge(self):
-        with tf.variable_scope('tag-LSTM-Bridge'):
-            # LSTM
             self.attn_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
-            self.attn_shape = tf.shape(self.attn_state)
-            self.lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
-            self.dec_init_state = tf.reshape(self.attn_state, [-1, self.lstm_shape])
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            self.tag_init = tf.contrib.rnn.LSTMStateTuple(self.dec_init_state,
-                                        tf.zeros_like(self.dec_init_state))
+            lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
+            dec_init_state = tf.reshape(self.attn_state, [-1, lstm_shape])
 
-            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.lstm_shape)
+            self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
+                                        tf.zeros_like(dec_init_state))
+
+            tag_cell = tf.contrib.rnn.BasicLSTMCell(lstm_shape)
 
             self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
@@ -136,7 +129,8 @@ class STAGModel(BasicModel):
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
             lo_shape = tf.shape(self.lstm_out)
-            atten_key_shape = [self.attn_shape[0], -1, lo_shape[-1]]
+            attn_shape = tf.shape(self.attn_state)
+            atten_key_shape = [attn_shape[0], -1, lo_shape[-1]]
             self.atten_key = tf.reshape(self.lstm_out, atten_key_shape)
 
             # TODO: add feed forward layer for atten_key
@@ -145,44 +139,29 @@ class STAGModel(BasicModel):
                                             self.attn_state))
             score = tf.einsum('aij,ajk->aik', alpha, self.attn_state)
 
-            score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
+            score_tag = tf.reshape(score, lo_shape)
+            self.lstm_attn = tf.concat([self.lstm_out, score_tag], -1)
 
-            con_lstm_score = tf.concat([self.lstm_out, score_tag], -1)
-            w_att_shape = [self.lstm_shape * 2, self.config['hidden_tag']]
-            w_att = tf.get_variable('W-att', dtype=self.dtype, shape=w_att_shape)
+    def _add_projection(self, proj_in):
 
-            # b_att = tf.Variable(tf.zeros([self.hidden_tag]), name='b-att')
+        with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            # lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
-            lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik', con_lstm_score, w_att))
-
+            proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
+                                            activation=tf.tanh, use_bias=False)
             mask_t = tf.sequence_mask(self.tag_len)
-            self.proj_in = tf.boolean_mask(lstm_att_pad, mask_t)
+            v = tf.boolean_mask(proj_in_pad, mask_t)
 
-    def _add_project_bridge(self):
-        with tf.variable_scope('predic-bridge', initializer=self.initializer):
-
-            w_proj_shape = [self.lstm_shape, self.config['hidden_tag']]
-            w_proj = tf.get_variable('W-proj', dtype=self.dtype, shape=w_proj_shape)
-            proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
-            mask_t = tf.sequence_mask(self.tag_len)
-            self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
-
-    def _add_projection(self):
-        # compute softmax
-        with tf.variable_scope('predictions', initializer=self.initializer):
-
-            v = self.proj_in
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
-            E_out = tf.get_variable('E-out', shape=E_out_shape, dtype=self.dtype)
+            E_out = tf.get_variable('E-out', shape=E_out_shape)
             E_out_t = tf.transpose(E_out, name='E-out-t')
-            b_out = tf.get_variable('b-out', shape=[self.config['ntags']], dtype=self.dtype)
+            b_out = tf.get_variable('b-out', shape=[self.config['ntags']])
             E_t_E = tf.matmul(E_out_t, E_out)
             E_v = tf.matmul(v, E_out)
             E_v_E_t_E = tf.matmul(E_v, E_t_E)
             self.logits = E_v + b_out
             self.mod_logits = E_v_E_t_E + b_out
+            # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
     def _add_loss(self):
@@ -220,13 +199,14 @@ class STAGModel(BasicModel):
                 else:
                     self._add_char_bridge()
                 self._add_word_bidi_lstm()
-                self._add_tag_lstm_bridge()
+                # self._add_tag_lstm_bridge()
                 self._add_tag_lstm_layer()
                 if self.config['attn']:
                     self._add_attention()
+                    proj_in = self.lstm_attn
                 else:
-                    self._add_project_bridge()
-                self._add_projection()
+                    proj_in = self.lstm_out
+                self._add_projection(proj_in)
                 self._add_loss()
                 if (self.config['mode'] == 'train'):
                     self._add_train_op()
@@ -281,7 +261,7 @@ class STAGModel(BasicModel):
                 if not dev:
                     self.save()
                 perplex = math.exp(loss) if loss < 300 else float('inf')
-                print ("[[train_epoch:]] step %d learning rate %f step-time %.3f"
+                print ("[[train_epoch]] step %d learning rate %f step-time %.3f"
                            " perplexity %.6f (loss %.6f)" %
                            (current_step, self.sess.run(self.lr),
                            step_time, perplex, loss))
@@ -349,7 +329,7 @@ class STAGModel(BasicModel):
         decode_trees = []
         nsentences = len(word_tokens)
         for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
-            print ("Staring astar search for sentence %d/%d [tag length %d]"
+            print ("[[decode_batch]] Staring astar search for sentence %d/%d [tag length %d]"
                         %(i+1, nsentences, len(beam_tag)))
 
             if all(beam_tag):
