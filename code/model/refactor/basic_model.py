@@ -20,8 +20,8 @@ class BasicModel(object):
 
         self.config = copy.deepcopy(config)
 
-        if config['debug']: # This is a personal check i like to do
-            print('config', self.config)
+        # if config['debug']: # This is a personal check i like to do
+        #     print('config', self.config)
 
         self.num_epochs = self.config['num_epochs']
         # self.random_seed = self.config['random_seed']
