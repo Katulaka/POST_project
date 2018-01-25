@@ -37,6 +37,8 @@ class POSTModel(object):
         self.use_c_embed = model_parms.use_c_embed
         self.comb_loss = model_parms.comb_loss
 
+        self.init = tf.contrib.layers.xavier_initializer()
+
     def _add_placeholders(self):
         """Inputs to be fed to the graph."""
         #shape = (batch_size, max length of sentence, max lenght of word)
@@ -57,49 +59,46 @@ class POSTModel(object):
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
-        with tf.name_scope('embedding'):
+        # with tf.name_scope('embedding'):
 
-            ch_embed_mat = tf.get_variable('char-embedding', dtype=self.dtype,
-                            shape=[self.nchars,self.dim_char],
-                            initializer=tf.contrib.layers.xavier_initializer())
+        with tf.variable_scope('embedding', initializer=self.init, dtype=self.dtype):
+
+            ch_embed_mat = tf.get_variable('char-embedding',
+                                shape=[self.nchars,self.dim_char])
             self.char_embed = tf.nn.embedding_lookup(ch_embed_mat,
                                                     self.char_in,
                                                     name='char-embed')
 
-            ch_embed_mat_pos = tf.get_variable('char-embedding-pos', dtype=self.dtype,
-                            shape=[self.nchars,self.dim_char],
-                            initializer=tf.contrib.layers.xavier_initializer())
+            ch_embed_mat_pos = tf.get_variable('char-embedding-pos',
+                                    shape=[self.nchars,self.dim_char])
             self.char_embed_pos = tf.nn.embedding_lookup(ch_embed_mat_pos,
                                                     self.char_in,
                                                     name='char-embed-pos')
 
             w_embed_mat_pos = tf.get_variable('word-embeddings-pos',
-                            shape=[self.nwords,self.dim_word], dtype=self.dtype,
-                            initializer=tf.contrib.layers.xavier_initializer())
+                                    shape=[self.nwords,self.dim_word])
             self.word_embed_pos = tf.nn.embedding_lookup(w_embed_mat_pos,
                                                     self.w_in,
                                                     name='word-embed-pos')
 
             w_embed_mat = tf.get_variable('word-embeddings',
-                            shape=[self.nwords,self.dim_word], dtype=self.dtype,
-                            initializer=tf.contrib.layers.xavier_initializer())
+                                shape=[self.nwords,self.dim_word])
             self.word_embed = tf.nn.embedding_lookup(w_embed_mat,
                                                     self.w_in,
                                                     name='word-embed')
 
             t_embed_mat = tf.get_variable('tag-embeddings',
-                            shape=[self.ntags,self.dim_tag],dtype=self.dtype,
-                            initializer=tf.contrib.layers.xavier_initializer())
+                                shape=[self.ntags,self.dim_tag])
             self.tag_embed = tf.nn.embedding_lookup(t_embed_mat,
                                                     self.t_in,
                                                     name='tag-embed')
 
             pos_embed_mat = tf.get_variable('pos-embeddings',
-                            shape=[self.npos,self.dim_pos], dtype=self.dtype,
-                            initializer=tf.contrib.layers.xavier_initializer())
+                                shape=[self.npos,self.dim_pos])
             self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat,
                                                     self.pos_in,
                                                     name='pos-embed')
+
     '''POS Graph elemnts'''
 
     def _add_char_lstm_pos(self):
@@ -112,11 +111,9 @@ class POSTModel(object):
                                             dtype=self.dtype,
                                             scope='char-lstm-pos')
 
-            W_char = tf.get_variable('W_char-pos', dtype=self.dtype,
-                            shape=[self.hidden_char, self.dim_word],
-                            initializer=tf.contrib.layers.xavier_initializer())
-
-            char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
+            char_out = tf.layers.dense(ch_state[1], self.dim_word,
+                                        use_bias=False,
+                                        kernel_initializer=self.init)
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed_pos))
             self.word_embed_f_pos = tf.concat([self.word_embed_pos, char_out_reshape],
                                         -1, 'mod_word_embed')
@@ -157,6 +154,7 @@ class POSTModel(object):
                                                     labels=pos_in_1hot)
             self.pos_loss = tf.reduce_mean(pos_cross_entropy)
 
+
     '''STAGS Graph elemnts'''
 
     def _add_char_lstm(self):
@@ -169,11 +167,10 @@ class POSTModel(object):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            W_char = tf.get_variable('W_char', dtype=self.dtype,
-                            shape=[self.hidden_char, self.dim_word],
-                            initializer=tf.contrib.layers.xavier_initializer())
+            char_out = tf.layers.dense(ch_state[1], self.dim_word,
+                                        use_bias=False,
+                                        kernel_initializer= self.init)
 
-            char_out = tf.einsum('aj,jk->ak', ch_state[1], W_char)
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
             self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
@@ -227,54 +224,51 @@ class POSTModel(object):
         with tf.name_scope('Attention'):
             lo_shape = tf.shape(self.lstm_out)
 
+            #atten_key dims: [batch, wordsxtags, mod_dim]
+            #atten_state dims: [batch, words, mod_dim]
+            #lstm_out dims: [batchxwords, tags, mod_dim]
             self.atten_key = tf.reshape(self.lstm_out,
                                 [self.attn_shape[0], -1, lo_shape[-1]])
 
             # TODO: add feed forward layer for atten_key
+
+
+            # W_q = tf.get_variable('W_q', dtype=self.dtype,
+            #             shape=[TODO, lo_shape[-1]],
+            #             initializer=tf.contrib.layers.xavier_initializer())
+            # q = tf.nn.relu(tf.einsum('aij,akj->aik', W_q, self.lstm_out) ,name='q')
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
                                             self.atten_key,
                                             self.attn_state))
             score = tf.einsum('aij,ajk->aik', alpha, self.attn_state)
 
-            score_tag = tf.reshape(score, [-1, lo_shape[-2], lo_shape[-1]])
+            score_tag = tf.reshape(score, lo_shape)
 
             con_lstm_score = tf.concat([self.lstm_out, score_tag], -1)
 
-            w_att = tf.get_variable('W-att', dtype = self.dtype,
-                            shape=[self.lstm_shape * 2, self.hidden_tag],
-                            initializer=tf.contrib.layers.xavier_initializer())
-
-            # b_att = tf.Variable(tf.zeros([self.hidden_tag]), name='b-att')
-
-            # lstm_att_pad = tf.einsum('aij,jk->aik', con_lstm_score, w_att)
-
-            lstm_att_pad = tf.tanh(tf.einsum('aij,jk->aik', con_lstm_score,
-                                                w_att))
+            lstm_att_pad = tf.layers.dense(con_lstm_score, self.hidden_tag,
+                                            activation=tf.tanh,
+                                            use_bias=False)
 
             mask_t = tf.sequence_mask(self.tag_len)
             self.proj_in = tf.boolean_mask(lstm_att_pad, mask_t)
 
     def _add_project_bridge(self):
-        w_proj = tf.get_variable('W-proj', dtype = self.dtype,
-                            shape = [self.lstm_shape, self.hidden_tag],
-                            initializer=tf.contrib.layers.xavier_initializer())
-        proj_in_pad = tf.tanh(tf.einsum('aij,jk->aik', self.lstm_out, w_proj))
+        proj_in_pad = tf.layers.dense(self.lstm_out, self.hidden_tag,
+                                        activation=tf.tanh, use_bias=False,)
         mask_t = tf.sequence_mask(self.tag_len)
         self.proj_in = tf.boolean_mask(proj_in_pad, mask_t)
 
     def _add_projection(self):
         # compute softmax
-        with tf.name_scope('predictions'):
+        with tf.variable_scope('predictions', initializer=self.init, dtype=self.dtype):
 
             v = self.proj_in
             #E from notes
-            E_out = tf.get_variable('E-out', dtype=self.dtype,
-                            shape=[self.hidden_tag, self.ntags],
-                            initializer=tf.contrib.layers.xavier_initializer())
+            E_out = tf.get_variable('E-out', shape=[self.hidden_tag, self.ntags])
             E_out_t = tf.transpose(E_out, name='E-out-t')
-            b_out = tf.get_variable('b-out', shape=[self.ntags], dtype=self.dtype,
-                            initializer=tf.contrib.layers.xavier_initializer())
+            b_out = tf.get_variable('b-out', shape=[self.ntags])
             E_t_E = tf.matmul(E_out_t, E_out)
             E_v = tf.matmul(v, E_out)
             E_v_E_t_E = tf.matmul(E_v, E_t_E)
