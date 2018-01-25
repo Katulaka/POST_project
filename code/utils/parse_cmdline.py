@@ -95,10 +95,11 @@ def parse_cmdline():
     #training num epochs before evaluting the dev loss
     config['num_epochs'] = 1
     config['debug'] = True
-    config['pos_model'] = args.pos_model
-    pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
-    config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
-    config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
+    if not args.pos:
+        config['pos_model'] = args.pos_model
+        pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
+        config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
+        config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
     config['time_out'] = args.time_out
     config['num_goals'] = args.num_goals
     config['beam_size'] = args.beam
