@@ -241,8 +241,8 @@ class STAGModel(BasicModel):
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out']}
 
-        if self.config['use_pretrained_pos']:
-            input_feed[self.pos_in] = self.pos_step(bv)
+        # if self.config['use_pretrained_pos']:
+        #     input_feed[self.pos_in] = self.pos_step(bv)
         output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
         return self.sess.run(output_feed, input_feed)[0]
 
