@@ -1,6 +1,6 @@
-from astar import AStar
-from node_t import NodeT
-from tree_t_s import convert_to_TreeTS
+from .astar import AStar
+from .node_t import NodeT
+from .tree_t_s import convert_to_TreeTS
 
 class Solver(AStar):
 
