@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-from basic_model import BasicModel
+from .basic_model import BasicModel
 import time
 import math
 import sys
