@@ -151,9 +151,8 @@ class STAGModel(BasicModel):
 
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            # proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
-            #                                 activation=tf.tanh, use_bias=False)
-            proj_in_pad = proj_in
+            proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
+                                            activation=tf.tanh, use_bias=False)
             mask_t = tf.sequence_mask(self.tag_len)
             v = tf.boolean_mask(proj_in_pad, mask_t)
 
