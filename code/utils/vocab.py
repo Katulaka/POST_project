@@ -20,7 +20,7 @@ class Vocab(object):
 
         self._special_tokens = dict([PAD, GO, EOS, UNK])
         s_tokens_sort = sorted(self._special_tokens.items(), key=lambda x: x[1])
-        self._count = map(lambda t: [t[0], -1], s_tokens_sort)
+        self._count = list(map(lambda t: [t[0], -1], s_tokens_sort))
 
         if _size > 0 :
             common_tokens = collections.Counter(_text).most_common(_size - 1)
