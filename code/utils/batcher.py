@@ -4,8 +4,8 @@ import copy
 import numpy as np
 from itertools import islice
 
-from vocab import PAD, GO, EOS, UNK
-from utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
+from .vocab import PAD, GO, EOS, UNK
+from .utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
 
 
 class Batcher(object):

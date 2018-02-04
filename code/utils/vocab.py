@@ -3,7 +3,7 @@ from __future__ import print_function
 import collections
 import numpy as np
 
-from utils import operate_on_Narray, _operate_on_Narray
+from .utils import operate_on_Narray, _operate_on_Narray
 
 
 PAD = ['PAD', 0]
