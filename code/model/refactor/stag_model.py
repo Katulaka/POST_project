@@ -145,7 +145,7 @@ class STAGModel(BasicModel):
             c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
             context = tf.reshape(_context, [do_shape[0],do_shape[1],c_dim])
 
-            self.proj_in = tf.concat([self.decode_out, context], -1)
+            dec_out_w_attn = tf.concat([self.decode_out, context], -1)
 
             self.proj_in = tf.layers.dense(dec_out_w_attn,
                                             self.config['hidden_tag'],
