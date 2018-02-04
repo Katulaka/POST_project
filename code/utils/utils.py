@@ -1,5 +1,6 @@
 from multiprocessing import Process, Queue
 from itertools import chain
+import functools
 import numpy as np
 # import cPickle
 import _pickle as cPickle
@@ -24,7 +25,7 @@ def fast_copy(src):
 
 def repeated(f, n):
     def repeat(arg):
-        return reduce(lambda r, g: g(r), [f] * n, arg)
+        return functools.reduce(lambda r, g: g(r), [f] * n, arg)
     return repeat
 
 def flattenNd(A, n):
