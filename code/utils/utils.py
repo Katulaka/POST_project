@@ -1,7 +1,8 @@
 from multiprocessing import Process, Queue
 from itertools import chain
 import numpy as np
-import cPickle
+# import cPickle
+import _pickle as cPickle
 
 def _operate_on_Narray(A, function, *kwarg): #recursive up to the element level
     if isinstance(A, list):
