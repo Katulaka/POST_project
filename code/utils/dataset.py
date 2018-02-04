@@ -4,10 +4,10 @@ import os
 import json
 import time
 
-from tags.tree_t import gen_tags
-from tags.tag_ops import TagOp
-from utils import flatten_to_1D, _select
-from vocab import Vocab
+from .tags.tree_t import gen_tags
+from .tags.tag_ops import TagOp
+from .utils import flatten_to_1D, _select
+from .vocab import Vocab
 
 
 class Dataset(object):
