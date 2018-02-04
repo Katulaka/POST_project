@@ -145,16 +145,18 @@ class STAGModel(BasicModel):
             _context = tf.einsum('aij,ajk->aik', alpha, self.encode_state)
             context = tf.reshape(_context, [do_shape[0],do_shape[1],-1])
 
-            self.dec_out_w_attn = tf.concat([self.decode_out, context], -1)
+            dec_out_w_attn = tf.concat([self.decode_out, context], -1)
+            self.proj_in = tf.layers.dense(dec_out_w_attn, use_bias=False,
+                                            self.config['hidden_tag'],
+                                            activation=tf.tanh)
 
-    def _add_projection(self, proj_in):
+    def _add_projection(self):
 
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
-                                            activation=tf.tanh, use_bias=False)
+
             mask_t = tf.sequence_mask(self.tag_len)
-            v = tf.boolean_mask(proj_in_pad, mask_t)
+            v = tf.boolean_mask(self.proj_in, mask_t)
 
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
@@ -206,9 +208,13 @@ class STAGModel(BasicModel):
                 self._add_tag_lstm_layer()
                 if self.config['attn']:
                     self._add_attention()
-                    self.pi = proj_in = self.dec_out_w_attn
+                    # self.pi = proj_in = self.dec_out_w_attn
                 else:
-                    self.pi = proj_in = self.decode_out
+                    # self.pi = proj_in = self.decode_out
+                    self.proj_in = tf.layers.dense(self.decode_out,
+                                                    self.config['hidden_tag'],
+                                                    activation=tf.tanh,
+                                                    use_bias=False)
                 self._add_projection(proj_in)
                 self._add_loss()
                 if (self.config['mode'] == 'train'):
