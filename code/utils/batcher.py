@@ -17,7 +17,7 @@ class Batcher(object):
 
     def use_data(self, data):
         self._data = data
-        self._d_size = len(data.values()[0])
+        self._d_size = len(list(data.values())[0])
 
     def use_vocab(self, vocab):
         self._vocab = vocab
