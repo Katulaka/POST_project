@@ -146,9 +146,8 @@ class STAGModel(BasicModel):
             context = tf.reshape(_context, [do_shape[0],do_shape[1],-1])
 
             dec_out_w_attn = tf.concat([self.decode_out, context], -1)
-            self.proj_in = tf.layers.dense(dec_out_w_attn, use_bias=False,
-                                            self.config['hidden_tag'],
-                                            activation=tf.tanh)
+            self.proj_in = tf.layers.dense(dec_out_w_attn, self.config['hidden_tag'],
+                                            use_bias=False, activation=tf.tanh)
 
     def _add_projection(self):
 
