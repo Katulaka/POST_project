@@ -134,28 +134,34 @@ class STAGModel(BasicModel):
             do_shape = tf.shape(self.decode_out)
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, do_shape[-1]]
-            self.atten_key = tf.reshape(self.decode_out, ak_shape)
-            self.atten_query = tf.layers.dense(self.encode_state, self.dec_in_dim,
+            atten_k = tf.reshape(self.decode_out, ak_shape)
+            atten_q = tf.layers.dense(self.encode_state, self.dec_in_dim,
                                         activation=tf.nn.relu, use_bias=False)
 
-            alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', self.atten_key,
-                                    self.atten_query))
+            alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
                                             # self.encode_state))
 
             _context = tf.einsum('aij,ajk->aik', alpha, self.encode_state)
-            context = tf.reshape(_context, [do_shape[0],do_shape[1],-1])
+            c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
+            context = tf.reshape(_context, [do_shape[0],do_shape[1],c_dim])
 
-            dec_out_w_attn = tf.concat([self.decode_out, context], -1)
-            self.proj_in = tf.layers.dense(dec_out_w_attn, self.config['hidden_tag'],
-                                            use_bias=False, activation=tf.tanh)
+            self.proj_in = tf.concat([self.decode_out, context], -1)
+
+            self.proj_in = tf.layers.dense(dec_out_w_attn,
+                                            self.config['hidden_tag'],
+                                            use_bias=False,
+                                            activation=tf.tanh)
 
     def _add_projection(self):
 
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-
+            proj_in = tf.layers.dense(self.proj_in,
+                                        self.config['hidden_tag'],
+                                        use_bias=False,
+                                        activation=tf.tanh)
             mask_t = tf.sequence_mask(self.tag_len)
-            v = tf.boolean_mask(self.proj_in, mask_t)
+            v = tf.boolean_mask(proj_in, mask_t)
 
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
@@ -207,14 +213,9 @@ class STAGModel(BasicModel):
                 self._add_tag_lstm_layer()
                 if self.config['attn']:
                     self._add_attention()
-                    # self.pi = proj_in = self.dec_out_w_attn
                 else:
-                    # self.pi = proj_in = self.decode_out
-                    self.proj_in = tf.layers.dense(self.decode_out,
-                                                    self.config['hidden_tag'],
-                                                    activation=tf.tanh,
-                                                    use_bias=False)
-                self._add_projection(proj_in)
+                    self.proj_in = self.decode_out
+                self._add_projection()
                 self._add_loss()
                 if (self.config['mode'] == 'train'):
                     self._add_train_op()
@@ -252,7 +253,6 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
         output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
-        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)[0]
 
     def train_epoch(self, batcher, dev=False):
