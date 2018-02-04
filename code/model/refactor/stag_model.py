@@ -107,20 +107,23 @@ class STAGModel(BasicModel):
                                                             dtype=self.dtype)
             self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
-            self.attn_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            self.encode_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
-            dec_init_state = tf.reshape(self.attn_state, [-1, lstm_shape])
+            # lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
+            # dec_init_state = tf.reshape(self.encode_state, [-1, lstm_shape])
+            self.dec_in_dim = self.config['hidden_word'] * 2
+            encode_state = tf.layers.dense(self.encode_state, self.dec_in_dim, use_bias=False)
+            dec_init_state = tf.reshape(encode_state, [-1, self.dec_in_dim])
 
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            tag_cell = tf.contrib.rnn.BasicLSTMCell(lstm_shape)
+            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.dec_in_dim)
 
-            self.lstm_out, self.lstm_state = tf.nn.dynamic_rnn(tag_cell,
+            self.decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
                                                 initial_state=self.tag_init,
                                                 sequence_length=self.tag_len,
@@ -128,19 +131,21 @@ class STAGModel(BasicModel):
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
-            lo_shape = tf.shape(self.lstm_out)
-            attn_shape = tf.shape(self.attn_state)
-            atten_key_shape = [attn_shape[0], -1, lo_shape[-1]]
-            self.atten_key = tf.reshape(self.lstm_out, atten_key_shape)
-
-            # TODO: add feed forward layer for atten_key
+            do_shape = tf.shape(self.decode_out)
+            es_shape = tf.shape(self.encode_state)
+            ak_shape = [es_shape[0], -1, do_shape[-1]]
+            self.atten_key = tf.reshape(self.decode_out, ak_shape)
+            self.atten_query = tf.layers.dense(self.encode_state, self.dec_in_dim,
+                                        activation=tf.nn.relu, use_bias=False)
 
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', self.atten_key,
-                                            self.attn_state))
-            score = tf.einsum('aij,ajk->aik', alpha, self.attn_state)
+                                    self.atten_query))
+                                            # self.encode_state))
 
-            score_tag = tf.reshape(score, lo_shape)
-            self.lstm_attn = tf.concat([self.lstm_out, score_tag], -1)
+            _context = tf.einsum('aij,ajk->aik', alpha, self.encode_state)
+            context = tf.reshape(_context, [do_shape[0],do_shape[1],-1])
+
+            self.dec_out_w_attn = tf.concat([self.decode_out, context], -1)
 
     def _add_projection(self, proj_in):
 
@@ -181,7 +186,6 @@ class STAGModel(BasicModel):
 
             self.loss = self.mod_loss if self.config['comb_loss'] else self.reg_loss
 
-
     def _add_train_op(self):
         self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss, global_step=self.global_step)
 
@@ -199,13 +203,12 @@ class STAGModel(BasicModel):
                 else:
                     self._add_char_bridge()
                 self._add_word_bidi_lstm()
-                # self._add_tag_lstm_bridge()
                 self._add_tag_lstm_layer()
                 if self.config['attn']:
                     self._add_attention()
-                    proj_in = self.lstm_attn
+                    proj_in = self.dec_out_w_attn
                 else:
-                    proj_in = self.lstm_out
+                    proj_in = self.decode_out
                 self._add_projection(proj_in)
                 self._add_loss()
                 if (self.config['mode'] == 'train'):
@@ -241,8 +244,8 @@ class STAGModel(BasicModel):
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out']}
 
-        # if self.config['use_pretrained_pos']:
-        #     input_feed[self.pos_in] = self.pos_step(bv)
+        if self.config['use_pretrained_pos']:
+            input_feed[self.pos_in] = self.pos_step(bv)
         output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
         return self.sess.run(output_feed, input_feed)[0]
 
@@ -291,17 +294,17 @@ class STAGModel(BasicModel):
                         self.pos_in: enc_bv['pos']['in']}
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(enc_bv)
-        output_feed = self.attn_state
+        output_feed = self.encode_state
         return self.sess.run(output_feed, input_feed)
 
-    def decode_topk(self, latest_tokens, dec_init_states, atten_state, k):
+    def decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
         """Return the topK results and new decoder states."""
         input_feed = {
             self.tag_init : dec_init_states,
             self.t_in: np.array(latest_tokens),
-            self.attn_state : atten_state,
+            self.encode_state : enc_state,
             self.tag_len: np.ones(1, np.int32)}
-        output_feed = [self.lstm_state, self.pred]
+        output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
