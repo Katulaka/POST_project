@@ -78,7 +78,7 @@ class Dataset(object):
         for k, rng in dir_range.items():
             start_time = time.time()
             self.dataset[k] = {'words': [], 'tags': []}
-            for idx in xrange(*rng):
+            for idx in range(*rng):
                 self.dataset[k]['words'].extend(data[str(idx)]['words'])
                 self.dataset[k]['tags'].extend(data[str(idx)]['tags'])
             self.size[k] = len(self.dataset[k]['words'])
