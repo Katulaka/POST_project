@@ -15,7 +15,7 @@ def parse_cmdline():
     parser.add_argument('--pos_model', type=str, default=None, help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
-    parser.add_argument('--use_pos', action='store_true', help='')
+    # parser.add_argument('--use_pos', action='store_true', help='')
     parser.add_argument('--use_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--test_min', default=0, type=int)
@@ -95,7 +95,7 @@ def parse_cmdline():
     #training num epochs before evaluting the dev loss
     config['num_epochs'] = 1
     config['debug'] = True
-    if not args.pos:
+    if not args.pos and config['use_pretrained_pos']:
         config['pos_model'] = args.pos_model
         pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
         config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
