@@ -151,8 +151,9 @@ class STAGModel(BasicModel):
 
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
-                                            activation=tf.tanh, use_bias=False)
+            # proj_in_pad = tf.layers.dense(proj_in, self.config['hidden_tag'],
+            #                                 activation=tf.tanh, use_bias=False)
+            proj_in_pad = proj_in
             mask_t = tf.sequence_mask(self.tag_len)
             v = tf.boolean_mask(proj_in_pad, mask_t)
 
@@ -206,9 +207,9 @@ class STAGModel(BasicModel):
                 self._add_tag_lstm_layer()
                 if self.config['attn']:
                     self._add_attention()
-                    proj_in = self.dec_out_w_attn
+                    self.pi = proj_in = self.dec_out_w_attn
                 else:
-                    proj_in = self.decode_out
+                    self.pi = proj_in = self.decode_out
                 self._add_projection(proj_in)
                 self._add_loss()
                 if (self.config['mode'] == 'train'):
@@ -247,6 +248,7 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
         output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)[0]
 
     def train_epoch(self, batcher, dev=False):
