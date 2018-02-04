@@ -9,7 +9,7 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from basic_model import BasicModel
+from .basic_model import BasicModel
 from beam.refactor.search import BeamSearch
 from astar.search import solve_tree_search
 
