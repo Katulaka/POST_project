@@ -96,4 +96,5 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, ver
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
+        import pdb; pdb.set_trace()
     return trees_res
