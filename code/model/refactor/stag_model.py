@@ -311,10 +311,10 @@ class STAGModel(BasicModel):
             self.encode_state : enc_state,
             self.tag_len: np.ones(1, np.int32)}
         output_feed = [self.decode_state, self.pred]
+        import pdb; pdb.set_trace()
         # states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
-        import pdb; pdb.set_trace()
         return topk_ids, topk_probs, states
 
     def decode_bs(self, vocab, bv, t_op):
