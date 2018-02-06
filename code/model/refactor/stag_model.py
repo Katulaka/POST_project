@@ -314,6 +314,7 @@ class STAGModel(BasicModel):
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
+        import pdb; pdb.set_trace()
         return topk_ids, topk_probs, states
 
     def decode_bs(self, vocab, bv, t_op):
