@@ -46,14 +46,14 @@ class Solver(AStar):
                 %(name, current.data.idx, current.data.rank, current.fscore))
 
     def heuristic_cost(self, current, goal):
-        idx_range = range(current.rid) + range(current.lid, goal.lid)
+        idx_range = list(range(current.rid)) + list(range(current.lid, goal.lid))
         rank = [0] * len(idx_range)
         pos = zip(idx_range ,rank)
         return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
 
     def real_cost(self, current):
         if current.is_valid(self.ts_mat, self.miss_tag_any):
-            idx_range = range(current.rid, current.lid)
+            idx_range = list(range(current.rid, current.lid))
             pos = zip(idx_range, current.rank)
             return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
         return .0
@@ -88,7 +88,7 @@ class Solver(AStar):
 def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, verbose=1):
     ts_mat = convert_to_TreeTS(tag_score_mat, words)
     max_lid = len(ts_mat)
-    start = [NodeT(idx, idx+1, [0]) for idx in xrange(max_lid)]
+    start = [NodeT(idx, idx+1, [0]) for idx in range(max_lid)]
     goal = NodeT(0, max_lid, [])
     # let's solve it
     paths, max_path = Solver(ts_mat, no_val_gap).astar(start, goal, num_goals, time_out, verbose)
