@@ -91,7 +91,6 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, ver
 
     if any([t == [] for t in ts_mat]):
         return []
-    import pdb; pdb.set_trace()
     max_lid = len(ts_mat)
     start = [NodeT(idx, idx+1, [0]) for idx in range(max_lid)]
     goal = NodeT(0, max_lid, [])

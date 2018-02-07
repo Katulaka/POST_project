@@ -91,6 +91,7 @@ class AStar:
             if self.is_goal_reached(strt, goal):
                 goals.append(strt)
             cost = self.real_cost(strt) + self.heuristic_cost(strt, goal)
+            import pdb; pdb.set_trace()
             startNode = searchNodes[strt] = AStar.SearchNode(strt, fscore=cost)
             heappush(openSet, startNode)
         while (time.time() - start_time < time_out) and openSet and len(goals) < num_goals:
