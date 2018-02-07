@@ -14,7 +14,7 @@ class NodeT(object):
     def __eq__(self, other):
         return self.rank == other.rank and self.idx == other.idx
 
-     def __hash__(self):
+    def __hash__(self):
         return hash(tuple(self))
 
     def combine_pair(self, t_dst, t_src, comb_side, miss_side, miss_tag_any):
