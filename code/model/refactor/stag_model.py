@@ -115,8 +115,8 @@ class STAGModel(BasicModel):
             # lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
             # dec_init_state = tf.reshape(self.encode_state, [-1, lstm_shape])
             self.dec_in_dim = self.config['hidden_word'] * 2
-            encode_state = tf.layers.dense(self.encode_state, self.dec_in_dim, use_bias=False)
-            dec_init_state = tf.reshape(encode_state, [-1, self.dec_in_dim])
+            enc_state = tf.layers.dense(self.encode_state, self.dec_in_dim, use_bias=False)
+            dec_init_state = tf.reshape(enc_state, [-1, self.dec_in_dim])
 
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
@@ -312,7 +312,7 @@ class STAGModel(BasicModel):
             self.tag_len: np.ones(1, np.int32)}
         output_feed = [self.decode_state, self.pred]
         import pdb; pdb.set_trace()
-        # states, probs = self.sess.run(output_feed, input_feed)
+        states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
