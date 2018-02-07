@@ -15,7 +15,7 @@ class NodeT(object):
         return self.rank == other.rank and self.idx == other.idx
 
     def __hash__(self):
-        return hash(tuple(self))
+        return id(self)
 
     def combine_pair(self, t_dst, t_src, comb_side, miss_side, miss_tag_any):
         if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
