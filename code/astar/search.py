@@ -1,6 +1,7 @@
 from .astar import AStar
 from .node_t import NodeT
 from .tree_t_s import convert_to_TreeTS
+import itertools
 
 class Solver(AStar):
 
@@ -48,11 +49,9 @@ class Solver(AStar):
     def heuristic_cost(self, current, goal):
         # import pdb; pdb.set_trace()
         # idx_range = list(range(current.rid)) + list(range(current.lid, goal.lid))
-        r_range = [current.rid] if current.rid==0 else list(range(current.rid))
-        l_range = list(range(current.lid, goal.lid))
-        idx_range = r_range + l_range
+        idx_range = itertools.chain(range(current.rid), range(current.lid, goal.lid))
         rank = [0] * len(idx_range)
-        pos = zip(idx_range ,rank)
+        pos = zip(idx_range, rank)
         return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
 
     def real_cost(self, current):
