@@ -47,13 +47,10 @@ class Solver(AStar):
                 %(name, current.data.idx, current.data.rank, current.fscore))
 
     def heuristic_cost(self, current, goal):
-        # import pdb; pdb.set_trace()
-        # idx_range = list(range(current.rid)) + list(range(current.lid, goal.lid))
-        idx_range = itertools.chain(range(current.rid), range(current.lid, goal.lid))
-        import pdb; pdb.set_trace()
-        rank = [0] * len(idx_range)
-        pos = zip(idx_range, rank)
-        return sum([self.ts_mat[rng][rnk].score for rng, rnk in pos])
+        r_rng = [0] if current.rid == 0 else list(range(current.rid))
+        l_rng = list(range(current.lid, goal.lid))
+        idx_range = r_rng + l_rng
+        return sum([self.ts_mat[rng][0].score for rng in idx_range])
 
     def real_cost(self, current):
         if current.is_valid(self.ts_mat, self.miss_tag_any):
