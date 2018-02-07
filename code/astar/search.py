@@ -95,7 +95,8 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, ver
     start = [NodeT(idx, idx+1, [0]) for idx in range(max_lid)]
     goal = NodeT(0, max_lid, [])
     # let's solve it
-    paths, max_path = Solver(ts_mat, no_val_gap).astar(start, goal, num_goals, time_out, verbose)
+    tmp = Solver(ts_mat, no_val_gap)
+    paths, max_path = tmp.astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
     for path in paths:
         path = list(path)[-1]
