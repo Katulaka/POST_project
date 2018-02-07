@@ -115,13 +115,14 @@ class STAGModel(BasicModel):
             # lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
             # dec_init_state = tf.reshape(self.encode_state, [-1, lstm_shape])
             self.dec_in_dim = self.config['hidden_word'] * 2
-            enc_state = tf.layers.dense(self.encode_state, self.dec_in_dim, use_bias=False)
-            dec_init_state = tf.reshape(enc_state, [-1, self.dec_in_dim])
+            self.c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
+            dec_init_state = tf.reshape(self.encode_state, [-1, self.c_dim])
 
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.dec_in_dim)
+            # tag_cell = tf.contrib.rnn.BasicLSTMCell(self.dec_in_dim)
+            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.c_dim)
 
             self.decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
@@ -131,20 +132,24 @@ class STAGModel(BasicModel):
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
+
+            # ak_shape = [es_shape[0], -1, do_shape[-1]]
+            # atten_k = tf.reshape(self.decode_out, ak_shape)
+            # c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
+            # context = tf.reshape(_context, [do_shape[0],do_shape[1], self.c_dim])
+            # atten_k = tf.reshape(dec_out, ak_shape)
+            # context = tf.reshape(_context, do_shape)
             do_shape = tf.shape(self.decode_out)
             es_shape = tf.shape(self.encode_state)
-            ak_shape = [es_shape[0], -1, do_shape[-1]]
-            atten_k = tf.reshape(self.decode_out, ak_shape)
+            ak_shape = [es_shape[0], -1, self.dec_in_dim]
+
+            atten_k = tf.reshape(tf.layers.dense(self.decode_out, self.dec_in_dim,
+                                     use_bias=False), ak_shape)
             atten_q = tf.layers.dense(self.encode_state, self.dec_in_dim,
                                         activation=tf.nn.relu, use_bias=False)
-
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
-                                            # self.encode_state))
-
-            _context = tf.einsum('aij,ajk->aik', alpha, self.encode_state)
-            c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
-            context = tf.reshape(_context, [do_shape[0],do_shape[1],c_dim])
-
+            context = tf.reshape(tf.einsum('aij,ajk->aik', alpha,
+                                    self.encode_state), do_shape)
             dec_out_w_attn = tf.concat([self.decode_out, context], -1)
 
             self.proj_in = tf.layers.dense(dec_out_w_attn,
@@ -311,7 +316,7 @@ class STAGModel(BasicModel):
             self.encode_state : enc_state,
             self.tag_len: np.ones(1, np.int32)}
         output_feed = [self.decode_state, self.pred]
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
