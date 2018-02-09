@@ -133,12 +133,6 @@ class STAGModel(BasicModel):
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
 
-            # ak_shape = [es_shape[0], -1, do_shape[-1]]
-            # atten_k = tf.reshape(self.decode_out, ak_shape)
-            # c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
-            # context = tf.reshape(_context, [do_shape[0],do_shape[1], self.c_dim])
-            # atten_k = tf.reshape(dec_out, ak_shape)
-            # context = tf.reshape(_context, do_shape)
             do_shape = tf.shape(self.decode_out)
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, self.dec_in_dim]
@@ -150,12 +144,12 @@ class STAGModel(BasicModel):
             alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
             context = tf.reshape(tf.einsum('aij,ajk->aik', alpha,
                                     self.encode_state), do_shape)
-            dec_out_w_attn = tf.concat([self.decode_out, context], -1)
+            self.proj_in = tf.concat([self.decode_out, context], -1)
 
-            self.proj_in = tf.layers.dense(dec_out_w_attn,
-                                            self.config['hidden_tag'],
-                                            use_bias=False,
-                                            activation=tf.tanh)
+            # self.proj_in = tf.layers.dense(dec_out_w_attn,
+            #                                 self.config['hidden_tag'],
+            #                                 use_bias=False,
+            #                                 activation=tf.tanh)
 
     def _add_projection(self):
 
@@ -382,8 +376,8 @@ class STAGModel(BasicModel):
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
             beams = self.decode_bs(bv, vocab)
+            import pdb; pdb.set_trace()
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
-
             for tag, beam in zip(tags, beams['tokens']):
                 try:
                     beam_rank.append(beam.index(tag) + 1)

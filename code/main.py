@@ -58,6 +58,7 @@ def main(_):
 
         batcher.use_data(ds.dataset['test'])
         stats = batcher.restore(model.stats(batcher, ds.vocab))
+        import pdb; pdb.set_trace()
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         fname = '_'.join(['data', now])
         with open(fname, 'w') as outfile:
