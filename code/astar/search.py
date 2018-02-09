@@ -92,14 +92,18 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, ver
     if any([t == [] for t in ts_mat]):
         return []
     max_lid = len(ts_mat)
+    max_rank = max([len(t) for t in ts_mat])
     start = [NodeT(idx, idx+1, [0]) for idx in range(max_lid)]
     goal = NodeT(0, max_lid, [])
     # let's solve it
-    tmp = Solver(ts_mat, no_val_gap)
-    paths, max_path = tmp.astar(start, goal, num_goals, time_out, verbose)
+    solve = Solver(ts_mat, no_val_gap)
+    paths, max_path = solve.astar(start, goal, num_goals, time_out, verbose)
     trees_res = []
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
+        pattern = np.concatenate(([np.ones(max_lid)],np.zeros((max_rank-1,max_lid))))
+        for s in solve.seen :
+            pattern[s.rank, range(*s.idx)] += 1
         import pdb; pdb.set_trace()
     return trees_res
