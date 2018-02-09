@@ -376,7 +376,6 @@ class STAGModel(BasicModel):
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
             beams = self.decode_bs(bv, vocab)
-            import pdb; pdb.set_trace()
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
             for tag, beam in zip(tags, beams['tokens']):
                 try:
