@@ -2,6 +2,7 @@ import tensorflow as tf
 import time
 import os
 import json
+import datetime
 
 from model.refactor.pos_model import POSModel
 from model.refactor.stag_model import STAGModel
@@ -36,7 +37,7 @@ def main(_):
     elif (config['mode'] == 'decode'):
         print('==================================================================')
         print("[[POST]] Starting model decodeing")
-        import datetime
+
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         test_min, test_max = config['ds']['ds_range']['test']
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
