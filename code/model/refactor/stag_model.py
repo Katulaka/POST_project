@@ -382,14 +382,12 @@ class STAGModel(BasicModel):
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
             beams = self.decode_bs(bv, vocab)
-            import pdb; pdb.set_trace()
-            tags_cp = copy.copy(bv['tag'])
-            tags_cp = [t for tc in tags_cp for t in tc]
+            tags = list(filter(None, batcher.remove_len(bv['tag'])))
 
-            for dec_in, beam in zip(tags_cp, beams['tokens']):
+            for tag, beam in zip(tags, beams['tokens']):
                 try:
-                    beam_rank.append(beam.index(dec_in) + 1)
+                    beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
-                    beam_rank.append(config.beam_size + 1)
+                    beam_rank.append(self.config['beam_size'] + 1)
 
-        return np.mean(beam_rank)
+        return beam_rank
