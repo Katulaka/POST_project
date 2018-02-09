@@ -323,7 +323,7 @@ class STAGModel(BasicModel):
         return topk_ids, topk_probs, states
 
     # def decode_bs(self, vocab, bv, t_op):
-    def decode_bs(self, bv):
+    def decode_bs(self, bv, vocab):
         bs = BeamSearch(self.config['beam_size'],
                         vocab['tags'].token_to_id('GO'),
                         vocab['tags'].token_to_id('EOS'),
@@ -368,7 +368,7 @@ class STAGModel(BasicModel):
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
             self.get_tag_score(self.decode_bs(bv), vocab, t_op)
-            beams = self.decode_bs(bv)
+            beams = self.decode_bs(bv, vocab)
             tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
             # tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
 
@@ -381,7 +381,7 @@ class STAGModel(BasicModel):
         beam_rank = []
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
-            beams = self.decode_bs(bv)
+            beams = self.decode_bs(bv, vocab)
             tags_cp = copy.copy(bv['tags'])
             tags_cp = [t for tc in tags_cp for t in tc]
 
