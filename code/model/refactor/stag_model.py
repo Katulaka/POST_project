@@ -322,19 +322,25 @@ class STAGModel(BasicModel):
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
 
-    def decode_bs(self, vocab, bv, t_op):
-
+    # def decode_bs(self, vocab, bv, t_op):
+    def decode_bs(self, bv):
         bs = BeamSearch(self.config['beam_size'],
                         vocab['tags'].token_to_id('GO'),
                         vocab['tags'].token_to_id('EOS'),
                         self.config['dec_timesteps'])
 
         bv_cp = copy.copy(bv)
+        return bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
+        # beams = bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
+        # tags = t_op.combine_fn(vocab['tags'].to_tokens(beams['tokens']))
+        # tag_score_pairs = map(lambda x, y: zip(x, y), tags, beams['scores'])
+        # return tag_score_pairs
 
-        beams = bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
+    def beam_to_tag(self, beam, vocab, t_op):
+
         tags = t_op.combine_fn(vocab['tags'].to_tokens(beams['tokens']))
-        tag_score_pairs = map(lambda x, y: zip(x, y), tags, beams['scores'])
-        return tag_score_pairs
+        return map(lambda x, y: zip(x, y), tags, beams['scores'])
+
 
     def decode_batch(self, beam_pair, word_tokens):
 
@@ -361,8 +367,28 @@ class STAGModel(BasicModel):
             bv = batcher.process(bv)
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
-            tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
+            self.get_tag_score(self.decode_bs(bv), vocab, t_op)
+            beams = self.decode_bs(bv)
+            tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
+            # tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
 
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
 
         return decoded_trees
+
+    def stats(self, batcher):
+
+        beam_rank = []
+        for bv in batcher.get_batch():
+            bv = batcher.process(bv)
+            beams = self.decode_bs(bv)
+            tags_cp = copy.copy(bv['tags'])
+            tags_cp = [t for tc in tags_cp for t in tc]
+
+            for dec_in, beam in zip(tags_cp, beams['tokens']):
+                try:
+                    beam_rank.append(beam.index(dec_in) + 1)
+                except ValueError:
+                    beam_rank.append(config.beam_size + 1)
+
+        return np.mean(beam_rank)

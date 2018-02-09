@@ -53,6 +53,12 @@ def main(_):
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
 
+    elif (config['mode'] == 'stats'):
+
+        batcher.use_data(ds.dataset['test'])
+        stats = model.stats(batcher)
+        import pdb; pdb.set_trace()
+
     else:
         print("Nothing to do!!")
 
