@@ -376,7 +376,7 @@ class STAGModel(BasicModel):
 
         return decoded_trees
 
-    def stats(self, batcher):
+    def stats(self, batcher, vocab):
 
         beam_rank = []
         for bv in batcher.get_batch():

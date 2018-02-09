@@ -55,7 +55,7 @@ def main(_):
 
     elif (config['mode'] == 'stats'):
 
-        batcher.use_data(ds.dataset['test'])
+        batcher.use_data(ds.dataset['test'], ds.vocab)
         stats = model.stats(batcher)
         import pdb; pdb.set_trace()
 
