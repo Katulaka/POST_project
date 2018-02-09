@@ -56,8 +56,10 @@ def main(_):
     elif (config['mode'] == 'stats'):
 
         batcher.use_data(ds.dataset['test'])
-        stats = model.stats(batcher, ds.vocab)
-        import pdb; pdb.set_trace()
+        stats = batcher.restore(model.stats(batcher, ds.vocab))
+        
+        with open('data.txt', 'w') as outfile:
+            json.dump(stats, outfile)
 
     else:
         print("Nothing to do!!")
