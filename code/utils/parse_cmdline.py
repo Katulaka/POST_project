@@ -15,7 +15,6 @@ def parse_cmdline():
     parser.add_argument('--pos_model', type=str, default=None, help='')
     parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
-    # parser.add_argument('--use_pos', action='store_true', help='')
     parser.add_argument('--use_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--test_min', default=0, type=int)
