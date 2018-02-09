@@ -91,6 +91,9 @@ class Batcher(object):
     def remove_delim_len(self, data):
         return [d[1:l-1].tolist() for d, l in zip(data['in'], data['len'])]
 
+    def remove_len(self, data):
+        return [d[1:l].tolist() for d, l in zip(data['in'], data['len'])]
+
     # def remove_delim_len(self, *args):
     #     if len(args) == 1:
     #         return remove_delim_len_batch(self, *args)

@@ -383,7 +383,7 @@ class STAGModel(BasicModel):
             bv = batcher.process(bv)
             beams = self.decode_bs(bv, vocab)
             import pdb; pdb.set_trace()
-            tags_cp = copy.copy(bv['tags'])
+            tags_cp = copy.copy(bv['tag'])
             tags_cp = [t for tc in tags_cp for t in tc]
 
             for dec_in, beam in zip(tags_cp, beams['tokens']):
