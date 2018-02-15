@@ -373,6 +373,7 @@ class STAGModel(BasicModel):
     def stats(self, batcher, vocab):
 
         beam_rank = []
+        beam_rank_mod = []
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
             beams = self.decode_bs(bv, vocab)
@@ -381,19 +382,21 @@ class STAGModel(BasicModel):
                 try:
                     miss_r = vocab['tags'].token_to_id('{*')
                     miss_l = vocab['tags'].token_to_id('}*')
-                    res = []
+                    beam_mod = []
                     for b in beam:
-                        _res = []
+                        _beam_mod = []
                         for t in b:
                             if t == miss_r or t == miss_l:
-                                _res.append(t)
+                                _beam_mod.append(t)
                             else:
-                                _res.append(-1)
-                        res.append(_res)
-                    r_tag = [t if t==miss_r or t == miss_l else -1  for t in tag]
-                    import pdb; pdb.set_trace()
+                                _beam_mod.append(-1)
+                        beam_mod.append(_beam_mod)
+                    tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
+                    # import pdb; pdb.set_trace()
+                    beam_rank_mod.append(beam.index(tag_mod) + 1)
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
+                    beam_rank_mod.append(self.config['beam_size'] + 1)
                     beam_rank.append(self.config['beam_size'] + 1)
 
         return beam_rank
