@@ -379,7 +379,6 @@ class STAGModel(BasicModel):
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
             for tag, beam in zip(tags, beams['tokens']):
                 try:
-                    import pdb; pdb.set_trace()
                     miss_r = vocab['tags'].token_to_id('{*')
                     miss_l = vocab['tags'].token_to_id('}*')
                     res = []
@@ -391,6 +390,7 @@ class STAGModel(BasicModel):
                             else:
                                 _res.append(-1)
                         res.append(_res)
+                    import pdb; pdb.set_trace()
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
                     beam_rank.append(self.config['beam_size'] + 1)
