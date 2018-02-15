@@ -59,7 +59,7 @@ def main(_):
         batcher.use_data(ds.dataset['test'])
         stats, stats_mod = model.stats(batcher, ds.vocab)
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         fname = os.path.join('code', 'plot', '_'.join(['data', now]))
         with open(fname, 'w') as outfile:
             json.dump({'stats':stats, 'stats_mod':stats_mod}, outfile)
