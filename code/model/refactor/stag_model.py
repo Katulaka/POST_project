@@ -399,4 +399,4 @@ class STAGModel(BasicModel):
                     beam_rank_mod.append(self.config['beam_size'] + 1)
                     beam_rank.append(self.config['beam_size'] + 1)
 
-        return beam_rank
+        return beam_rank, beam_rank_mod
