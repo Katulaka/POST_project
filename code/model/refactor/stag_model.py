@@ -379,6 +379,7 @@ class STAGModel(BasicModel):
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
             for tag, beam in zip(tags, beams['tokens']):
                 try:
+                    import pdb; pdb.set_trace()
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
                     beam_rank.append(self.config['beam_size'] + 1)
