@@ -390,6 +390,7 @@ class STAGModel(BasicModel):
                             else:
                                 _res.append(-1)
                         res.append(_res)
+                    r_tag = [t if t==miss_r or t == miss_l else -1  for t in tag]
                     import pdb; pdb.set_trace()
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
