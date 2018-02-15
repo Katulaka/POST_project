@@ -392,7 +392,7 @@ class STAGModel(BasicModel):
                     beam_mod.append(_beam_mod)
                 tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
                 try:
-                    beam_rank_mod.append(beam.index(tag_mod) + 1)
+                    beam_rank_mod.append(beam_mod.index(tag_mod) + 1)
                 except ValueError:
                     beam_rank_mod.append(self.config['beam_size'] + 1)
                 try:
