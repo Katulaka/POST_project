@@ -388,7 +388,7 @@ class STAGModel(BasicModel):
                         for t in b:
                             if t == miss_r or t == miss_l:
                                 _res.append(t)
-                            else
+                            else:
                                 _res.sppend(-1)
                         res.append(_res)
                     beam_rank.append(beam.index(tag) + 1)
