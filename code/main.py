@@ -62,8 +62,7 @@ def main(_):
         import pdb; pdb.set_trace()
         fname = os.path.join('code', 'plot', '_'.join(['data', now]))
         with open(fname, 'w') as outfile:
-            json.dump(stats, outfile)
-
+            json.dump({'stats':stats, 'stats_mod':stats_mod}, outfile)
     else:
         print("Nothing to do!!")
 
