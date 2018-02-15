@@ -389,7 +389,7 @@ class STAGModel(BasicModel):
                             if t == miss_r or t == miss_l:
                                 _res.append(t)
                             else:
-                                _res.sppend(-1)
+                                _res.append(-1)
                         res.append(_res)
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
