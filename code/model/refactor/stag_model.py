@@ -379,24 +379,25 @@ class STAGModel(BasicModel):
             beams = self.decode_bs(bv, vocab)
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
             for tag, beam in zip(tags, beams['tokens']):
+                miss_r = vocab['tags'].token_to_id('{*')
+                miss_l = vocab['tags'].token_to_id('}*')
+                beam_mod = []
+                for b in beam:
+                    _beam_mod = []
+                    for t in b:
+                        if t == miss_r or t == miss_l:
+                            _beam_mod.append(t)
+                        else:
+                            _beam_mod.append(-1)
+                    beam_mod.append(_beam_mod)
+                tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
                 try:
-                    # miss_r = vocab['tags'].token_to_id('{*')
-                    # miss_l = vocab['tags'].token_to_id('}*')
-                    # beam_mod = []
-                    # for b in beam:
-                    #     _beam_mod = []
-                    #     for t in b:
-                    #         if t == miss_r or t == miss_l:
-                    #             _beam_mod.append(t)
-                    #         else:
-                    #             _beam_mod.append(-1)
-                    #     beam_mod.append(_beam_mod)
-                    # tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
-                    # import pdb; pdb.set_trace()
-                    # beam_rank_mod.append(beam.index(tag_mod) + 1)
+                    beam_rank_mod.append(beam.index(tag_mod) + 1)
+                except ValueError:
+                    beam_rank_mod.append(self.config['beam_size'] + 1)
+                try:
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
-                    # beam_rank_mod.append(self.config['beam_size'] + 1)
                     beam_rank.append(self.config['beam_size'] + 1)
 
         return beam_rank, beam_rank_mod
