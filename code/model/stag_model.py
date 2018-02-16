@@ -327,8 +327,8 @@ class STAGModel(BasicModel):
 
     def beam_to_tag(self, beam, vocab, t_op):
 
-        tags = t_op.combine_fn(vocab['tags'].to_tokens(beams['tokens']))
-        return map(lambda x, y: zip(x, y), tags, beams['scores'])
+        tags = t_op.combine_fn(vocab['tags'].to_tokens(beam['tokens']))
+        return map(lambda x, y: zip(x, y), tags, beam['scores'])
 
     def decode_batch(self, beam_pair, word_tokens):
 
