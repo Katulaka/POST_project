@@ -6,8 +6,7 @@ import tensorflow as tf
 
 
 def parse_cmdline():
-    seed = int(time.time())
-    np.random.seed(seed) #TODO tf random seed
+    np.random.seed(int(time.time())) 
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', type=str, default='train', help='')
