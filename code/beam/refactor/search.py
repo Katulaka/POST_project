@@ -96,13 +96,13 @@ class BeamSearch(object):
                     ordered by score
          """
         # Run the encoder and extract the outputs and final state.
-        atten_state_batch = encode_top_state(enc_bv)
+        enc_state_batch = encode_top_state(enc_bv)
         decs = []
-        dec_len = len(atten_state_batch)
-        for j, atten_state in enumerate(atten_state_batch):
+        dec_len = len(enc_state_batch)
+        for j, enc_state in enumerate(enc_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_bv['word']['len'][j] - 1
-            for i, dec_in in enumerate(atten_state[1:atten_len]):
+            enc_w_len = enc_bv['word']['len'][j] - 1
+            for i, dec_in in enumerate(enc_state[1:enc_w_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),
@@ -122,7 +122,7 @@ class BeamSearch(object):
                         states = hyp.state
                         ids, probs, new_state = decode_topk(latest_token,
                                                             states,
-                                                            [atten_state],
+                                                            [enc_state],
                                                             self._beam_size)
                         for j in xrange(self._beam_size):
                             all_hyps.append(hyp.extend_(ids[j],
@@ -142,7 +142,7 @@ class BeamSearch(object):
                         else:
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
-                print ("Finished beam search for %d / %d" % (i+1, atten_len - 1))
+                print ("Finished beam search for %d / %d" % (i+1, enc_w_len - 1))
                 decs.append(self.best_hyps(res))
 
         beams = dict()
@@ -176,15 +176,15 @@ class BeamSearch(object):
               ordered by score
         """
     # Run the encoder and extract the outputs and final state.
-        atten_state_batch = encode_top_state(enc_bv)
+        enc_state_batch = encode_top_state(enc_bv)
         # Replicate the initial states K times for the first step.
         decs = []
-        dec_len = len(atten_state_batch)
-        for j, atten_state in enumerate(atten_state_batch):
+        dec_len = len(enc_state_batch)
+        for j, enc_state in enumerate(enc_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
-            atten_len = enc_wlen[j] - 1
+            enc_w_len = enc_wlen[j] - 1
             res = []
-            for i, dec_in in enumerate(atten_state[1:atten_len]):
+            for i, dec_in in enumerate(enc_state[1:enc_w_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),
@@ -198,7 +198,7 @@ class BeamSearch(object):
                     ids, probs, new_state = decode_topk(sess,
                                                     latest_token,
                                                     states,
-                                                    [atten_state],
+                                                    [enc_state],
                                                     1)
                     hyp = hyp.extend_(ids[0], probs[0], new_state)
                 res.append(hyp)
