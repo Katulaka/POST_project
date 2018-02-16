@@ -68,41 +68,41 @@ class Dataset(object):
         return _select(data, indeces)
 
     def load_data(self, data_file):
-        start_time = time.time()
+        start_time = time.clock()
         data = self.load_fn(data_file, self.src_to_tags_words)
-        print("[[Dataset.load_data]] %.3f to load data" % (time.time()-start_time))
+        print("[[Dataset.load_data]] %.3f to load data" % (time.clock()-start_time))
         return data
 
     def split(self, data, dir_range):
         """ """
         for k, rng in dir_range.items():
-            start_time = time.time()
+            start_time = time.clock()
             self.dataset[k] = {'words': [], 'tags': []}
             for idx in range(*rng):
                 self.dataset[k]['words'].extend(data[str(idx)]['words'])
                 self.dataset[k]['tags'].extend(data[str(idx)]['tags'])
             self.size[k] = len(self.dataset[k]['words'])
             print ("[[Dataset.split]] %.5f to split into %s: %s entries" %
-                            (time.time()-start_time, k, self.size[k]))
+                            (time.clock()-start_time, k, self.size[k]))
 
     def slice(self, ds_range):
         for k, ds in self.dataset.items():
-            start_time = time.time()
+            start_time = time.clock()
             self.idx[k] = [ds_range[k][0] <= len(w) <= ds_range[k][1] for w in ds['words']]
             for kd in ds.keys():
                 ds[kd] = _select(ds[kd], self.idx[k])
             self.size[k] = len(self.dataset[k]['words'])
             print ("[[Dataset.slice]] %.5f to slice %s in range %s: %s entries" %
-                            (time.time()-start_time, k, ds_range[k], self.size[k]))
+                            (time.clock()-start_time, k, ds_range[k], self.size[k]))
 
     def modify(self, tags_type):
-        start_time = time.time()
+        start_time = time.clock()
         self.t_op = TagOp(**tags_type)
         for d in self.dataset.values():
             d['tags'] = self.t_op.modify_fn(d['tags'])
             d['chars'] = [[list(w) for w in s] for s in d['words']]
         print ("[[Dataset.modify]] Tags properties are %s" % (tags_type))
-        print ("[[Dataset.modify]] %.3f to modify dataset" % (time.time()-start_time))
+        print ("[[Dataset.modify]] %.3f to modify dataset" % (time.clock()-start_time))
 
     def invert_dataset(self):
         #mode: train/dev/test
@@ -119,29 +119,29 @@ class Dataset(object):
     def get_vocab(self, nsize):
 
         for elm, ids in self.invert_dataset().items():
-            start_time = time.time()
+            start_time = time.clock()
             d = [d for d in ids.values()] if elm == 'tags' else ids['train']
             self.vocab[elm] = Vocab(flatten_to_1D(d), nsize[elm])
             self.nsize[elm] = self.vocab[elm].vocab_size()
             print ("[[Dataset.get_vocab]] %.3f for %s vocab (size: %s)" %
-                                (time.time()-start_time, elm, self.nsize[elm]))
+                                (time.clock()-start_time, elm, self.nsize[elm]))
 
     def to_ids(self, nsize):
         self.get_vocab(nsize)
         for kds, ds in self.dataset.items():
-            start_time = time.time()
+            start_time = time.clock()
             for k in ds.keys():
                 ds[k] = self.vocab[k].to_ids(ds[k])
-            print ("[[Dataset.to_ids]] %.3f for %s" % (time.time()-start_time, kds))
+            print ("[[Dataset.to_ids]] %.3f for %s" % (time.clock()-start_time, kds))
 
     def gen_dataset(self):
-        start_time = time.time()
+        start_time = time.clock()
         data = self.load_data(self.ds_file)
         self.split(data, self.dir_range)
         self.slice(self.ds_range)
         self.modify(self.tags_type)
         self.to_ids(self.nsize)
-        print("[[Dataset.gen_dataset]] Total time %.3f"  % (time.time()-start_time))
+        print("[[Dataset.gen_dataset]] Total time %.3f"  % (time.clock()-start_time))
         return data
 
     def gen_gold(self):

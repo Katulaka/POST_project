@@ -260,10 +260,10 @@ class STAGModel(BasicModel):
         current_step = self.sess.run(self.global_step) if not dev else 0
         steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
         for bv in batcher.get_permute_batch():
-            start_time = time.time()
+            start_time = time.clock()
             step_loss = self.step(batcher.process(bv), dev)
             current_step += 1
-            step_time += (time.time() - start_time) / steps_per_ckpt
+            step_time += (time.clock() - start_time) / steps_per_ckpt
             loss += step_loss / steps_per_ckpt
             ret_loss = loss
             if  current_step % steps_per_ckpt == 0:
