@@ -98,6 +98,7 @@ class BeamSearch(object):
         # Run the encoder and extract the outputs and final state.
         enc_state_batch = encode_top_state(enc_bv)
         decs = []
+        decs_out_beam = []
         dec_len = len(enc_state_batch)
         for j, enc_state in enumerate(enc_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
@@ -126,10 +127,16 @@ class BeamSearch(object):
                             all_hyps.append(hyp.extend_(ids[j],
                                             probs[j],
                                             new_state))
-                    # Filter and collect any hypotheses that have the end token.
+
                     hyps = []
-                    #TODO keep the lowest res and update if res changes
-                    for h in self.best_hyps(all_hyps):
+                    all_hyps_sorted = self.sort_hyps(all_hyps)
+                    #collect completed hyps that are outside the beam
+                    for h in self.out_beam_hyps(all_hyps_sorted):
+                        if h.latest_token == self._end_token:
+                            res_out_beam.append(h)
+
+                    for h in self.best_hyps(all_hyps_sorted):
+                        # Filter and collect any hypotheses that have the end token.
                         if h.latest_token == self._end_token:
                             # Pull the hypothesis off the beam
                             #if the end token is reached.
@@ -141,25 +148,44 @@ class BeamSearch(object):
                             # Otherwise continue to the extend the hypothesis.
                             hyps.append(h)
                 print ("Finished beam search for %d / %d" % (i+1, enc_w_len - 1))
-                decs.append(self.best_hyps(res))
+                decs.append(self.best_hyps(self.sort_hyps(res)))
+                decs_out_beam.append(res_out_beam)
 
         beams = dict()
         beams['tokens'] = [[h.tokens[1:-1] for h in r if len(h.tokens)>2]
                             for r in decs]
         beams['scores'] = [[h.score for h in r if len(h.tokens)>2]
                              for r in decs]
-        return beams
+        return beams, decs_out_beam
 
-    def best_hyps(self, hyps):
+    def sort_hyps(self, hyps):
         """Sort the hyps based on probs.
-
         Args:
           hyps: A list of hypothesis.
         Returns:
-          hyps: A list of sorted hypothesis in reverse prod prob order.
+          hyps: A list of sorted hypothesis from highest prob to lowest
         """
-        hyp_sort = sorted(hyps, key=lambda h: h.score, reverse=True)
+        return sorted(hyps, key=lambda h: h.score, reverse=True)
+
+    def best_hyps(self, hyp_sort):
+        """return top <beam_size> hyps.
+
+        Args:
+          hyp_sort: A list of sorted hypothesis.
+        Returns:
+          hyps: A sub list of top <beam_size> hyps.
+        """
         return hyp_sort[:self._beam_size]
+
+    def out_beam_hyps(self, hyp_sort):
+        """return hyps outside the beam.
+
+        Args:
+          hyp_sort: A list of sorted hypothesis.
+        Returns:
+          hyps: A sub list of all hyps outside of the beam.
+        """
+        return hyp_sort[self._beam_size:]
 
     def greedy_beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
