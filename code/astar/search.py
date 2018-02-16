@@ -46,11 +46,11 @@ class Solver(AStar):
         print ('%s: range %s, rank %s, score %f'
                 %(name, current.data.idx, current.data.rank, current.fscore))
 
-    def heuristic_cost(self, current, goal):
+    def heuristic_cost(self, current, goal, cost_coeff):
         r_rng = [0] if current.rid == 0 else list(range(current.rid))
         l_rng = list(range(current.lid, goal.lid))
         idx_range = r_rng + l_rng
-        return sum([self.ts_mat[rng][0].score for rng in idx_range])
+        return cost_coeff * sum([self.ts_mat[rng][0].score for rng in idx_range])
 
     def real_cost(self, current):
         if current.is_valid(self.ts_mat, self.miss_tag_any):
@@ -86,7 +86,8 @@ class Solver(AStar):
             return current.tree[0].is_no_missing_leaves()
         return False
 
-def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, verbose=1):
+def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
+                        time_th=2. , verbose=1):
     ts_mat = convert_to_TreeTS(tag_score_mat, words)
 
     if any([t == [] for t in ts_mat]):
@@ -97,7 +98,7 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out, ver
     goal = NodeT(0, max_lid, [])
     # let's solve it
     solve = Solver(ts_mat, no_val_gap)
-    paths, max_path = solve.astar(start, goal, num_goals, time_out, verbose)
+    paths, max_path = solve.astar(start, goal, num_goals, time_out)
     trees_res = []
     for path in paths:
         path = list(path)[-1]

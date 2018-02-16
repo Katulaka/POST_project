@@ -79,7 +79,7 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, num_goals, time_out, verbose,
+    def astar(self, start, goal, num_goals, time_out, time_th=10., verbose=1,
                 reverse_path = False):
         start_time = time.clock()
         cost_coeff = 1.
@@ -96,6 +96,8 @@ class AStar:
             heappush(openSet, startNode)
         while (time.clock() - start_time < time_out) and openSet and len(goals) < num_goals:
             current = heappop(openSet)
+            if (time.clock() - start_time >= time_th):
+                cost_coeff = 0.5
             if verbose > 0:
                 self.print_fn(current, 'current')
                 max_len, max_node = self.is_max_len(current.data, max_len, max_node)
@@ -108,7 +110,7 @@ class AStar:
                 if neighbor.closed:
                     continue
                 neighbor.fscore = self.real_cost(neighbor.data) \
-                                    + self.heuristic_cost(neighbor.data, goal)
+                                    + self.heuristic_cost(neighbor.data, goal, cost_coeff)
                 neighbor.came_from = current
 
                 if neighbor.out_openset:
