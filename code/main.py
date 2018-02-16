@@ -4,8 +4,8 @@ import os
 import json
 import datetime
 
-from model.refactor.pos_model import POSModel
-from model.refactor.stag_model import STAGModel
+from model.pos_model import POSModel
+from model.stag_model import STAGModel
 from utils.batcher import Batcher
 from utils.dataset import Dataset
 from utils.parse_cmdline import parse_cmdline
