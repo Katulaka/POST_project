@@ -365,7 +365,7 @@ class STAGModel(BasicModel):
 
     def convert_to_structer(self, tags, beam_tokens, miss_r, miss_l):
         beam_mod = []
-        for b in beam:
+        for b in beam_tokens:
             _beam_mod = []
             for t in b:
                 if t == miss_r or t == miss_l:
