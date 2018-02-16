@@ -12,6 +12,7 @@ import tensorflow as tf
 from .basic_model import BasicModel
 from beam.refactor.search import BeamSearch
 from astar.search import solve_tree_search
+from utils.tags.tag_ops import R, L, ANY
 
 
 class STAGModel(BasicModel):
@@ -362,28 +363,37 @@ class STAGModel(BasicModel):
 
         return decoded_trees
 
+    def convert_to_structer(tags, beam_tokens, miss_r, miss_l):
+        beam_mod = []
+        for b in beam:
+            _beam_mod = []
+            for t in b:
+                if t == miss_r or t == miss_l:
+                    _beam_mod.append(t)
+                else:
+                    _beam_mod.append(-1)
+            beam_mod.append(_beam_mod)
+        tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
+        return beam_mod, tag_mod
+
     def stats(self, batcher, vocab):
 
         beam_rank = []
         beam_rank_mod = []
+        beam_rank_out = []
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
             beams, outside_beams = self.decode_bs(bv, vocab)
             import pdb; pdb.set_trace()
-            tags = list(filter(None, batcher.remove_len(bv['tag'])))
+            tags = batcher.remove_padding(bv['tag'])
+            miss_r = vocab['tags'].token_to_id(R+ANY)
+            miss_l = vocab['tags'].token_to_id(L+ANY)
             for tag, beam in zip(tags, beams['tokens']):
-                miss_r = vocab['tags'].token_to_id('{*')
-                miss_l = vocab['tags'].token_to_id('}*')
-                beam_mod = []
-                for b in beam:
-                    _beam_mod = []
-                    for t in b:
-                        if t == miss_r or t == miss_l:
-                            _beam_mod.append(t)
-                        else:
-                            _beam_mod.append(-1)
-                    beam_mod.append(_beam_mod)
-                tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
+                beam_mod, tag_mod = convert_to_structer(tag, beam, miss_r, miss_l)
+                try:
+                    beam_rank_out.append(outside_beams.index(tag) + 1)
+                except ValueError:
+                    beam_rank_out.append(self.config['beam_size'] + 1)
                 try:
                     beam_rank_mod.append(beam_mod.index(tag_mod) + 1)
                 except ValueError:
