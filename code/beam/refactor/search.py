@@ -133,7 +133,7 @@ class BeamSearch(object):
                     #collect completed hyps that are outside the beam
                     for h in self.out_beam_hyps(all_hyps_sorted):
                         if h.latest_token == self._end_token:
-                            res_out_beam.append(h)
+                            res_out_beam.append(h.tokens[1:-1])
 
                     for h in self.best_hyps(all_hyps_sorted):
                         # Filter and collect any hypotheses that have the end token.
