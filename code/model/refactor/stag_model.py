@@ -310,13 +310,11 @@ class STAGModel(BasicModel):
             self.encode_state : enc_state,
             self.tag_len: np.ones(1, np.int32)}
         output_feed = [self.decode_state, self.pred]
-        # import pdb; pdb.set_trace()
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
 
-    # def decode_bs(self, vocab, bv, t_op):
     def decode_bs(self, bv, vocab):
         bs = BeamSearch(self.config['beam_size'],
                         vocab['tags'].token_to_id('GO'),
@@ -325,16 +323,11 @@ class STAGModel(BasicModel):
 
         bv_cp = copy.copy(bv)
         return bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
-        # beams = bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
-        # tags = t_op.combine_fn(vocab['tags'].to_tokens(beams['tokens']))
-        # tag_score_pairs = map(lambda x, y: zip(x, y), tags, beams['scores'])
-        # return tag_score_pairs
 
     def beam_to_tag(self, beam, vocab, t_op):
 
         tags = t_op.combine_fn(vocab['tags'].to_tokens(beams['tokens']))
         return map(lambda x, y: zip(x, y), tags, beams['scores'])
-
 
     def decode_batch(self, beam_pair, word_tokens):
 
