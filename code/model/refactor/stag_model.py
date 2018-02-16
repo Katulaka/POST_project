@@ -363,7 +363,7 @@ class STAGModel(BasicModel):
 
         return decoded_trees
 
-    def convert_to_structer(tags, beam_tokens, miss_r, miss_l):
+    def convert_to_structer(self, tags, beam_tokens, miss_r, miss_l):
         beam_mod = []
         for b in beam:
             _beam_mod = []
@@ -388,7 +388,7 @@ class STAGModel(BasicModel):
             miss_r = vocab['tags'].token_to_id(R+ANY)
             miss_l = vocab['tags'].token_to_id(L+ANY)
             for tag, beam in zip(tags, beams['tokens']):
-                beam_mod, tag_mod = convert_to_structer(tag, beam, miss_r, miss_l)
+                beam_mod, tag_mod = self.convert_to_structer(tag, beam, miss_r, miss_l)
                 try:
                     beam_rank_out.append(outside_beams.index(tag) + 1)
                 except ValueError:
