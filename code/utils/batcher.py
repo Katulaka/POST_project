@@ -98,7 +98,7 @@ class Batcher(object):
     #     if len(args) == 1:
     #         return remove_delim_len_batch(self, *args)
 
-    def remove_padding(self, data):
+    def remove_pad(self, data):
         return list(filter(None, self.remove_len(data)))
 
     def get_random_batch(self):
