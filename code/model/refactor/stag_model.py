@@ -401,5 +401,5 @@ class STAGModel(BasicModel):
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
                     beam_rank.append(self.config['beam_size'] + 1)
-            import pdb; pdb.set_trace()
-        return beam_rank, beam_rank_mod
+            # import pdb; pdb.set_trace()
+        return beam_rank, beam_rank_mod, beam_rank_out
