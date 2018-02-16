@@ -354,10 +354,9 @@ class STAGModel(BasicModel):
             bv = batcher.process(bv)
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
-            self.get_tag_score(self.decode_bs(bv), vocab, t_op)
-            beams = self.decode_bs(bv, vocab)
+            # self.get_tag_score(self.decode_bs(bv), vocab, t_op)
+            beams, _ = self.decode_bs(bv, vocab)
             tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
-            # tag_score_pairs = batcher.restore(self.decode_bs(vocab, bv, t_op))
 
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
 
@@ -369,7 +368,8 @@ class STAGModel(BasicModel):
         beam_rank_mod = []
         for bv in batcher.get_batch():
             bv = batcher.process(bv)
-            beams = self.decode_bs(bv, vocab)
+            beams, outside_beams = self.decode_bs(bv, vocab)
+            import pdb; pdb.set_trace()
             tags = list(filter(None, batcher.remove_len(bv['tag'])))
             for tag, beam in zip(tags, beams['tokens']):
                 miss_r = vocab['tags'].token_to_id('{*')
