@@ -98,6 +98,9 @@ class Batcher(object):
     #     if len(args) == 1:
     #         return remove_delim_len_batch(self, *args)
 
+    def remove_padding(self, data):
+        return list(filter(None, self.remove_len(data)))
+
     def get_random_batch(self):
         batch = dict()
         d_index = np.random.randint(self._d_size, size=self._batch_size)
