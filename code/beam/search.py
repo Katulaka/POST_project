@@ -53,7 +53,7 @@ class Hypothesis(object):
           New Hypothesis with the results from latest step.
         """
         return Hypothesis(self.tokens+[token], self.prob+[prob],
-                            new_state, self.score + np.log(prob))
+                            new_state, self.score *prob)
 
     @property
     def latest_token(self):
@@ -110,7 +110,7 @@ class BeamSearch(object):
                                                     axis=0))
                 res = []
                 res_out_beam = []
-                hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 0.0)]
+                hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
                 for steps in xrange(self._max_steps):
                     # Extend each hypothesis.
                     # The first step takes the best K results from first hyps.
@@ -213,7 +213,7 @@ class BeamSearch(object):
                                     np.expand_dims(dec_in, axis=0),
                                     np.expand_dims(np.zeros_like(dec_in),
                                                     axis=0))
-                hyp = Hypothesis([self._start_token], [1.0], dec_in_state, 0.0)
+                hyp = Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)
                 for steps in xrange(self._max_steps):
                     latest_token = [[hyp.latest_token]]
                     if latest_token[0][0] == self._end_token:
