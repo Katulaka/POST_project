@@ -101,11 +101,13 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
     solve = Solver(ts_mat, no_val_gap)
     paths, max_path = solve.astar(start, goal, num_goals, time_out)
     trees_res = []
+    patterns = []
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
-        pattern = np.concatenate(([np.ones(max_lid)],np.zeros((max_rank-1,max_lid))))
+        pattern = np.concatenate(([np.ones(max_lid, dtype=int)],np.zeros((max_rank-1,max_lid), dtype=int)))
         for s in solve.seen :
             pattern[s.rank, range(*s.idx)] += 1
-        import pdb; pdb.set_trace()
-    return trees_res
+        # import pdb; pdb.set_trace()
+        patterns.append(pattern)
+    return trees_res, patterns
