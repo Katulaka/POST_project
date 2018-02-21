@@ -43,8 +43,11 @@ def main(_):
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
 
         batcher.use_data(ds.dataset['test'])
-        decode_trees = model.decode(ds.vocab, batcher, ds.t_op)
-        decoded_tags = trees_to_ptb(decode_tags)
+        decode_trees, patterns = model.decode(ds.vocab, batcher, ds.t_op)
+        decoded_tags = trees_to_ptb(decode_trees)
+        pattern_file = os.path.join('decode', fname + '.ptrn')
+        with open(pattern_file, 'w') as outfile:
+            json.dump(patterns, outfile)
         dec_file = os.path.join('decode', fname + '.test')
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
