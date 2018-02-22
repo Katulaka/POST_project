@@ -81,7 +81,7 @@ class AStar:
 
     def astar(self, start, goal, num_goals, time_out, time_th=10., verbose=1,
                 reverse_path = False):
-        start_time = time.clock()
+        current_time = start_time = time.clock()
         cost_coeff = 1.
         searchNodes = AStar.SearchNodeDict()
         openSet = []
@@ -96,8 +96,9 @@ class AStar:
             heappush(openSet, startNode)
         while (time.clock() - start_time < time_out) and openSet and len(goals) < num_goals:
             current = heappop(openSet)
-            if (time.clock() - start_time >= time_th):
-                cost_coeff = 0.5
+            if (time.clock() - current_time >= time_th):
+                cost_coeff *= 0.5
+                current_time = time.clock()
             if verbose > 0:
                 self.print_fn(current, 'current')
                 max_len, max_node = self.is_max_len(current.data, max_len, max_node)
