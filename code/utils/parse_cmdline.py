@@ -101,7 +101,7 @@ def parse_cmdline():
     config['time_out'] = args.time_out
     config['num_goals'] = args.num_goals
     config['beam_size'] = args.beam
-    config['dec_timesteps'] = 20
+    config['dec_timesteps'] = 25
     config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
 
     return config
