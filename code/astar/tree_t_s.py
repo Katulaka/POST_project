@@ -9,8 +9,6 @@ class TreeTS(object):
         self.max_pos_id = self.tree.from_tag_to_tree(tag, word, pos_id)
 
 def convert_to_TreeTS(tag_score_mat, words):
-    #TODO what to do about trees with only missing leaves
-    #TODO what to do about trees with only more than 1 non-missing leave
     tree_t_s_mat = []
     pos_id = 0
     for tag_score_row, word in zip(tag_score_mat, words):
