@@ -4,6 +4,9 @@ from treelib import Tree
 from utils.utils import _getattr_operate_on_Narray
 from utils.tags.tag_ops import R, L, CL, CR
 
+from functools import lru_cache
+memoize = lru_cache(None)
+
 class TreeData(object):
     def __init__(self, height=0, lids=[], miss_side='', comb_side='', word =''):
         self.height = height
@@ -11,6 +14,7 @@ class TreeData(object):
         self.miss_side = miss_side
         self.comb_side = comb_side
         self.word = word
+
 
 class TreeT(object):
 
@@ -122,34 +126,44 @@ class TreeT(object):
                 break
         return pos_id
 
+    @memoize
     def is_combine_to(self, side):
         return self.tree[self.tree.root].data.comb_side == side
 
+    @memoize
     def is_combine_right(self):
         return self.is_combine_to(CR)
 
+    @memoize
     def is_combine_left(self):
         return self.is_combine_to(CL)
 
+    @memoize
     def is_complete_tree(self):
         return all([n.data.miss_side == '' for n in self.tree.all_nodes()])
 
+    @memoize
     def get_missing_leaves_to(self, miss_val, side):
         return [l.identifier for l in self.tree.leaves(self.tree.root)
                 if l.data.miss_side == side and l.tag == miss_val]
 
+    @memoize
     def get_missing_leaves_left(self, miss_val):
         return self.get_missing_leaves_to(miss_val, L)
 
+    @memoize
     def get_missing_leaves_right(self, miss_val):
         return self.get_missing_leaves_to(miss_val, R)
 
+    @memoize
     def root_tag(self):
         return self.tree[self.tree.root].tag
 
+    @memoize
     def is_no_missing_leaves(self):
         return all([l.data.miss_side == '' for l in self.tree.leaves(self.tree.root)])
 
+    @memoize
     def combine_tree(self, _tree, comb_leaf):
         self.tree.paste(comb_leaf, _tree.tree)
         self.tree.link_past_node(comb_leaf)
