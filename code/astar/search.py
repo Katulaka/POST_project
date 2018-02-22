@@ -108,6 +108,5 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
         pattern = np.concatenate(([np.ones(max_lid, dtype=int)],np.zeros((max_rank-1,max_lid), dtype=int)))
         for s in solve.seen :
             pattern[s.rank, range(*s.idx)] += 1
-        # import pdb; pdb.set_trace()
         patterns.append(pattern)
     return trees_res, patterns
