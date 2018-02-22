@@ -25,7 +25,8 @@ def main(_):
         config['n'+k] = ds.nsize[k]
     config['npos'] = config['ntags']
 
-    model = POSModel(config) if config['pos'] else STAGModel(config)
+    if (config['mode'] in ['train', 'decode', 'stats']):
+        model = POSModel(config) if config['pos'] else STAGModel(config)
 
     if (config['mode'] == 'train'):
         print('==================================================================')
