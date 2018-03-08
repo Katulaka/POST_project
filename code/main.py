@@ -24,6 +24,9 @@ def main(_):
     for k in ds.vocab.keys():
         config['n'+k] = ds.nsize[k]
     config['npos'] = config['ntags']
+    print('==================================================================')
+    for k,v in config.items():
+        print ('[[Model Params]] %s: %s' % (k, v))
 
     if (config['mode'] in ['train', 'decode', 'stats']):
         model = POSModel(config) if config['pos'] else STAGModel(config)
@@ -31,8 +34,6 @@ def main(_):
     if (config['mode'] == 'train'):
         print('==================================================================')
         print("[[POST]] Starting model training.")
-        for k,v in config.items():
-            print ('[[Model Params]] %s: %s' % (k, v))
         model.train(batcher, ds.dataset)
 
     elif (config['mode'] == 'decode'):
