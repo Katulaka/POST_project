@@ -43,19 +43,23 @@ def main(_):
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         test_min, test_max = config['ds']['ds_range']['test']
         fname = '_'.join(['ds', str(test_min), str(test_max), now])
+        dir_name = os.path.join('results', config['model_name'], config['mode'])
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
 
         batcher.use_data(ds.dataset['test'])
         decode_trees, patterns = model.decode(ds.vocab, batcher, ds.t_op)
         decoded_tags = trees_to_ptb(decode_trees)
-        pattern_file = os.path.join('decode', fname + '.ptrn')
+
+        pattern_file = os.path.join(dir_name, fname + '.ptrn')
         with open(pattern_file, 'w') as outfile:
             json.dump(patterns, outfile)
-        dec_file = os.path.join('decode', fname + '.test')
+        dec_file = os.path.join(dir_name, fname + '.test')
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
 
         gold = ds.gen_gold()
-        gold_file = os.path.join('decode', fname + '.gold')
+        gold_file = os.path.join(dir_name, fname + '.gold')
         with open(gold_file, 'w') as outfile:
             json.dump(gold, outfile)
 
@@ -64,8 +68,10 @@ def main(_):
         batcher.use_data(ds.dataset['test'])
         stats, stats_mod, stats_out = model.stats(batcher, ds.vocab)
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
-        # import pdb; pdb.set_trace()
-        fname = os.path.join('code', 'plot', '_'.join(['data', now]))
+        dir_name = os.path.join('code', 'plot')
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+        fname = os.path.join(dir_name, '_'.join(['data', now]))
         with open(fname, 'w') as outfile:
             data = {'stats':stats, 'stats_mod':stats_mod, 'stats_out': stats_out}
             json.dump(data, outfile)
