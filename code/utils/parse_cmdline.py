@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import numpy as np
 import time
@@ -30,10 +31,22 @@ def parse_cmdline():
     parser.add_argument('--num_goals', type=int, default=1, help='')
     parser.add_argument('--comb_loss', action='store_true', help='')
     parser.add_argument('--time_out', type=float, default=100., help='')
+    parser.add_argument('--load_from_file', action='store_true', help='')
 
     args = parser.parse_args()
 
     config = dict()
+
+    if args.load_from_file:
+        config_file = os.path.join('results', args.model_name, 'config.json')
+        if os.path.isfile(config_file):
+            with open(config_file, 'r') as conf_file:
+                config = json.load(conf_file)
+            import pdb; pdb.set_trace()
+            config['mode'] = args.action
+            return config
+        else:
+            print('Couldn\'t find the config file proceeding with command line configurations')
 
     config['ds'] = {}
     config['ds']['tags_type'] = {'direction': args.keep_direction,
