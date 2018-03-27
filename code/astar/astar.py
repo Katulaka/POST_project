@@ -99,6 +99,7 @@ class AStar:
             if (time.clock() - current_time >= time_th):
                 cost_coeff *= 0.5
                 current_time = time.clock()
+                import ipdb; ipdb.set_trace()
             if verbose > 0:
                 self.print_fn(current, 'current')
                 max_len, max_node = self.is_max_len(current.data, max_len, max_node)
