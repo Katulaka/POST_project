@@ -1,18 +1,3 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 """Beam search module.
 
 Beam search takes the top K results from the model, predicts the K results for
@@ -36,6 +21,7 @@ class Hypothesis(object):
           tokens: start tokens for decoding.
           prob: prob of the start tokens, usually 1.
           state: decoder initial states.
+          score: decoder intial score.
         """
         self.tokens = tokens
         self.prob = prob
@@ -100,9 +86,11 @@ class BeamSearch(object):
         decs = []
         decs_out_beam = []
         dec_len = len(enc_state_batch)
+        #iterate over batch
         for j, enc_state in enumerate(enc_state_batch):
             print ("Starting batch %d / %d" % (j+1, dec_len))
             enc_w_len = enc_bv['word']['len'][j] - 1
+            #iterate over words in seq
             for i, dec_in in enumerate(enc_state[1:enc_w_len]):
                 dec_in_state = tf.contrib.rnn.LSTMStateTuple(
                                     np.expand_dims(dec_in, axis=0),
@@ -127,7 +115,6 @@ class BeamSearch(object):
                             all_hyps.append(hyp.extend_(ids[j],
                                             probs[j],
                                             new_state))
-
                     hyps = []
                     all_hyps_sorted = self.sort_hyps(all_hyps)
                     #collect completed hyps that are outside the beam
@@ -137,10 +124,12 @@ class BeamSearch(object):
 
                     for h in self.best_hyps(all_hyps_sorted):
                         # Filter and collect any hypotheses that have the end token.
-                        if h.latest_token == self._end_token:
+                        if h.latest_token == self._end_token and len(h.tokens)>2:
                             # Pull the hypothesis off the beam
                             #if the end token is reached.
                             res.append(h)
+                        elif h.latest_token == self._end_token:
+                            pass
                         elif len(res) >= self._beam_size \
                             and h.score < min(res, key=lambda h: h.score).score:
                             pass
@@ -151,11 +140,72 @@ class BeamSearch(object):
                 decs.append(self.best_hyps(self.sort_hyps(res)))
                 decs_out_beam.append(res_out_beam)
 
+        # import ipdb; ipdb.set_trace()
+
         beams = dict()
-        beams['tokens'] = [[h.tokens[1:-1] for h in r if len(h.tokens)>2]
-                            for r in decs]
-        beams['scores'] = [[h.score for h in r if len(h.tokens)>2]
-                             for r in decs]
+        beams['tokens'] = [[h.tokens[1:-1] for h in r ] for r in decs]
+        beams['scores'] = [[h.score for h in r ] for r in decs]
+        return beams, decs_out_beam
+
+    def _beam_search(self, encode_top_state, decode_topk, enc_bv):
+        """Performs beam search for decoding.
+
+         Args:
+            sess: tf.Session, session
+            enc_win: ndarray of shape (enc_length, 1),
+                        the document ids to encode
+            enc_wlen: ndarray of shape (1), the length of the sequnce
+
+         Returns:
+            hyps: list of Hypothesis, the best hypotheses found by beam search,
+                    ordered by score
+         """
+        # Run the encoder and extract the outputs and final state.
+        enc_state_batch = encode_top_state(enc_bv)
+        decs = []
+        dec_len = len(enc_state_batch)
+        #iterate over batch
+        for j, enc_state in enumerate(enc_state_batch):
+            print ("Starting batch %d / %d" % (j+1, dec_len))
+            enc_w_len = enc_bv['word']['len'][j] - 1
+            #iterate over words in seq
+            for i, dec_in in enumerate(enc_state[1:enc_w_len]):
+                dec_in_state = tf.contrib.rnn.LSTMStateTuple(
+                                    np.expand_dims(dec_in, axis=0),
+                                    np.expand_dims(np.zeros_like(dec_in),
+                                                    axis=0))
+                # res = dict()
+                res = []
+                hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
+                for steps in xrange(self._max_steps):
+                    # Extend each hypothesis.
+                    # The first step takes the best K results from first hyps.
+                    # Following steps take the best K results from K*K hyps.
+                    all_hyps = []
+                    for hyp in hyps:
+                        latest_token = [[hyp.latest_token]]
+                        states = hyp.state
+                        ids, probs, new_state = decode_topk(latest_token,
+                                                            states,
+                                                            [enc_state],
+                                                            self._beam_size)
+                        for j in xrange(self._beam_size):
+                            all_hyps.append(hyp.extend_(ids[j],
+                                            probs[j],
+                                            new_state))
+                    hyps = []
+                    all_hyps_sorted = self.sort_hyps(self.filter_hyps(all_hyps))
+                    for h in self.best_hyps(all_hyps_sorted):
+                        # res[steps].append(h.extend_(self._end_token, 1., new_state))
+                        res.append(h.extend_(self._end_token, 1., new_state))
+                        hyps.append(h)
+                decs.append(res)
+                print ("Finished beam search for %d / %d" % (i+1, enc_w_len - 1))
+        # import ipdb; ipdb.set_trace()
+
+        beams = dict()
+        beams['tokens'] = [[h.tokens[1:-1] for h in r] for r in decs]
+        beams['scores'] = [[h.score for h in r] for r in decs]
         return beams, decs_out_beam
 
     def sort_hyps(self, hyps):
@@ -166,6 +216,15 @@ class BeamSearch(object):
           hyps: A list of sorted hypothesis from highest prob to lowest
         """
         return sorted(hyps, key=lambda h: h.score, reverse=True)
+
+    def filter_hyps(self, hyps):
+        """Sort the hyps based on probs.
+        Args:
+          hyps: A list of hypothesis.
+        Returns:
+          hyps: A list of sorted hypothesis from highest prob to lowest
+        """
+        return [h for h in hyps if h.latest_token != self._end_token]
 
     def best_hyps(self, hyp_sort):
         """return top <beam_size> hyps.
