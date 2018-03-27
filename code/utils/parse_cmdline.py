@@ -9,31 +9,42 @@ import tensorflow as tf
 def parse_cmdline():
     np.random.seed(int(time.time()))
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--action', type=str, default='train', help='')
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--model_name', type=str, default='stags', help='')
-    parser.add_argument('--pos_model', type=str, default=None, help='')
-    parser.add_argument('--batch', type=int, default=32, help='')
     parser.add_argument('--pos', action='store_true', help='')
+    parser.add_argument('--pos_model', type=str, default=None, help='')
+    parser.add_argument('--load_from_file', action='store_true', help='')
+
     parser.add_argument('--use_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
+
+    parser.add_argument('--only_pos', action='store_true', help='')
+    parser.add_argument('--keep_direction', action='store_true', help='')
+    parser.add_argument('--no_val_gap', action='store_true', help='')
+    parser.add_argument('--reverse', action='store_true', help='')
+    parser.add_argument('--batch', type=int, default=32, help='')
+
     parser.add_argument('--test_min', default=0, type=int)
     parser.add_argument('--test_max', default=np.inf, type=int)
     parser.add_argument('--dev_min', default=0, type=int)
     parser.add_argument('--dev_max', default=np.inf, type=int)
     parser.add_argument('--train_min', default=0, type=int)
     parser.add_argument('--train_max', default=np.inf, type=int)
-    parser.add_argument('--beam', type=int, default=5, help='')
-    parser.add_argument('--only_pos', action='store_true', help='')
-    parser.add_argument('--keep_direction', action='store_true', help='')
-    parser.add_argument('--no_val_gap', action='store_true', help='')
-    parser.add_argument('--reverse', action='store_true', help='')
-    parser.add_argument('--num_goals', type=int, default=1, help='')
-    parser.add_argument('--comb_loss', action='store_true', help='')
-    parser.add_argument('--time_out', type=float, default=100., help='')
-    parser.add_argument('--load_from_file', action='store_true', help='')
 
-    args = parser.parse_args()
+    subparsers = parser.add_subparsers(help='types of action')
+
+    t_parser = subparsers.add_parser('train', parents=[parser])
+    t_parser.add_argument('--comb_loss', action='store_true', help='')
+
+    d_parser = subparsers.add_parser('decode', parents=[parser])
+    d_parser.add_argument('--beam', type=int, default=5, help='')
+    d_parser.add_argument('--time_out', type=float, default=100., help='')
+    d_parser.add_argument('--num_goals', type=int, default=1, help='')
+
+    import sys
+    config['mode'] = sys.argv[1]
+    current_parser =  t_parser if config['mode'] == 'train' else d_parser
+    args = current_parser.parse_args()
 
     config = dict()
 
@@ -43,7 +54,6 @@ def parse_cmdline():
             with open(config_file, 'r') as conf_file:
                 config = json.load(conf_file)
             import pdb; pdb.set_trace()
-            config['mode'] = args.action
             return config
         else:
             print('Couldn\'t find the config file proceeding with command line configurations')
@@ -86,9 +96,8 @@ def parse_cmdline():
     config['comb_loss'] = args.comb_loss
     config['pos'] = args.pos
     config['use_c_embed'] = args.use_c_embed
-    # config['use_pretrained_pos'] = args.use_pos
     config['use_pretrained_pos'] = args.pos_model != None
-    config['mode'] = args.action
+
 
     #embedding size
     config['dim_word'] = 128
