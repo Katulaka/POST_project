@@ -11,7 +11,7 @@ from utils.dataset import Dataset
 from utils.parse_cmdline import parse_cmdline
 from utils.tags.tree_t import trees_to_ptb
 
-def main(_):
+def main():
     config = parse_cmdline()
     print('==================================================================')
     # create vocabulary and array of dataset from train file
