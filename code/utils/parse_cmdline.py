@@ -59,6 +59,20 @@ def parse_cmdline():
         else:
             print('Couldn\'t find the config file proceeding with command line configurations')
 
+    if config['mode'] == 'train':
+        config['comb_loss'] = args.comb_loss
+        config['lr'] = 0.01
+        config['th_loss'] = 0.1
+        #training num epochs before evaluting the dev loss
+        config['num_epochs'] = 1
+        config['steps_per_ckpt'] = 10
+    else:
+        config['time_out'] = args.time_out
+        config['num_goals'] = args.num_goals
+        config['beam_size'] = args.beam
+        config['dec_timesteps'] = 25
+
+
     config['ds'] = {}
     config['ds']['tags_type'] = {'direction': args.keep_direction,
                                 'pos': args.only_pos,
@@ -90,15 +104,12 @@ def parse_cmdline():
     config['model_name'] = args.model_name
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
-    config['steps_per_ckpt'] = 10
-    # Update config variables
 
+    # Update config variables
     config['attn'] = args.attn
-    config['comb_loss'] = args.comb_loss
     config['pos'] = args.pos
     config['use_c_embed'] = args.use_c_embed
     config['use_pretrained_pos'] = args.pos_model != None
-
 
     #embedding size
     config['dim_word'] = 128
@@ -111,20 +122,14 @@ def parse_cmdline():
     config['hidden_word'] = 128
     config['hidden_tag'] = 256
 
-    config['lr'] = 0.01
-    config['th_loss'] = 0.1
-    #training num epochs before evaluting the dev loss
-    config['num_epochs'] = 1
+
     config['debug'] = True
-    if not args.pos and config['use_pretrained_pos']:
+    if not config['pos'] and config['use_pretrained_pos']:
         config['pos_model'] = args.pos_model
         pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
         config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
         config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
-    config['time_out'] = args.time_out
-    config['num_goals'] = args.num_goals
-    config['beam_size'] = args.beam
-    config['dec_timesteps'] = 25
+
     config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
 
     return config
