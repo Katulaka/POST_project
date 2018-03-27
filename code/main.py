@@ -79,5 +79,5 @@ def main(_):
         print("Nothing to do!!")
 
 
-if __name__ == "__main__":
-    tf.app.run()
+# if __name__ == "__main__":
+tf.app.run(main)
