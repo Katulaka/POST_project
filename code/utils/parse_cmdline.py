@@ -13,7 +13,7 @@ def parse_cmdline():
     parser.add_argument('--model_name', type=str, default='stags', help='')
     parser.add_argument('--pos', action='store_true', help='')
     parser.add_argument('--pos_model', type=str, default=None, help='')
-    parser.add_argument('--load_from_file', action='store_true', help='')
+    parser.add_argument('--load_from_file', type=str, default=None, help='')
 
     parser.add_argument('--use_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
@@ -41,19 +41,20 @@ def parse_cmdline():
     d_parser.add_argument('--time_out', type=float, default=100., help='')
     d_parser.add_argument('--num_goals', type=int, default=1, help='')
 
+    config = dict()
+
     import sys
     config['mode'] = sys.argv[1]
     current_parser =  t_parser if config['mode'] == 'train' else d_parser
     args = current_parser.parse_args()
 
-    config = dict()
-
-    if args.load_from_file:
-        config_file = os.path.join('results', args.model_name, 'config.json')
+    if args.load_from_file is not None:
+        # config_file = os.path.join('results', args.model_name, 'config.json')
+        config_file = os.path.join('results', args.model_name, args.load_from_file)
         if os.path.isfile(config_file):
             with open(config_file, 'r') as conf_file:
                 config = json.load(conf_file)
-            import pdb; pdb.set_trace()
+            config['mode'] = sys.argv[1]
             return config
         else:
             print('Couldn\'t find the config file proceeding with command line configurations')
