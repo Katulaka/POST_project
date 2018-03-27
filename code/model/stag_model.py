@@ -197,29 +197,30 @@ class STAGModel(BasicModel):
         self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss, global_step=self.global_step)
 
     def build_graph(self):
-        with tf.Graph().as_default() as g:
-            with tf.variable_scope(self.config['scope_name']):
-                self.lr = tf.Variable(float(self.config['lr']), trainable=False,
-                                        dtype=self.dtype, name='learning_rate')
-                self.global_step =  tf.Variable(0, trainable=False,
-                                                dtype=tf.int32, name='g_step')
-                self._add_placeholders()
-                self._add_embeddings()
-                if self.config['use_c_embed']:
-                    self._add_char_lstm()
-                else:
-                    self._add_char_bridge()
-                self._add_word_bidi_lstm()
-                self._add_tag_lstm_layer()
-                if self.config['attn']:
-                    self._add_attention()
-                else:
-                    self.proj_in = self.decode_out
-                self._add_projection()
-                self._add_loss()
-                if (self.config['mode'] == 'train'):
-                    self._add_train_op()
-        return g
+        with tf.device('/gpu:0'):
+            with tf.Graph().as_default() as g:
+                with tf.variable_scope(self.config['scope_name']):
+                    self.lr = tf.Variable(float(self.config['lr']), trainable=False,
+                                            dtype=self.dtype, name='learning_rate')
+                    self.global_step =  tf.Variable(0, trainable=False,
+                                                    dtype=tf.int32, name='g_step')
+                    self._add_placeholders()
+                    self._add_embeddings()
+                    if self.config['use_c_embed']:
+                        self._add_char_lstm()
+                    else:
+                        self._add_char_bridge()
+                    self._add_word_bidi_lstm()
+                    self._add_tag_lstm_layer()
+                    if self.config['attn']:
+                        self._add_attention()
+                    else:
+                        self.proj_in = self.decode_out
+                    self._add_projection()
+                    self._add_loss()
+                    if (self.config['mode'] == 'train'):
+                        self._add_train_op()
+            return g
 
         """"TRAIN Part """
     def pos_step(self, bv):
