@@ -120,7 +120,7 @@ def parse_cmdline():
     config['hidden_char'] = 32
     config['hidden_pos'] = 128
     config['hidden_word'] = 128
-    config['hidden_tag'] = 256
+    config['hidden_tag'] = 128
 
 
     config['debug'] = True
