@@ -98,8 +98,14 @@ class AStar:
             current = heappop(openSet)
             if (time.clock() - current_time >= time_th):
                 cost_coeff *= 0.5
-                current_time = time.clock()
+                while(openSet):
+                    c_up = heappop(openSet)
+                    c_up.fscore = self.real_cost(c_up.data) + self.heuristic_cost(c_up.data, goal, cost_coeff)
+                    tmp.append(c_up)
+                for t in tmp:
+                    heappush(openSet, t)
                 import ipdb; ipdb.set_trace()
+                current_time = time.clock()
             if verbose > 0:
                 self.print_fn(current, 'current')
                 max_len, max_node = self.is_max_len(current.data, max_len, max_node)
