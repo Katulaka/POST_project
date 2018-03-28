@@ -98,14 +98,8 @@ class AStar:
             current = heappop(openSet)
             if (time.clock() - current_time >= time_th):
                 cost_coeff *= 0.5
-                import ipdb; ipdb.set_trace()
-                while(openSet):
-                    c_up = heappop(openSet)
-                    c_up.fscore = self.real_cost(c_up.data) + self.heuristic_cost(c_up.data, goal, cost_coeff)
-                    tmp.append(c_up)
-                for t in tmp:
-                    heappush(openSet, t)
-
+                for t in openSet:
+                    t.fscore = self.real_cost(t.data) + self.heuristic_cost(t.data, goal, cost_coeff)
                 current_time = time.clock()
             if verbose > 0:
                 self.print_fn(current, 'current')
