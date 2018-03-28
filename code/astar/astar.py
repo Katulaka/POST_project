@@ -99,7 +99,8 @@ class AStar:
             if (time.clock() - current_time >= time_th):
                 cost_coeff *= 0.5
                 for t in openSet:
-                    t.fscore = self.real_cost(t.data) + self.heuristic_cost(t.data, goal, cost_coeff)
+                    t.fscore = self.real_cost(t.data) \
+                            + self.heuristic_cost(t.data, goal, cost_coeff)
                 current_time = time.clock()
             if verbose > 0:
                 self.print_fn(current, 'current')
