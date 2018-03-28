@@ -112,15 +112,15 @@ def parse_cmdline():
     config['use_pretrained_pos'] = args.pos_model != None
 
     #embedding size
-    config['dim_word'] = 128
+    config['dim_word'] = 64
     config['dim_tag'] = 64
     config['dim_char'] = 32
     config['dim_pos'] = 64
     #NN dims
     config['hidden_char'] = 32
-    config['hidden_pos'] = 128
-    config['hidden_word'] = 128
-    config['hidden_tag'] = 128
+    config['hidden_pos'] = 64
+    config['hidden_word'] = 64
+    config['hidden_tag'] = 64
 
 
     config['debug'] = True
