@@ -55,6 +55,22 @@ def parse_cmdline():
             with open(config_file, 'r') as conf_file:
                 config = json.load(conf_file)
             config['mode'] = sys.argv[1]
+            if config['mode'] == 'train':
+                if 'comb_loss' not in config.keys():
+                    config['comb_loss'] = args.comb_loss
+                config['lr'] = 0.01
+                config['th_loss'] = 0.1
+                #training num epochs before evaluting the dev loss
+                config['num_epochs'] = 1
+                config['steps_per_ckpt'] = 10
+            else:
+                if 'time_out' not in config.keys():
+                    config['time_out'] = args.time_out
+                if 'num_goals' not in config.keys():
+                    config['num_goals'] = args.num_goals
+                if 'beam_size' not in config.keys():
+                    config['beam_size'] = args.beam
+                config['dec_timesteps'] = 25
             return config
         else:
             print('Couldn\'t find the config file proceeding with command line configurations')
@@ -67,9 +83,12 @@ def parse_cmdline():
         config['num_epochs'] = 1
         config['steps_per_ckpt'] = 10
     else:
-        config['time_out'] = args.time_out
-        config['num_goals'] = args.num_goals
-        config['beam_size'] = args.beam
+        if 'time_out' not in config.keys():
+            config['time_out'] = args.time_out
+        if 'num_goals' not in config.keys():
+            config['num_goals'] = args.num_goals
+        if 'beam_size' not in config.keys():
+            config['beam_size'] = args.beam
         config['dec_timesteps'] = 25
 
 
