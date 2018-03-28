@@ -105,7 +105,6 @@ class AStar:
                     tmp.append(c_up)
                 for t in tmp:
                     heappush(openSet, t)
-
                 current_time = time.clock()
             if verbose > 0:
                 self.print_fn(current, 'current')
