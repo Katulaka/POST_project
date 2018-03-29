@@ -358,7 +358,17 @@ class STAGModel(BasicModel):
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
             # self.get_tag_score(self.decode_bs(bv), vocab, t_op)
+            import cProfile, pstats, StringIO
+            pr = cProfile.Profile()
+            pr.enable()
             beams, _ = self.decode_bs(bv, vocab)
+            pr.disable()
+            s = StringIO.StringIO()
+            sortby = 'cumulative'
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print s.getvalue()
+
             tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
 
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
