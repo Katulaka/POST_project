@@ -364,7 +364,7 @@ class STAGModel(BasicModel):
             pr.enable()
             beams, _ = self.decode_bs(bv, vocab)
             pr.disable()
-            s = StringIO.StringIO()
+            s = StringIO()
             sortby = 'cumulative'
             ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
             ps.print_stats()
