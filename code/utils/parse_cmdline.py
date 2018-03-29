@@ -71,6 +71,8 @@ def parse_cmdline():
                 if 'beam_size' not in config.keys():
                     config['beam_size'] = args.beam
                 config['dec_timesteps'] = 25
+            with open(config_file, 'w') as conf_file:
+                json.dump(config, conf_file)
             return config
         else:
             print('Couldn\'t find the config file proceeding with command line configurations')
