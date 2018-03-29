@@ -5,6 +5,7 @@ import copy
 import math
 import sys
 import time
+from tqdm import tqdm
 
 import numpy as np
 import tensorflow as tf
@@ -352,7 +353,7 @@ class STAGModel(BasicModel):
     def decode(self, vocab, batcher, t_op):
 
         decoded_trees = []
-        for bv in batcher.get_batch():
+        for bv in tqdm(batcher.get_batch()):
             bv = batcher.process(bv)
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = vocab['words'].to_tokens(words_id)
