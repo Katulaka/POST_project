@@ -177,19 +177,20 @@ class BeamSearch(object):
                 # The first step takes the best K results from first hyps.
                 # Following steps take the best K results from K*K hyps.
                 all_hyps = []
-                hyps_shape = np.array(hyps).shape
+                hyps = np.array(hyps)
+                hyps_shape = hyps.shape
                 enc_shape = enc_state_batch.shape
-                import ipdb; ipdb.set_trace()
-                hyps_ = np.array(hyps).reshape(-1,1)
-                latest_token = list(map(lambda h: [h[0].latest_token], hyps_))
-                states = list(map(lambda h: [h[0].state], hyps_))
-                enc_tile = [np.tile(n, (hyps_shape[-1],1,1)) for n in enc_state_batch]
-                enc = np.reshape(enc_tile, (hyps_shape[0]*hyps_shape[1],enc_shape[-2],enc_shape[-1]))
-                # import ipdb; ipdb.set_trace()
-                ids, probs, new_state = _decode_topk(latest_token,
-                                                    states,
-                                                    enc,
-                                                    self._beam_size)
+                for i in range(hyps_shape[1]):
+                    hyp = hyps[:,i]
+                    latest_token = list(map(lambda h: [h[0].latest_token], hyp))
+                    states = list(map(lambda h: [h[0].state], hyp))
+                # enc_tile = [np.tile(n, (hyps_shape[-1],1,1)) for n in enc_state_batch]
+                # enc = np.reshape(enc_tile, (hyps_shape[0]*hyps_shape[1],enc_shape[-2],enc_shape[-1]))
+                    ids, probs, new_state = _decode_topk(latest_token,
+                                                        states,
+                                                        enc_state_batch,
+                                                        self._beam_size)
+                    import ipdb; ipdb.set_trace()
                 for h, idx, pr, nst in zip(hyps_, ids, probs, new_state):
                     all_hyps.append([h[0].extend_(idx[j], pr[j], nst)
                                         for j in xrange(self._beam_size)])
