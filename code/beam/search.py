@@ -185,6 +185,7 @@ class BeamSearch(object):
                 new_state = []
                 for i in range(hyps_shape[1]):
                     hyp = hyps[:,i]
+                    import ipdb; ipdb.set_trace()
                     latest_token = list(map(lambda h: [h[0].latest_token], hyp))
                     states = list(map(lambda h: [h[0].state], hyp))
                 # enc_tile = [np.tile(n, (hyps_shape[-1],1,1)) for n in enc_state_batch]
@@ -196,7 +197,6 @@ class BeamSearch(object):
                     ids.append(ids_)
                     probs.append(probs_)
                     new_state.append(new_state_)
-                import ipdb; ipdb.set_trace()
                 for h, idx, pr, nst in zip(hyp, ids, probs, new_state):
                     all_hyps.append([h[0].extend_(idx[j], pr[j], nst)
                                         for j in xrange(self._beam_size)])
