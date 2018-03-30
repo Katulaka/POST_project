@@ -194,8 +194,11 @@ class BeamSearch(object):
                                                         enc_state_batch,
                                                         self._beam_size)
                     for h, idx, pr, nst in zip(hyp, ids, probs, new_state):
-                        all_hyps.append([h.extend_(idx[j], pr[j], nst)
-                                        for j in xrange(self._beam_size)])
+                        # all_hyps.append([h.extend_(idx[j], pr[j], nst)
+                        #                 for j in xrange(self._beam_size)])
+                        hyp_ext = [h.extend_(idx[j], pr[j], nst)
+                                        for j in xrange(self._beam_size)]
+                        np.append(all_hyps, hyp_ext, axis=1)
                 import ipdb; ipdb.set_trace()
                 # all_hyps = np.array(all_hyps).reshape(hyps_shape[0], -1)
                 # import ipdb; ipdb.set_trace()
