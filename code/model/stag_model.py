@@ -312,14 +312,10 @@ class STAGModel(BasicModel):
             self.t_in: np.array(latest_tokens),
             self.encode_state : enc_state,
             self.tag_len: np.ones(1, np.int32)}
-            # self.tag_len: np.squeeze(np.ones_like(latest_tokens, np.int32), 1)}
         output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
-        # topk_ids = np.argsort(probs)[:,-k:]
-        # rows = np.repeat(np.arange(topk_ids.shape[0]), k).reshape(-1, k)
-        # topk_probs = probs[rows, topk_ids]
         return topk_ids, topk_probs, states
 
     def _decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
@@ -344,7 +340,7 @@ class STAGModel(BasicModel):
                         self.config['dec_timesteps'])
 
         bv_cp = copy.copy(bv)
-        return bs.beam_search(self.encode_top_state, self._decode_topk, bv_cp)
+        return bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
 
     def beam_to_tag(self, beam, vocab, t_op):
 

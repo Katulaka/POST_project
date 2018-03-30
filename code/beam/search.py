@@ -68,7 +68,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def _beam_search(self, encode_top_state, decode_topk, enc_bv):
+    def beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 
          Args:
@@ -147,7 +147,7 @@ class BeamSearch(object):
         beams['scores'] = [[h.score for h in r ] for r in decs]
         return beams, decs_out_beam
 
-    def beam_search(self, encode_top_state, _decode_topk, enc_bv):
+    def _beam_search(self, encode_top_state, _decode_topk, enc_bv):
         """Performs beam search for decoding.
 
          Args:
@@ -204,10 +204,6 @@ class BeamSearch(object):
                         if h.latest_token == self._end_token and len(h.tokens)>2:
                         # Pull the hypothesis off the beam
                         #if the end token is reached.
-                            # import ipdb; ipdb.set_trace()
-                            # if res == []:
-                            #     res[j] = h
-                            # else:
                             res[j].append(h)
                         elif h.latest_token == self._end_token:
                             pass
@@ -222,8 +218,6 @@ class BeamSearch(object):
             print ("Finished beam search for %d / %d" % (i+1, enc_w_len - 1))
             decs.append(self.best_hyps(self.sort_hyps(res)))
             decs_out_beam.append(res_out_beam)
-
-    # import ipdb; ipdb.set_trace()
 
         beams = dict()
         beams['tokens'] = [[h.tokens[1:-1] for h in r ] for r in decs]
