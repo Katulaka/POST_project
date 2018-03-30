@@ -197,17 +197,17 @@ class BeamSearch(object):
                         all_hyps.append([h.extend_(idx[j], pr[j], nst)
                                         for j in xrange(self._beam_size)])
                 import ipdb; ipdb.set_trace()
-                all_hyps = np.array(all_hyps).reshape(hyps_shape[0], -1)
+                # all_hyps = np.array(all_hyps).reshape(hyps_shape[0], -1)
                 # import ipdb; ipdb.set_trace()
                 hyps = []
                 for j, all_hyp in enumerate(all_hyps):
                     hyps_ = []
                     for h in self.best_hyps(self.sort_hyps(all_hyp)):
-                        try:
-                            aaa = res != [] and len(res[j]) >= self._beam_size \
-                                and h.score < min(res[j], key=lambda h: h.score).score
-                        except:
-                            import ipdb; ipdb.set_trace()
+                        # try:
+                        #     aaa = res != [] and len(res[j]) >= self._beam_size \
+                        #         and h.score < min(res[j], key=lambda h: h.score).score
+                        # except:
+                        #     import ipdb; ipdb.set_trace()
                         # Filter and collect any hypotheses that have the end token.
                         if h.latest_token == self._end_token and len(h.tokens)>2:
                         # Pull the hypothesis off the beam
