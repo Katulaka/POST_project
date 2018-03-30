@@ -187,34 +187,23 @@ class BeamSearch(object):
                     hyp = hyps[:,i]
                     latest_token = list(map(lambda h: [h.latest_token], hyp))
                     states = list(map(lambda h: [h.state], hyp))
-                # enc_tile = [np.tile(n, (hyps_shape[-1],1,1)) for n in enc_state_batch]
-                # enc = np.reshape(enc_tile, (hyps_shape[0]*hyps_shape[1],enc_shape[-2],enc_shape[-1]))
                     ids, probs, new_state = _decode_topk(latest_token,
                                                         states,
                                                         enc_state_batch,
                                                         self._beam_size)
-                    hyp_ext = []                                
+                    hyp_ext = []
                     for h, idx, pr, nst in zip(hyp, ids, probs, new_state):
-                        # all_hyps.append([h.extend_(idx[j], pr[j], nst)
-                        #                 for j in xrange(self._beam_size)])
                         hyp_ext.append([h.extend_(idx[j], pr[j], nst)
                                         for j in xrange(self._beam_size)])
-                    import ipdb; ipdb.set_trace()
-                    # if all_hyps == []:
-                    #     all_hyps = hyp_ext
-                    # else:
-                    np.append(all_hyps, hyp_ext, axis=1)
-                # all_hyps = np.array(all_hyps).reshape(hyps_shape[0], -1)
+                    if all_hyps == []:
+                        all_hyps = hyp_ext
+                    else:
+                        all_hyps = np.append(all_hyps, hyp_ext, axis=1)
                 # import ipdb; ipdb.set_trace()
                 hyps = []
                 for j, all_hyp in enumerate(all_hyps):
                     hyps_ = []
                     for h in self.best_hyps(self.sort_hyps(all_hyp)):
-                        # try:
-                        #     aaa = res != [] and len(res[j]) >= self._beam_size \
-                        #         and h.score < min(res[j], key=lambda h: h.score).score
-                        # except:
-                        #     import ipdb; ipdb.set_trace()
                         # Filter and collect any hypotheses that have the end token.
                         if h.latest_token == self._end_token and len(h.tokens)>2:
                         # Pull the hypothesis off the beam
