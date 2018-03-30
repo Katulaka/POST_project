@@ -145,6 +145,7 @@ class BeamSearch(object):
         beams = dict()
         beams['tokens'] = [[h.tokens[1:-1] for h in r ] for r in decs]
         beams['scores'] = [[h.score for h in r ] for r in decs]
+        import ipdb; ipdb.set_trace()
         return beams, decs_out_beam
 
     def _beam_search(self, encode_top_state, _decode_topk, enc_bv):
