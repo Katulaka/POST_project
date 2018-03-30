@@ -179,6 +179,7 @@ class BeamSearch(object):
                 all_hyps = []
                 hyps = np.array(hyps)
                 hyps_shape = hyps.shape
+                import ipdb; ipdb.set_trace()
                 for i in range(hyps_shape[1]):
                     hyp = hyps[:,i]
                     latest_token = list(map(lambda h: [h.latest_token], hyp))
