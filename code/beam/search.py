@@ -179,12 +179,13 @@ class BeamSearch(object):
                 all_hyps = []
                 hyps_shape = np.array(hyps).shape
                 enc_shape = enc_state_batch.shape
+                import ipdb; ipdb.set_trace()
                 hyps_ = np.array(hyps).reshape(-1,1)
                 latest_token = list(map(lambda h: [h[0].latest_token], hyps_))
                 states = list(map(lambda h: [h[0].state], hyps_))
                 enc_tile = [np.tile(n, (hyps_shape[-1],1,1)) for n in enc_state_batch]
                 enc = np.reshape(enc_tile, (hyps_shape[0]*hyps_shape[1],enc_shape[-2],enc_shape[-1]))
-                import ipdb; ipdb.set_trace()
+                # import ipdb; ipdb.set_trace()
                 ids, probs, new_state = _decode_topk(latest_token,
                                                     states,
                                                     enc,
