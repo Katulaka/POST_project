@@ -164,14 +164,14 @@ class BeamSearch(object):
         enc_state_batch = encode_top_state(enc_bv)
         decs = []
         decs_out_beam = []
-        dec_len = len(enc_state_batch)
-        for i in range(enc_state_batch.shape[1]):
+        b_sz, n_w, _ = enc_state_batch.shape
+        for i in range(n_w):
             dec_in_batch =  enc_state_batch[:,i,:]
             dec_in_state = tf.contrib.rnn.LSTMStateTuple(dec_in_batch,
                                                 np.zeros_like(dec_in_batch))
             hyps = np.array([[Hypothesis([self._start_token], [1.0], dis, 1.0)]
                                                     for dis in dec_in_state])
-            res = []
+            res = [[]*n for n in range(b_sz)]
             for steps in xrange(self._max_steps):
                 # Extend each hypothesis.
                 # The first step takes the best K results from first hyps.
@@ -203,11 +203,14 @@ class BeamSearch(object):
                         if h.latest_token == self._end_token and len(h.tokens)>2:
                         # Pull the hypothesis off the beam
                         #if the end token is reached.
-                            import ipdb; ipdb.set_trace()
+                            # import ipdb; ipdb.set_trace()
+                            # if res == []:
+                            #     res[j] = h
+                            # else:
                             res[j].append(h)
                         elif h.latest_token == self._end_token:
                             pass
-                        elif res != [] and len(res[j]) >= self._beam_size \
+                        elif len(res[j]) >= self._beam_size \
                             and h.score < min(res[j], key=lambda h: h.score).score:
                             pass
                         else:
