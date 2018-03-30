@@ -49,12 +49,12 @@ def main(_):
             os.makedirs(dir_name)
 
         batcher.use_data(ds.dataset['test'])
-        decode_trees, patterns = model.decode(ds.vocab, batcher, ds.t_op)
-        decoded_tags = trees_to_ptb(decode_trees)
+        # decode_trees = model.decode(ds.vocab, batcher, ds.t_op)
+        decoded_tags = trees_to_ptb(model.decode(ds.vocab, batcher, ds.t_op))
 
-        pattern_file = os.path.join(dir_name, fname + '.ptrn')
-        with open(pattern_file, 'w') as outfile:
-            json.dump(patterns, outfile)
+        # pattern_file = os.path.join(dir_name, fname + '.ptrn')
+        # with open(pattern_file, 'w') as outfile:
+        #     json.dump(patterns, outfile)
         dec_file = os.path.join(dir_name, fname + '.test')
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
