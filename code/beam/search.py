@@ -198,7 +198,10 @@ class BeamSearch(object):
                         #                 for j in xrange(self._beam_size)])
                         hyp_ext = [h.extend_(idx[j], pr[j], nst)
                                         for j in xrange(self._beam_size)]
-                        np.append(all_hyps, hyp_ext, axis=1)
+                        if all_hyps == []:
+                            all_hyps = hyp_ext
+                        else:
+                            np.append(all_hyps, hyp_ext, axis=1)
                 import ipdb; ipdb.set_trace()
                 # all_hyps = np.array(all_hyps).reshape(hyps_shape[0], -1)
                 # import ipdb; ipdb.set_trace()
