@@ -329,7 +329,7 @@ class STAGModel(BasicModel):
             self.t_in: np.array(latest_tokens),
             self.encode_state : enc_state,
             self.tag_len: np.squeeze(np.ones_like(latest_tokens, np.int32), 1)}
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.argsort(probs)[:,-k:]
