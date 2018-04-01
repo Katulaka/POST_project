@@ -12,7 +12,7 @@ from utils.parse_cmdline import parse_cmdline
 from utils.tags.tree_t import trees_to_ptb
 
 def main(_):
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     config = parse_cmdline()
     print('==================================================================')
     # create vocabulary and array of dataset from train file
@@ -51,6 +51,7 @@ def main(_):
         batcher.use_data(ds.dataset['test'])
         # decode_trees = model.decode(ds.vocab, batcher, ds.t_op)
         decoded_tags = trees_to_ptb(model.decode(ds.vocab, batcher, ds.t_op))
+        import pdb; pdb.set_trace()
 
         # pattern_file = os.path.join(dir_name, fname + '.ptrn')
         # with open(pattern_file, 'w') as outfile:
