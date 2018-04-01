@@ -53,6 +53,7 @@ def main(_):
         decoded = model.decode(ds.vocab, batcher, ds.t_op)
         # import pdb; pdb.set_trace()
         pattern = np.array(decoded)[:,1].tolist()
+        import ipdb; ipdb.set_trace()
         pattern_file = os.path.join(dir_name, fname + '.ptrn')
         with open(pattern_file, 'w') as outfile:
             json.dump(pattern, outfile)
