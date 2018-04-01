@@ -44,8 +44,10 @@ def main(_):
 
         now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         test_min, test_max = config['ds']['ds_range']['test']
-        fname = '_'.join(['ds', str(test_min), str(test_max), now])
-        dir_name = os.path.join('results', config['model_name'], config['mode'])
+        # fname = '_'.join(['ds', str(test_min), str(test_max), now])
+        fname = now
+        d_name = '_'.join(['ds', str(test_min), str(test_max)])
+        dir_name = os.path.join('results', config['model_name'], config['mode'], d_name)
         if not os.path.isdir(dir_name):
             os.makedirs(dir_name)
 
