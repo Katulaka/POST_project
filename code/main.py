@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import time
 import os
 import json
@@ -49,13 +50,15 @@ def main(_):
             os.makedirs(dir_name)
 
         batcher.use_data(ds.dataset['test'])
-        decode_trees = model.decode(ds.vocab, batcher, ds.t_op)
-        import pdb; pdb.set_trace()
-        decoded_tags = trees_to_ptb(decode_trees)
+        decoded = model.decode(ds.vocab, batcher, ds.t_op)
+        # import pdb; pdb.set_trace()
+        pattern = np.array(decode_trees)[:,1].tolist()
+        pattern_file = os.path.join(dir_name, fname + '.ptrn')
+        with open(pattern_file, 'w') as outfile:
+            json.dump(pattern, outfile)
 
-        # pattern_file = os.path.join(dir_name, fname + '.ptrn')
-        # with open(pattern_file, 'w') as outfile:
-        #     json.dump(patterns, outfile)
+        decode_trees = np.array(decoded)[:,0].tolist()
+        decoded_tags = trees_to_ptb(decode_trees)
         dec_file = os.path.join(dir_name, fname + '.test')
         with open(dec_file, 'w') as outfile:
             json.dump(decode_tags, outfile)
