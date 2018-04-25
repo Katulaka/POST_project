@@ -1,4 +1,5 @@
 import copy
+import os
 from nltk.tree import Tree as Tree_
 from treelib import Tree
 from utils.utils import _getattr_operate_on_Narray
@@ -59,9 +60,9 @@ class TreeT(object):
         for leaf in self.tree.leaves():
             lid = leaf.identifier
             hid = tree_dep[lid]
-            if hid == tree.root:
-                self.tree[lid].data.height = self.tree.depth(tree[lid])
-                for cid in [p for p in tree.paths_to_leaves() if lid in p][0]:
+            if hid == self.tree.root:
+                self.tree[lid].data.height = self.tree.depth(self.tree[lid])
+                for cid in [p for p in self.tree.paths_to_leaves() if lid in p][0]:
                     self.tree[cid].data.leaves += [lid]
             else:
                 height = -1
@@ -223,13 +224,13 @@ class TreeT(object):
 
     def from_tree_to_tag(self):
         path = {}
-        self.tree_to_path(tree.root, path)
-        return (self.path_to_tags(path.values()), self.path_to_words(path.keys()))
+        self.tree_to_path(self.tree.root, path)
+        return {'tags': self.path_to_tags(path.values()), 'words': self.path_to_words(path.keys())}
 
     def from_ptb_to_tag(self, line, max_id, depend):
-        tree.from_ptb_to_tree(line, max_id)
-        tree.add_height(depend)
-        return tree.from_tree_to_tag()
+        self.from_ptb_to_tree(line, max_id)
+        self.add_height(depend)
+        return self.from_tree_to_tag()
 
 def trees_to_ptb(trees):
     return _getattr_operate_on_Narray(trees, 'from_tree_to_ptb')

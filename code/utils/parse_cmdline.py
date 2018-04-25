@@ -41,11 +41,19 @@ def parse_cmdline():
     d_parser.add_argument('--time_out', type=float, default=100., help='')
     d_parser.add_argument('--num_goals', type=int, default=1, help='')
 
+    b_parser = subparsers.add_parser('evalb', parents=[parser])
+
     config = dict()
 
     import sys
     config['mode'] = sys.argv[1]
-    current_parser =  t_parser if config['mode'] == 'train' else d_parser
+    if config['mode'] == 'train':
+        current_parser =  t_parser
+    elif config['mode'] == 'decode':
+        current_parser =  d_parser
+    else:
+        current_parser =  b_parser
+
     args = current_parser.parse_args()
 
     if args.load_from_file is not None:
@@ -61,7 +69,6 @@ def parse_cmdline():
                 config['lr'] = 0.01
                 config['th_loss'] = 0.1
                 #training num epochs before evaluting the dev loss
-                config['num_epochs'] = 1
                 config['steps_per_ckpt'] = 10
             else:
                 if 'time_out' not in config.keys():
@@ -82,7 +89,6 @@ def parse_cmdline():
         config['lr'] = 0.01
         config['th_loss'] = 0.1
         #training num epochs before evaluting the dev loss
-        config['num_epochs'] = 1
         config['steps_per_ckpt'] = 10
     else:
         if 'time_out' not in config.keys():
@@ -93,7 +99,7 @@ def parse_cmdline():
             config['beam_size'] = args.beam
         config['dec_timesteps'] = 25
 
-
+    config['num_epochs'] = 1
     config['ds'] = {}
     config['ds']['tags_type'] = {'direction': args.keep_direction,
                                 'pos': args.only_pos,

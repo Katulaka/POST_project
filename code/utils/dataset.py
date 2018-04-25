@@ -37,9 +37,12 @@ class Dataset(object):
                 data = {'words' : [], 'tags' : []}
                 for fname in sorted(filenames):
                     fin = os.path.join(directory, fname)
-                    for tags, words in gen_tags(fin):
-                        data['words'].append(words)
-                        data['tags'].append(tags)
+                    # for tags, words in gen_tags(fin):
+                    #     data['words'].append(words)
+                    #     data['tags'].append(tags)
+                    res = gen_tags(fin)
+                    data['tags'].append(res['tags'])
+                    data['words'].append(res['words'])
                 all_data[int(directory[-2:])] = data
         with open(data_file, 'w') as outfile:
             json.dump(all_data, outfile)

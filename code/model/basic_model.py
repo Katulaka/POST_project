@@ -17,7 +17,6 @@ class BasicModel(object):
 
         # if config['best']:
         #     config.update(self.get_best_config(config['env_name']))
-
         self.config = copy.deepcopy(config)
 
         # if config['debug']: # This is a personal check i like to do
