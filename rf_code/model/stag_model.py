@@ -281,7 +281,6 @@ class STAGModel(BasicModel):
             # for bv in batcher.get_batch('train'):
             for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
-                import pdb; pdb.set_trace()
                 step_loss, summary, _ = self.step(batcher.process(bv), dev)
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
