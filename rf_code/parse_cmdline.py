@@ -58,6 +58,10 @@ def parse_cmdline():
     b_parser = subparsers.add_parser('evalb', parents=[parser])
 
     dbg_parser = subparsers.add_parser('debug', parents=[parser])
+    dbg_parser.add_argument('--no_val_gap', action='store_true', help='')
+    dbg_parser.add_argument('--reverse', action='store_true', help='')
+
+
 
     config = dict()
 
@@ -73,50 +77,54 @@ def parse_cmdline():
         current_parser =  dbg_parser
 
     args = current_parser.parse_args()
-    config['pos'] = args.pos
-    config['num_epochs'] = args.num_epochs
-    config['model_name'] = args.model_name
-    config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
-    config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
-    config['steps_per_ckpt'] = args.steps_per_ckpt
-    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
-    config['lr'] = args.lr
+    config['tags_type'] = {'reverse' : args.reverse,
+                            'no_val_gap': args.no_val_gap}
 
-    config['use_pretrained_pos'] = args.pos_model_name != None
+    if config['mode'] == 'train':
+        config['pos'] = args.pos
+        config['num_epochs'] = args.num_epochs
+        config['model_name'] = args.model_name
+        config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
+        config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
+        config['steps_per_ckpt'] = args.steps_per_ckpt
+        config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
+        config['lr'] = args.lr
 
-    if not config['pos'] and config['use_pretrained_pos']:
-        pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
+        config['use_pretrained_pos'] = args.pos_model_name != None
+
+        if not config['pos'] and config['use_pretrained_pos']:
+            pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
         # config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
-        config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
+            config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
 
-    config['btch'] = {}
-    config['btch']['batch_size'] = args.batch
-    config['btch']['tags_type'] = {'reverse' : args.reverse,
+        config['btch'] = {}
+        config['btch']['batch_size'] = args.batch
+        config['btch']['tags_type'] = {'reverse' : args.reverse,
                                 'no_val_gap': args.no_val_gap}
 
-    config['btch']['dir_range'] = {'train': (2,22),
+        config['btch']['dir_range'] = {'train': (2,22),
                                 'dev': (22,23),
                                 'test': (23,24)}
 
-    config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
+        config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
 
-    #embedding size
-    config['dim_word'] = args.dim_word
-    config['dim_tag'] = args.dim_tag
-    config['dim_char'] = args.dim_char
-    config['dim_pos'] = args.dim_pos
-    #NN dims
-    config['hidden_char'] = args.h_char
-    config['hidden_pos'] = args.h_pos
-    config['hidden_word'] = args.h_word
-    config['hidden_tag'] = args.h_tag
+        #embedding size
+        config['dim_word'] = args.dim_word
+        config['dim_tag'] = args.dim_tag
+        config['dim_char'] = args.dim_char
+        config['dim_pos'] = args.dim_pos
+        #NN dims
+        config['hidden_char'] = args.h_char
+        config['hidden_pos'] = args.h_pos
+        config['hidden_word'] = args.h_word
+        config['hidden_tag'] = args.h_tag
 
-    #model arch
-    config['use_c_embed'] = args.use_c_embed
-    config['attn'] = args.attn
+        #model arch
+        config['use_c_embed'] = args.use_c_embed
+        config['attn'] = args.attn
 
-    config['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
-    config['at_fout'] = 'at_data.out'
+        config['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
+        config['at_fout'] = 'at_data.out'
 
     # ds_dir = '../data'
     # ds_fname = 'data.txt'

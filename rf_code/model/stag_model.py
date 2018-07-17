@@ -1,19 +1,18 @@
 from __future__ import division
 from __future__ import print_function
 
-import copy
 import math
 import sys
 import time
-from tqdm import tqdm
-
 import numpy as np
 import tensorflow as tf
-
 from .basic_model import BasicModel
 # from beam.search import BeamSearch
-from astar.search import solve_tree_search
-from tag_ops import R, L, ANY
+
+# import copy
+# from tqdm import tqdm
+# from astar.search import solve_tree_search
+# from tag_ops import R, L, ANY
 
 
 class STAGModel(BasicModel):
@@ -163,15 +162,16 @@ class STAGModel(BasicModel):
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
             E_out = tf.get_variable('E-out', shape=E_out_shape)
-            # E_out_t = tf.transpose(E_out, name='E-out-t')
             b_out = tf.get_variable('b-out', shape=[self.config['ntags']])
+            self.logits = tf.matmul(v, E_out) + b_out
+            # compute softmax
+            self.pred = tf.nn.softmax(self.logits, name='pred')
+
+            # E_out_t = tf.transpose(E_out, name='E-out-t')
             # E_t_E = tf.matmul(E_out_t, E_out)
             # E_v = tf.matmul(v, E_out)
             # E_v_E_t_E = tf.matmul(E_v, E_t_E)
-            self.logits = tf.matmul(v, E_out) + b_out
             # self.mod_logits = E_v_E_t_E + b_out
-            # compute softmax
-            self.pred = tf.nn.softmax(self.logits, name='pred')
 
     def _add_loss(self):
 
@@ -255,14 +255,14 @@ class STAGModel(BasicModel):
         return self.sess.run(output_feed, input_feed)[0]
 
     def train(self, batcher, dev=False):
+
         for epoch_id in range(0, self.num_epochs):
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
             steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
-            # for bv in batcher.get_permute_batch():
-            for bv in batcher.get_batch('train'):
+            # for bv in batcher.get_batch('train'):
+            for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
-                # step_loss = self.step(batcher.process(bv), dev)
                 step_loss = self.step(batcher.process(bv), dev)
                 current_step += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt

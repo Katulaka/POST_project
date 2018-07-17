@@ -24,9 +24,10 @@ def main(_):
         pdir = '~/Berkeley/Research/Tagger'
         evalb = os.path.join(pdir, 'EVALB', 'evalb')
         pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
-        t_op = TagOp(**config['ds']['tags_type'])
+        t_op = TagOp(**config['tags_type'])
         for directory, dirnames, filenames in os.walk(src_dir):
-            if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
+            # if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
+            if directory[-1].isdigit() and directory[-2:] in ['15']:
 
                 dir_idx = directory.split('/')[-1]
                 lb_c_dir = os.path.join(lb_dir, dir_idx)
@@ -50,7 +51,7 @@ def main(_):
                         score = [[1.]]*len(tags)
                         tag_score_mat = map(lambda x, y: zip(x, y), mod_tags, score)
                         trees_res,_ = solve_tree_search(tag_score_mat, words,
-                        config['ds']['tags_type']['no_val_gap'], 1, 100)
+                        config['tags_type']['no_val_gap'], 1, 100)
                         try:
                             reconst.append(trees_res[0].from_tree_to_ptb())
                         except:
