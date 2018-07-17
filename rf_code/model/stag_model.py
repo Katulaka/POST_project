@@ -251,8 +251,9 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
-        return self.sess.run(output_feed, input_feed)[0]
+        # output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
+        output_feed = [self.loss, self.m_loss, self.optimizer]
+        return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher, dev=False):
 
@@ -263,6 +264,16 @@ class STAGModel(BasicModel):
         else:
             self.subset_idx =  batcher.get_subset_idx(self.config['mode'], 0.1)
 
+        # Create a summary to monitor loss tensor
+        self.m_loss = tf.summary.scalar("loss", self.loss)
+        # # Create a summary to monitor accuracy tensor
+        # tf.summary.scalar("accuracy", acc)
+        # # Merge all summaries into a single op
+        # self.merged_summary_op = tf.summary.merge_all()
+
+        summary_writer = tf.summary.FileWriter('./graphs', self.graph)
+
+
         for epoch_id in range(0, self.num_epochs):
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
@@ -270,7 +281,9 @@ class STAGModel(BasicModel):
             # for bv in batcher.get_batch('train'):
             for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
-                step_loss = self.step(batcher.process(bv), dev)
+                import pdb; pdb.set_trace()
+                step_loss, summary, _ = self.step(batcher.process(bv), dev)
+                summary_writer.add_summary(summary, current_step)
                 current_step += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt
                 loss += step_loss / steps_per_ckpt
@@ -286,6 +299,7 @@ class STAGModel(BasicModel):
                     ret_loss = loss
                     step_time, loss = 0.0, 0.0
                     sys.stdout.flush()
+        summary_writer.close()
             # return ret_loss
 
     # def train(self, batcher, dataset):
