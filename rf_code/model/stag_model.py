@@ -256,6 +256,13 @@ class STAGModel(BasicModel):
 
     def train(self, batcher, dev=False):
 
+        import os, json
+        if os.path.exists(os.path.join(self.config['result_dir'],'sub_batch.json')):
+            with open(os.path.join(self.config['result_dir'],'sub_batch.json'), 'r') as f:
+                self.subset_idx =  json.load(f)
+        else:
+            self.subset_idx =  batcher.get_subset_idx(self.config['mode'], 0.1)
+
         for epoch_id in range(0, self.num_epochs):
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
