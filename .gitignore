@@ -1,7 +1,6 @@
 *.json
 *.pyc
 checkpoints/
-venv/
-venv3/
 decode/
 code/plot/
+rf_code/graphs
