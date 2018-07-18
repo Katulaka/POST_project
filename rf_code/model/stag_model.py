@@ -296,6 +296,7 @@ class STAGModel(BasicModel):
                     step_time = 0.0
                     loss.append([0.0])
                     sys.stdout.flush()
+            import pdb; pdb.set_trace()
         summary_writer.close()
             # return ret_loss
 
