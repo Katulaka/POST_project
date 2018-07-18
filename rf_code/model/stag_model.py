@@ -266,9 +266,9 @@ class STAGModel(BasicModel):
         # self.merged_summary_op = tf.summary.merge_all()
 
         summary_writer = tf.summary.FileWriter('./graphs', self.graph)
-
+        loss = 0.1
         # for epoch_id in range(0, self.num_epochs):
-        while loss > 0.1:
+        while loss >= 0.1:
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
             steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1

@@ -54,34 +54,29 @@ def parse_cmdline():
 
     args = parser.parse_args()
     config['mode'] = args.mode
-
-    config['tags_type'] = {'reverse' : args.reverse,
-                            'no_val_gap': args.no_val_gap}
-
     config['pos'] = args.pos
-    config['num_epochs'] = args.num_epochs
+    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
     config['model_name'] = args.model_name
+
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
-    config['steps_per_ckpt'] = args.steps_per_ckpt
-    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
-    config['lr'] = args.lr
+
+    # config['tags_type'] = {'reverse' : args.reverse,
+    #                         'no_val_gap' : args.no_val_gap}
 
     config['use_pretrained_pos'] = args.pos_model_name != None
 
     if not config['pos'] and config['use_pretrained_pos']:
         pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
-    # config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
         config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
+        # config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
 
     config['btch'] = {}
     config['btch']['batch_size'] = args.batch
     config['btch']['tags_type'] = {'reverse' : args.reverse,
                             'no_val_gap': args.no_val_gap}
 
-    config['btch']['dir_range'] = {'train': (2,22),
-                            'dev': (22,23),
-                            'test': (23,24)}
+    config['btch']['dir_range'] = {'train': (2,22), 'dev': (22,23), 'test': (23,24)}
 
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
 
@@ -103,10 +98,16 @@ def parse_cmdline():
     config['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['at_fout'] = 'at_data.out'
 
-    config['beam_size'] = args.beam_size
-    config['beam_timesteps'] = args.beam_timesteps
-    config['num_goals'] = args.num_goals
-    config['time_out'] = args.time_out
+    if config['mode'] == 'train':
+        config['lr'] = args.lr
+        config['num_epochs'] = args.num_epochs
+        config['steps_per_ckpt'] = args.steps_per_ckpt
+
+    elif config['mode'] == 'decode':
+        config['beam_size'] = args.beam_size
+        config['beam_timesteps'] = args.beam_timesteps
+        config['num_goals'] = args.num_goals
+        config['time_out'] = args.time_out
 
     # ds_dir = '../data'
     # ds_fname = 'data.txt'
