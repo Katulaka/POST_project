@@ -191,9 +191,9 @@ class STAGModel(BasicModel):
             # self.loss = self.mod_loss if self.config['comb_loss'] else self.reg_loss
 
     def _add_train_op(self):
-        self.optimizer_fn = tf.train.GradientDescentOptimizer(self.lr)
         self.lr = tf.Variable(float(self.config['lr']), trainable=False,
                                 dtype=self.dtype, name='learning_rate')
+        self.optimizer_fn = tf.train.GradientDescentOptimizer
         self.global_step =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='g_step')
 
