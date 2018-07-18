@@ -65,7 +65,6 @@ def main(_):
                     os.popen('%s -p %s %s %s > %s' % (evalb, pfile, fin, fout_lb, rfile))
 
     elif (config['mode'] == 'train'):
-        import pdb; pdb.set_trace()
         batcher = Batcher(**config['btch'])
         data = batcher.load_fn(config['src_dir'], config['at_fout'])
         batcher.modify(data)
@@ -73,7 +72,7 @@ def main(_):
             config['n'+k] = batcher._nsize[k]
         model = POSModel(config) if config['pos'] else STAGModel(config)
         # trees_res = model.decode(batcher)
-        bv_tag, bm_tag = model.decode(batcher)
+        model.train(batcher)
 
         # pass
     elif (config['mode'] == 'dev'):
