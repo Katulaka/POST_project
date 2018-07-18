@@ -267,12 +267,14 @@ class STAGModel(BasicModel):
 
         summary_writer = tf.summary.FileWriter('./graphs', self.graph)
         loss = 0.1
+        epoch_id = 0
         # for epoch_id in range(0, self.num_epochs):
         while loss >= 0.1:
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
             steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
             # for bv in batcher.get_batch('train'):
+            epoch_id += 1
             for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv), dev)
