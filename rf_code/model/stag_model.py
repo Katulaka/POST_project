@@ -7,11 +7,11 @@ import time
 import numpy as np
 import tensorflow as tf
 from .basic_model import BasicModel
-# from beam.search import BeamSearch
+from beam.search import BeamSearch
 
 # import copy
 # from tqdm import tqdm
-# from astar.search import solve_tree_search
+from astar.search import solve_tree_search
 # from tag_ops import R, L, ANY
 
 
@@ -20,7 +20,6 @@ class STAGModel(BasicModel):
     def __init__ (self, config):
         BasicModel.__init__(self, config)
         self.initializer = tf.contrib.layers.xavier_initializer()
-        self.optimizer_fn = tf.train.GradientDescentOptimizer(self.lr)
         self.init_op = tf.global_variables_initializer()
         if self.config['use_pretrained_pos']:
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
@@ -192,16 +191,18 @@ class STAGModel(BasicModel):
             # self.loss = self.mod_loss if self.config['comb_loss'] else self.reg_loss
 
     def _add_train_op(self):
+        self.optimizer_fn = tf.train.GradientDescentOptimizer(self.lr)
+        self.lr = tf.Variable(float(self.config['lr']), trainable=False,
+                                dtype=self.dtype, name='learning_rate')
+        self.global_step =  tf.Variable(0, trainable=False,
+                                        dtype=tf.int32, name='g_step')
+
         self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss, global_step=self.global_step)
 
     def build_graph(self):
         with tf.device('/gpu:0'):
             with tf.Graph().as_default() as g:
                 with tf.variable_scope(self.config['scope_name']):
-                    self.lr = tf.Variable(float(self.config['lr']), trainable=False,
-                                            dtype=self.dtype, name='learning_rate')
-                    self.global_step =  tf.Variable(0, trainable=False,
-                                                    dtype=tf.int32, name='g_step')
                     self._add_placeholders()
                     self._add_embeddings()
                     if self.config['use_c_embed']:
@@ -257,13 +258,6 @@ class STAGModel(BasicModel):
 
     def train(self, batcher, dev=False):
 
-        import os, json
-        if os.path.exists(os.path.join(self.config['result_dir'],'sub_batch.json')):
-            with open(os.path.join(self.config['result_dir'],'sub_batch.json'), 'r') as f:
-                self.subset_idx =  json.load(f)
-        else:
-            self.subset_idx =  batcher.get_subset_idx(self.config['mode'], 0.1)
-
         # Create a summary to monitor loss tensor
         self.m_loss = tf.summary.scalar("loss", self.loss)
         # # Create a summary to monitor accuracy tensor
@@ -273,8 +267,8 @@ class STAGModel(BasicModel):
 
         summary_writer = tf.summary.FileWriter('./graphs', self.graph)
 
-
-        for epoch_id in range(0, self.num_epochs):
+        # for epoch_id in range(0, self.num_epochs):
+        while loss > 0.1:
             step_time, loss = 0.0, 0.0
             current_step = self.sess.run(self.global_step) if not dev else 0
             steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
@@ -314,30 +308,30 @@ class STAGModel(BasicModel):
 
         """"Decode Part """
 
-    # def encode_top_state(self, enc_bv):
-    #     """Return the top states from encoder for decoder."""
-    #     input_feed = {self.w_in: enc_bv['word']['in'],
-    #                     self.word_len: enc_bv['word']['len'],
-    #                     self.char_in : enc_bv['char']['in'],
-    #                     self.char_len : enc_bv['char']['len'],
-    #                     self.pos_in: enc_bv['pos']['in']}
-    #     if self.config['use_pretrained_pos']:
-    #         input_feed[self.pos_in] = self.pos_step(enc_bv)
-    #     output_feed = self.encode_state
-    #     return self.sess.run(output_feed, input_feed)
-    #
-    # def decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
-    #     """Return the topK results and new decoder states."""
-    #     input_feed = {
-    #         self.tag_init : dec_init_states,
-    #         self.t_in: np.array(latest_tokens),
-    #         self.encode_state : enc_state,
-    #         self.tag_len: np.ones(1, np.int32)}
-    #     output_feed = [self.decode_state, self.pred]
-    #     states, probs = self.sess.run(output_feed, input_feed)
-    #     topk_ids = np.argsort(np.squeeze(probs))[-k:]
-    #     topk_probs = np.squeeze(probs)[topk_ids]
-    #     return topk_ids, topk_probs, states
+    def encode_top_state(self, enc_bv):
+        """Return the top states from encoder for decoder."""
+        input_feed = {self.w_in: enc_bv['word']['in'],
+                        self.word_len: enc_bv['word']['len'],
+                        self.char_in : enc_bv['char']['in'],
+                        self.char_len : enc_bv['char']['len'],
+                        self.pos_in: enc_bv['pos']['in']}
+        if self.config['use_pretrained_pos']:
+            input_feed[self.pos_in] = self.pos_step(enc_bv)
+        output_feed = self.encode_state
+        return self.sess.run(output_feed, input_feed)
+
+    def decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
+        """Return the topK results and new decoder states."""
+        input_feed = {
+            self.tag_init : dec_init_states,
+            self.t_in: np.array(latest_tokens),
+            self.encode_state : enc_state,
+            self.tag_len: np.ones(1, np.int32)}
+        output_feed = [self.decode_state, self.pred]
+        states, probs = self.sess.run(output_feed, input_feed)
+        topk_ids = np.argsort(np.squeeze(probs))[-k:]
+        topk_probs = np.squeeze(probs)[topk_ids]
+        return topk_ids, topk_probs, states
     #
     # def _decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
     #     """Return the topK results and new decoder states."""
@@ -388,31 +382,60 @@ class STAGModel(BasicModel):
     #         decode_trees.append(trees)
     #     return decode_trees
     #
-    # def decode(self, vocab, batcher, t_op):
-    #
-    #     decoded_trees = []
-    #     for bv in tqdm(batcher.get_batch()):
-    #         bv = batcher.process(bv)
-    #         words_id = batcher.remove_delim_len(bv['word'])
-    #         words_token = vocab['words'].to_tokens(words_id)
-    #         # self.get_tag_score(self.decode_bs(bv), vocab, t_op)
-    #         import cProfile, pstats
-    #         from io import StringIO
-    #         pr = cProfile.Profile()
-    #         pr.enable()
-    #         beams, _ = self.decode_bs(bv, vocab)
-    #         pr.disable()
-    #         s = StringIO()
-    #         sortby = 'cumulative'
-    #         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    #         ps.print_stats()
-    #         print (s.getvalue())
-    #
-    #         tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
-    #         import pdb; pdb.set_trace()
-    #         decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
-    #
-    #     return decoded_trees
+    def decode(self, batcher):
+
+        decode_trees = []
+        bv_tag = []
+        bm_tag = []
+
+        bs = BeamSearch(self.config['beam_size'],
+                        batcher._vocab['tags'].token_to_id('GO'),
+                        batcher._vocab['tags'].token_to_id('EOS'),
+                        self.config['beam_timesteps'])
+        for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
+            bv = batcher.process(bv)
+            #TODO fix the UNK words
+            words_id = batcher.remove_delim_len(bv['word'])
+            words_token = batcher._vocab['words'].to_tokens(words_id)
+            beams, _ = bs.beam_search(self.encode_top_state, self.decode_topk, bv)
+            bv_tag.append([bv[1:blen].tolist() for bv,blen in zip(bv['tag']['in'], bv['tag']['len'])][1:-1])
+            bm_tag.append([bm[0] if bm!=[] else bm for bm in beams['tokens']])
+
+            tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
+            tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
+            tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
+            tag_score_mat = batcher.restore(tag_score_mat)
+            for ts_entry, w_entry in zip(tag_score_mat, words_token):
+                if all(tag_score_mat):
+                    trees, _ = solve_tree_search(ts_entry, w_entry,
+                                            self.config['tags_type']['no_val_gap'],
+                                            self.config['num_goals'],
+                                            self.config['time_out'])
+                else:
+                    trees = []
+
+            import pdb; pdb.set_trace()
+            # decode_trees.append(trees)
+        # return decode_trees
+        return bv_tag, bm_tag
+            #     for bv in tqdm(batcher.get_batch()):
+            #         import cProfile, pstats
+            #         from io import StringIO
+            #         pr = cProfile.Profile()
+            #         pr.enable()
+            #         beams, _ = self.decode_bs(bv, vocab)
+            #         pr.disable()
+            #         s = StringIO()
+            #         sortby = 'cumulative'
+            #         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            #         ps.print_stats()
+            #         print (s.getvalue())
+            #
+            #         tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
+            #         import pdb; pdb.set_trace()
+            #         decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
+            #
+            #     return decoded_trees
     #
     # def convert_to_structer(self, tag, beam_tokens, miss_r, miss_l):
     #     beam_mod = []

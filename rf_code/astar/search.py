@@ -97,6 +97,7 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
 
     tree_score_mat = []
     pos_id = 0
+    # import pdb; pdb.set_trace()
     for tag_score_row, word in zip(tag_score_mat, words):
         tree_score_row = []
         for tag, score in tag_score_row:
@@ -107,7 +108,7 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
             return []
         tree_score_mat.append(tree_score_row)
 
-
+    # import pdb; pdb.set_trace()
     # ts_mat = convert_to_TreeTS(tag_score_mat, words)
     # if any([t == [] for t in ts_mat]):
     #     return []

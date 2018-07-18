@@ -21,8 +21,8 @@ class BasicModel(object):
 
         # if config['debug']: # This is a personal check i like to do
         #     print('config', self.config)
-
-        self.num_epochs = self.config['num_epochs']
+        if self.config['mode'] == 'train':
+            self.num_epochs = self.config['num_epochs']
         # self.random_seed = self.config['random_seed']
         self.dtype = tf.float32
         self.initializer = tf.contrib.layers.xavier_initializer()
@@ -84,6 +84,13 @@ class BasicModel(object):
             # if self.config['debug']:
             print('Loading the model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
+
+        import os, json
+        if os.path.exists(os.path.join(self.config['result_dir'],'sub_batch.json')):
+            with open(os.path.join(self.config['result_dir'],'sub_batch.json'), 'r') as f:
+                self.subset_idx =  json.load(f)
+        else:
+            self.subset_idx =  batcher.get_subset_idx(self.config['mode'], 0.1)
 
 
     @abstractmethod

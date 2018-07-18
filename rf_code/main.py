@@ -71,12 +71,62 @@ def main(_):
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._nsize[k]
         model = POSModel(config) if config['pos'] else STAGModel(config)
-        model.train(batcher)
+        # trees_res = model.decode(batcher)
+        bv_tag, bm_tag = model.decode(batcher)
+        import pdb; pdb.set_trace()
 
-        pass
+        # pass
     elif (config['mode'] == 'dev'):
         pass
-    elif (config['mode'] == 'test'):
+    elif (config['mode'] == 'decode'):
+
+        # now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
+        # fname = now
+        # d_name = '_'.join(['ds', str(test_min), str(test_max)])
+        # dir_name = os.path.join('results', config['model_name'], config['mode'], d_name)
+        # if not os.path.isdir(dir_name):
+        #     os.makedirs(dir_name)
+
+        # batcher.use_data(ds.dataset['test'])
+        batcher = Batcher(**config['btch'])
+        data = batcher.load_fn(config['src_dir'], config['at_fout'])
+        batcher.modify(data)
+        for k in batcher._vocab.keys():
+            config['n'+k] = batcher._nsize[k]
+        model = POSModel(config) if config['pos'] else STAGModel(config)
+        decoded = model.decode(batcher)
+
+        # for tags, words in zip(res['tags'], res['words']):
+        #     mod_tags = [[t] for t in t_op.combine_fn(t_op.modify_fn(tags))]
+        #     score = [[1.]]*len(tags)
+        #     tag_score_mat = map(lambda x, y: zip(x, y), mod_tags, score)
+        #     trees_res,_ = solve_tree_search(tag_score_mat, words,
+        #     config['tags_type']['no_val_gap'], 1, 100)
+        #     try:
+        #         reconst.append(trees_res[0].from_tree_to_ptb())
+        #     except:
+        #         reconst.append('')
+        # pattern = np.array(decoded)[:,1].tolist()
+        # pattern = [[p.tolist() for p in pp] for pp in pattern]
+        # pattern_file = os.path.join(dir_name, fname + '.ptrn')
+        # with open(pattern_file, 'w') as outfile:
+        #     json.dump(pattern, outfile)
+        #
+        # decode_trees = np.array(decoded)[:,0].tolist()
+        # decode_tags = trees_to_ptb(decode_trees)
+        # dec_file = os.path.join(dir_name, fname + '.test')
+        # with open(dec_file, 'w') as outfile:
+        #     # json.dump(decode_tags, outfile)
+        #     for dtag in decode_tags:
+        #         outfile.write("%s\n" % dtag)
+        #
+        # gold = ds.gen_gold()
+        # gold_file = os.path.join(dir_name, fname + '.gold')
+        # with open(gold_file, 'w') as outfile:
+        #     # json.dump(gold, outfile)
+        #     for g in gold:
+        #         outfile.write("%s\n" % g)
+
         pass
 
     # import  pdb; pdb.set_trace()
