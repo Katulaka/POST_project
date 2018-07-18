@@ -11,7 +11,7 @@ def parse_cmdline():
     # np.random.seed(int(time.time()))
 
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('mode', type=str, default='debug', help='')
+    parser.add_argument('--mode', type=str, default='debug', help='')
 
     parser.add_argument('--model_name', type=str, default='stags', help='')
     parser.add_argument('--pos', action='store_true', help='')

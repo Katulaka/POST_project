@@ -1,6 +1,8 @@
 *.json
 *.pyc
-checkpoints/
-decode/
 code/plot/
 rf_code/graphs
+rf_code/results
+misc/
+results/
+code/checkpoints
