@@ -272,8 +272,8 @@ class STAGModel(BasicModel):
                 step_time += (time.clock() - start_time) / steps_per_ckpt
                 loss[-1] += step_loss / steps_per_ckpt
                 if  current_step % steps_per_ckpt == 0:
-                    if not dev:
-                        self.save()
+                    # if not dev:
+                    self.save()
                     perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
                     print ("[[train_epoch %d]] step %d learning rate %f step-time %.3f"
                                " perplexity %.6f (loss %.6f)" %
