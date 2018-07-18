@@ -32,7 +32,7 @@ def simplify(ts): # Simplify tags
     for t in ts:
         for s in t.subtrees():
             tag = s.label()
-            if tag not in ['-LRB-', '-RRB-', '-NONE-']:
+            if tag not in ['-LRB-', '-RRB-', '-LCB-', '-RCB-', '-NONE-']:
                 if '-' in tag or '=' in tag or '|' in tag:
                     simple = tag.split('-')[0].split('=')[0].split('|')[0]
                     s.set_label(simple)

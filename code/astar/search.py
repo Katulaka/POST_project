@@ -89,8 +89,8 @@ class Solver(AStar):
 
 def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
                         time_th=2. , verbose=1):
+    import pdb; pdb.set_trace()
     ts_mat = convert_to_TreeTS(tag_score_mat, words)
-
     if any([t == [] for t in ts_mat]):
         return []
     max_lid = len(ts_mat)

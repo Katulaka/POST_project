@@ -12,6 +12,8 @@ from utils.dataset import Dataset
 from utils.parse_cmdline import parse_cmdline
 from utils.tags.tree_t import trees_to_ptb
 
+from astar.search import solve_tree_search
+
 def main(_):
     # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     config = parse_cmdline()
@@ -33,7 +35,21 @@ def main(_):
     for k,v in config.items():
         print ('[[Model Params]] %s: %s' % (k, v))
 
-    if (config['mode'] == 'train'):
+    if (config['mode'] == 'debug'):
+        ds = Dataset(config['ds'])
+        data = ds.load_data(ds.ds_file)
+        ds.split(data, ds.dir_range)
+        ds.modify(ds.tags_type)
+        for k in ds.dataset.keys():
+            for tags, words in zip(ds.dataset[k]['tags'], ds.dataset[k]['words']):
+                # map(lambda x, y: zip(x, y), tags, beam['scores'])x
+                tag_score_mat = [([[i] for i in t],1.) for t in tags]
+                import pdb; pdb.set_trace()
+                trees_res,_ = solve_tree_search(tag_score_mat, words,
+                                config['ds']['tags_type']['no_val_gap'],
+                                1, 100)
+
+    elif (config['mode'] == 'train'):
         print('==================================================================')
         print("[[POST]] Starting model training.")
         model.train(batcher, ds.dataset)

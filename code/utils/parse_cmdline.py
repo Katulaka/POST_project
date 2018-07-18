@@ -43,6 +43,10 @@ def parse_cmdline():
 
     b_parser = subparsers.add_parser('evalb', parents=[parser])
 
+    dbg_parser = subparsers.add_parser('debug', parents=[parser])
+    # dbg_parser.add_argument('--time_out', type=float, default=100., help='')
+    # dbg_parser.add_argument('--num_goals', type=int, default=1, help='')
+
     config = dict()
 
     import sys
@@ -51,8 +55,10 @@ def parse_cmdline():
         current_parser =  t_parser
     elif config['mode'] == 'decode':
         current_parser =  d_parser
-    else:
+    elif config['mode'] == 'evalb':
         current_parser =  b_parser
+    else:
+        current_parser =  dbg_parser
 
     args = current_parser.parse_args()
 
@@ -70,7 +76,7 @@ def parse_cmdline():
                 config['th_loss'] = 0.1
                 #training num epochs before evaluting the dev loss
                 config['steps_per_ckpt'] = 10
-            else:
+            elif config['mode'] == 'decode':
                 if 'time_out' not in config.keys():
                     config['time_out'] = args.time_out
                 if 'num_goals' not in config.keys():
@@ -90,7 +96,7 @@ def parse_cmdline():
         config['th_loss'] = 0.1
         #training num epochs before evaluting the dev loss
         config['steps_per_ckpt'] = 10
-    else:
+    elif config['mode'] == 'decode':
         if 'time_out' not in config.keys():
             config['time_out'] = args.time_out
         if 'num_goals' not in config.keys():

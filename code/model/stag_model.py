@@ -139,12 +139,12 @@ class STAGModel(BasicModel):
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, self.dec_in_dim]
 
-            atten_k = tf.reshape(tf.layers.dense(self.decode_out, self.dec_in_dim,
+            self.k = atten_k = tf.reshape(tf.layers.dense(self.decode_out, self.dec_in_dim,
                                      use_bias=False), ak_shape)
-            atten_q = tf.layers.dense(self.encode_state, self.dec_in_dim,
+            self.q = atten_q = tf.layers.dense(self.encode_state, self.dec_in_dim,
                                         activation=tf.nn.relu, use_bias=False)
-            alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
-            context = tf.reshape(tf.einsum('aij,ajk->aik', alpha,
+            self.a = alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
+            self.c = context = tf.reshape(tf.einsum('aij,ajk->aik', alpha,
                                     self.encode_state), do_shape)
             self.proj_in = tf.concat([self.decode_out, context], -1)
 
@@ -255,6 +255,8 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
         output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
+        import pdb; pdb.set_trace()
+
         return self.sess.run(output_feed, input_feed)[0]
 
     def train_epoch(self, batcher, dev=False):
@@ -345,6 +347,7 @@ class STAGModel(BasicModel):
     def beam_to_tag(self, beam, vocab, t_op):
 
         tags = t_op.combine_fn(vocab['tags'].to_tokens(beam['tokens']))
+        import pdb; pdb.set_trace()
         return map(lambda x, y: zip(x, y), tags, beam['scores'])
 
     def decode_batch(self, beam_pair, word_tokens):
@@ -359,6 +362,7 @@ class STAGModel(BasicModel):
                         %(i+1, nsentences, len(beam_tag)))
 
             if all(beam_tag):
+                import pdb; pdb.set_trace()
                 trees = solve_tree_search(beam_tag, sent, no_val, ngoals, t_out)
             else:
                 trees = []
@@ -386,7 +390,7 @@ class STAGModel(BasicModel):
             print (s.getvalue())
 
             tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
-
+            import pdb; pdb.set_trace()
             decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
 
         return decoded_trees
