@@ -266,33 +266,35 @@ class STAGModel(BasicModel):
         # self.merged_summary_op = tf.summary.merge_all()
 
         summary_writer = tf.summary.FileWriter('./graphs', self.graph)
-        loss = 0.1
+        # loss = 0.1
         epoch_id = 0
+        loss = [0.1]
         # for epoch_id in range(0, self.num_epochs):
-        while loss >= 0.1:
-            step_time, loss = 0.0, 0.0
+        while loss[-1] >= 0.1 or loss[-2] >= 0.1:
+            step_time = 0.0
+            loss.append(0.0)
             current_step = self.sess.run(self.global_step) if not dev else 0
             steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
-            # for bv in batcher.get_batch('train'):
             epoch_id += 1
+            # for bv in batcher.get_batch('train'):
             for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv), dev)
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt
-                loss += step_loss / steps_per_ckpt
-                ret_loss = loss
+                loss[-1] += step_loss / steps_per_ckpt
+                losses.append(loss)
                 if  current_step % steps_per_ckpt == 0:
                     if not dev:
                         self.save()
-                    perplex = math.exp(loss) if loss < 300 else float('inf')
+                    perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
                     print ("[[train_epoch %d]] step %d learning rate %f step-time %.3f"
                                " perplexity %.6f (loss %.6f)" %
                                (epoch_id, current_step, self.sess.run(self.lr),
-                               step_time, perplex, loss))
-                    ret_loss = loss
-                    step_time, loss = 0.0, 0.0
+                               step_time, perplex, loss[-1]))
+                    step_time = 0.0
+                    loss.append(0.0)
                     sys.stdout.flush()
         summary_writer.close()
             # return ret_loss
@@ -407,16 +409,18 @@ class STAGModel(BasicModel):
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             tag_score_mat = batcher.restore(tag_score_mat)
+            import pdb; pdb.set_trace()
             for ts_entry, w_entry in zip(tag_score_mat, words_token):
                 if all(tag_score_mat):
                     trees, _ = solve_tree_search(ts_entry, w_entry,
-                                            self.config['tags_type']['no_val_gap'],
+                                            # batcher._tags_type.no_val_gap,
+                                            batcher._t_op.no_val_gap,
                                             self.config['num_goals'],
                                             self.config['time_out'])
                 else:
                     trees = []
 
-            import pdb; pdb.set_trace()
+
             # decode_trees.append(trees)
         # return decode_trees
         return bv_tag, bm_tag
