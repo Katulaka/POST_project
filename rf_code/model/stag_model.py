@@ -9,10 +9,7 @@ import tensorflow as tf
 from .basic_model import BasicModel
 from beam.search import BeamSearch
 
-# import copy
-# from tqdm import tqdm
 from astar.search import solve_tree_search
-# from tag_ops import R, L, ANY
 
 
 class STAGModel(BasicModel):
@@ -80,7 +77,7 @@ class STAGModel(BasicModel):
 
             char_out = tf.layers.dense(ch_state[1], self.config['dim_word'],
                                         use_bias=False)
-                                        # kernel_initializer= self.init)
+
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
             self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
@@ -101,10 +98,11 @@ class STAGModel(BasicModel):
             self.w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
             w_bidi_out, _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
-                                                            word_cell_bw,
-                                                            self.w_bidi_in,
-                                                            sequence_length=self.word_len,
-                                                            dtype=self.dtype)
+                                                word_cell_bw,
+                                                self.w_bidi_in,
+                                                sequence_length=self.word_len,
+                                                dtype=self.dtype)
+
             self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
             self.encode_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
@@ -112,8 +110,6 @@ class STAGModel(BasicModel):
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            # lstm_shape = self.dim_word_f + self.config['dim_pos'] + self.config['hidden_word'] * 2
-            # dec_init_state = tf.reshape(self.encode_state, [-1, lstm_shape])
             self.dec_in_dim = self.config['hidden_word'] * 2
             self.c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
             dec_init_state = tf.reshape(self.encode_state, [-1, self.c_dim])
@@ -121,7 +117,6 @@ class STAGModel(BasicModel):
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            # tag_cell = tf.contrib.rnn.BasicLSTMCell(self.dec_in_dim)
             tag_cell = tf.contrib.rnn.BasicLSTMCell(self.c_dim)
 
             self.decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
@@ -137,13 +132,19 @@ class STAGModel(BasicModel):
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, self.dec_in_dim]
 
-            self.k = atten_k = tf.reshape(tf.layers.dense(self.decode_out, self.dec_in_dim,
-                                     use_bias=False), ak_shape)
-            self.q = atten_q = tf.layers.dense(self.encode_state, self.dec_in_dim,
-                                        activation=tf.nn.relu, use_bias=False)
-            self.a = alpha = tf.nn.softmax(tf.einsum('aij,akj->aik', atten_k, atten_q))
+            self.k = atten_k = tf.reshape(tf.layers.dense(self.decode_out,
+                                                self.dec_in_dim,
+                                                use_bias=False), ak_shape)
+
+            self.q = atten_q = tf.layers.dense(self.encode_state,
+                                                self.dec_in_dim,
+                                                activation=self.activation_fn,
+                                                use_bias=False)
+
+            self.a = alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
+                                                    atten_k, atten_q))
             self.c = context = tf.reshape(tf.einsum('aij,ajk->aik', alpha,
-                                    self.encode_state), do_shape)
+                                                self.encode_state), do_shape)
             self.proj_in = tf.concat([self.decode_out, context], -1)
 
 
@@ -154,6 +155,7 @@ class STAGModel(BasicModel):
             proj_in = tf.layers.dense(self.proj_in,
                                         self.config['hidden_tag'],
                                         use_bias=False,
+                                        # activation=self.activation_fn)
                                         activation=tf.tanh)
             mask_t = tf.sequence_mask(self.tag_len)
             v = tf.boolean_mask(proj_in, mask_t)
@@ -166,12 +168,6 @@ class STAGModel(BasicModel):
             # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
-            # E_out_t = tf.transpose(E_out, name='E-out-t')
-            # E_t_E = tf.matmul(E_out_t, E_out)
-            # E_v = tf.matmul(v, E_out)
-            # E_v_E_t_E = tf.matmul(E_v, E_t_E)
-            # self.mod_logits = E_v_E_t_E + b_out
-
     def _add_loss(self):
 
         with tf.variable_scope("loss"):
@@ -179,25 +175,17 @@ class STAGModel(BasicModel):
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                                                     logits=self.logits,
                                                     labels=targets_1hot)
-            # mod_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            #                                         logits=self.mod_logits,
-            #                                         labels=targets_1hot)
             self.loss = tf.reduce_mean(cross_entropy)
-            # self.reg_loss = tf.reduce_mean(cross_entropy)
 
-            # mod_loss = tf.reduce_mean(mod_cross_entropy)
-            # self.mod_loss = (self.reg_loss + mod_loss)/2
-
-            # self.loss = self.mod_loss if self.config['comb_loss'] else self.reg_loss
 
     def _add_train_op(self):
         self.lr = tf.Variable(float(self.config['lr']), trainable=False,
                                 dtype=self.dtype, name='learning_rate')
-        self.optimizer_fn = tf.train.GradientDescentOptimizer
         self.global_step =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='g_step')
 
-        self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss, global_step=self.global_step)
+        self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
+                                                global_step=self.global_step)
 
     def build_graph(self):
         with tf.device('/gpu:0'):
@@ -238,7 +226,7 @@ class STAGModel(BasicModel):
                 out = self.pos_g.get_tensor_by_name(op.name+':0')
         return self.pos_sess.run(out, input_feed)
 
-    def step(self, bv, dev=False):
+    def step(self, bv):
         """ Training step, returns the loss"""
         input_feed = {
             self.w_in: bv['word']['in'],
@@ -256,7 +244,7 @@ class STAGModel(BasicModel):
         output_feed = [self.loss, self.m_loss, self.optimizer]
         return self.sess.run(output_feed, input_feed)
 
-    def train(self, batcher, dev=False):
+    def train(self, batcher):
 
         # Create a summary to monitor loss tensor
         self.m_loss = tf.summary.scalar("loss", self.loss)
@@ -264,8 +252,7 @@ class STAGModel(BasicModel):
         # tf.summary.scalar("accuracy", acc)
         # # Merge all summaries into a single op
         # self.merged_summary_op = tf.summary.merge_all()
-
-        summary_writer = tf.summary.FileWriter('./graphs', self.graph)
+        summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         # loss = 0.1
         epoch_id = 0
         loss = [0.1]
@@ -273,13 +260,13 @@ class STAGModel(BasicModel):
         while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
             loss.append(0.0)
-            current_step = self.sess.run(self.global_step) if not dev else 0
-            steps_per_ckpt = self.config['steps_per_ckpt'] if not dev else 1
+            current_step = self.sess.run(self.global_step)
+            steps_per_ckpt = self.config['steps_per_ckpt']
             epoch_id += 1
             # for bv in batcher.get_batch('train'):
             for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
-                step_loss, summary, _ = self.step(batcher.process(bv), dev)
+                step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt
@@ -296,17 +283,6 @@ class STAGModel(BasicModel):
                     loss.append(0.0)
                     sys.stdout.flush()
         summary_writer.close()
-
-    # def train(self, batcher, dataset):
-    # def train(self, batcher):
-        # dev_loss = np.inf
-        # while dev_loss > self.config['th_loss']:
-            # batcher.use_data(dataset['train'])
-        # for epoch_id in range(0, self.num_epochs):
-            # self.train_epoch(batcher)
-            # batcher.use_data(dataset['dev'])
-            # for epoch_id in range(0, self.num_epochs):
-            #     dev_loss = self.train_epoch(batcher, True)
 
         """"Decode Part """
 
@@ -407,7 +383,6 @@ class STAGModel(BasicModel):
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             tag_score_mat = batcher.restore(tag_score_mat)
-            import pdb; pdb.set_trace()
             for ts_entry, w_entry in zip(tag_score_mat, words_token):
                 if all(tag_score_mat):
                     trees, _ = solve_tree_search(ts_entry, w_entry,
@@ -418,6 +393,7 @@ class STAGModel(BasicModel):
                 else:
                     trees = []
 
+            import pdb; pdb.set_trace()
 
             # decode_trees.append(trees)
         # return decode_trees

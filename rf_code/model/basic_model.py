@@ -29,6 +29,8 @@ class BasicModel(object):
 
         self.optimizer_fn = tf.train.GradientDescentOptimizer
 
+        self.activation_fn = tf.nn.relu
+
         self.model_name = self.config['model_name']
         self.result_dir = self.config['result_dir']
         self.ckpt_dir = self.config['ckpt_dir']
