@@ -284,7 +284,7 @@ class STAGModel(BasicModel):
                 current_step += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt
                 loss[-1] += step_loss / steps_per_ckpt
-                losses.append(loss)
+                # loss.append(loss)
                 if  current_step % steps_per_ckpt == 0:
                     if not dev:
                         self.save()
@@ -294,7 +294,7 @@ class STAGModel(BasicModel):
                                (epoch_id, current_step, self.sess.run(self.lr),
                                step_time, perplex, loss[-1]))
                     step_time = 0.0
-                    loss.append(0.0)
+                    loss.append([0.0])
                     sys.stdout.flush()
         summary_writer.close()
             # return ret_loss
