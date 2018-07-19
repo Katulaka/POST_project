@@ -185,9 +185,9 @@ class STAGModel(BasicModel):
                                         dtype=tf.int32, name='g_step')
 
         if self.config['grad_clip']:
-            gradients, variables = zip(*self.optimizer_fn.compute_gradients(self.loss))
+            gradients, variables = zip(*self.optimizer_fn(self.loss).compute_gradients(self.loss))
             gradients, _ = tf.clip_by_global_norm(gradients, self.config['grad_norm'])
-            self.optimizer = self.optimizer_fn.apply_gradients(zip(gradients, variables))
+            self.optimizer = self.optimizer_fn(self.loss).apply_gradients(zip(gradients, variables))
         else:
             self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
                                                     global_step=self.global_step)
