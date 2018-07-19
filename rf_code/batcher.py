@@ -190,7 +190,7 @@ class Batcher(object):
         size_subset = np.ceil(self._d_size * precentage)
         return random.sample(range(1, self._d_size), int(size_subset))
 
-    def get_subset_batch(self, subset_idx, mode):
+    def get_subset_permute_batch(self, subset_idx, mode):
         size_subset = len(subset_idx)
         num_batches = np.ceil(size_subset/self._batch_size)
         batch_permute = np.random.permutation(int(num_batches))
@@ -199,6 +199,16 @@ class Batcher(object):
 
         return [{k: batch[k][i] for k in self._data.keys()}
                                     for i in batch_permute]
+
+    def get_subset_batch(self, subset_idx, mode):
+        size_subset = len(subset_idx)
+        num_batches = np.ceil(size_subset/self._batch_size)
+        # batch_permute = np.random.permutation(int(num_batches))
+        batch = {k: np.array_split(np.array(self._data[k][mode])[subset_idx],
+                    num_batches) for k in self._data.keys()}
+
+        return [{k: batch[k][i] for k in self._data.keys()}
+                                for i in range(int(num_batches))]
 
 
 
