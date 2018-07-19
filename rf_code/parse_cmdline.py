@@ -20,6 +20,8 @@ def parse_cmdline():
     parser.add_argument('--num_epochs', default=1, type=int)
     parser.add_argument('--lr', default=0.01, type=float)
     parser.add_argument('--steps_per_ckpt', default=10, type=int)
+    parser.add_argument('--grad_clip', action='store_true', help='')
+    parser.add_argument('--grad_norm', default=5.0, type=float)
 
     parser.add_argument('--dim_word', default=64, type=int)
     parser.add_argument('--dim_tag', default=64, type=int)
@@ -61,9 +63,6 @@ def parse_cmdline():
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
 
-    # config['tags_type'] = {'reverse' : args.reverse,
-    #                         'no_val_gap' : args.no_val_gap}
-
     config['use_pretrained_pos'] = args.pos_model_name != None
 
     if not config['pos'] and config['use_pretrained_pos']:
@@ -102,6 +101,8 @@ def parse_cmdline():
         config['lr'] = args.lr
         config['num_epochs'] = args.num_epochs
         config['steps_per_ckpt'] = args.steps_per_ckpt
+        config['grad_clip'] = args.grad_clip
+        config['grad_norm'] = args.grad_norm
 
     elif config['mode'] == 'decode':
         config['beam_size'] = args.beam_size

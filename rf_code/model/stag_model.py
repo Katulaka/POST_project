@@ -184,8 +184,15 @@ class STAGModel(BasicModel):
         self.global_step =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='g_step')
 
-        self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
-                                                global_step=self.global_step)
+        if self.config['grad_clip']:
+            gradients, variables = zip(*self.optimizer_fn.compute_gradients(self.loss))
+            gradients, _ = tf.clip_by_global_norm(gradients, self.config['grad_norm'])
+            self.optimizer = self.optimizer_fn.apply_gradients(zip(gradients, variables))
+        else:
+            self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
+                                                    global_step=self.global_step)
+
+
 
     def build_graph(self):
         with tf.device('/gpu:0'):
@@ -264,7 +271,7 @@ class STAGModel(BasicModel):
             steps_per_ckpt = self.config['steps_per_ckpt']
             epoch_id += 1
             # for bv in batcher.get_batch('train'):
-            for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
+            for bv in batcher.get_subset_permute_batch(self.subset_idx, 'train'):
                 start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)
@@ -272,7 +279,6 @@ class STAGModel(BasicModel):
                 step_time += (time.clock() - start_time) / steps_per_ckpt
                 loss[-1] += step_loss / steps_per_ckpt
                 if  current_step % steps_per_ckpt == 0:
-                    # if not dev:
                     self.save()
                     perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
                     print ("[[train_epoch %d]] step %d learning rate %f step-time %.3f"
@@ -370,14 +376,14 @@ class STAGModel(BasicModel):
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
-        for bv in batcher.get_subset_batch(self.subset_idx, 'train'):
+        for bv in batcher.get_subset_permute_batch(self.subset_idx, 'train'):
             bv = batcher.process(bv)
             #TODO fix the UNK words
             words_id = batcher.remove_delim_len(bv['word'])
             words_token = batcher._vocab['words'].to_tokens(words_id)
             beams, _ = bs.beam_search(self.encode_top_state, self.decode_topk, bv)
             bv_tag.append([bv[1:blen].tolist() for bv,blen in zip(bv['tag']['in'], bv['tag']['len'])][1:-1])
-            bm_tag.append([bm[0] if bm!=[] else bm for bm in beams['tokens']])
+            # bm_tag.append([bm[0] if bm!=[] else bm for bm in beams['tokens']])
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
@@ -392,12 +398,9 @@ class STAGModel(BasicModel):
                                             self.config['time_out'])
                 else:
                     trees = []
-
-            import pdb; pdb.set_trace()
-
-            # decode_trees.append(trees)
-        # return decode_trees
-        return bv_tag, bm_tag
+                # import pdb; pdb.set_trace()
+                decode_trees.append(trees)
+        return decode_trees
             #     for bv in tqdm(batcher.get_batch()):
             #         import cProfile, pstats
             #         from io import StringIO
