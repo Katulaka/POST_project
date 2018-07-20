@@ -84,7 +84,7 @@ class BasicModel(object):
                 raise ValueError('Model not found to restore.')
         else:
             # if self.config['debug']:
-            print('Loading the model from folder: %s' % self.ckpt_dir)
+            print('[[basic_model.init]]Loading the model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
 
@@ -120,7 +120,7 @@ class BasicModel(object):
         with open(os.path.join(self.result_dir,'config.json'), 'w') as f:
             json.dump({self.config['mode']: self.config}, f)
 
-        
+
     def freeze_graph(self, output_node_names):
         if not tf.gfile.Exists(self.ckpt_dir):
             raise AssertionError(
