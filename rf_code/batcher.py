@@ -154,8 +154,10 @@ class Batcher(object):
         batched = {}
         for k in self._types:
             if not subset_idx is None:
-                self._ds[k] = np.array(self._ds[k])[subset_idx].tolist()
-            batched.setdefault(k, np.array_split(self._ds[k], n_batches))
+                data = np.array(self._ds[k])[subset_idx].tolist()
+            else:
+                data = self._ds[k]
+            batched.setdefault(k, np.array_split(data, n_batches))
 
         return [{k: batched[k][i].tolist() for k in self._types} for i in batch_idx]
 
