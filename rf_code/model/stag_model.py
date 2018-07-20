@@ -285,10 +285,10 @@ class STAGModel(BasicModel):
                     self.save()
                     perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
                     bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
-                    print ("[[stag_model.train::train_epoch %d.%d]] step %d learning"
-                            "rate %f step-time %.3f perplexity %.6f (loss %.6f)" %
-                               (epoch_id, bv_id_m, current_step, self.sess.run(self.lr),
-                               step_time, perplex, loss[-1]))
+                    print ("[[stag_model.train::train_epoch %d.%d]] step %d "
+                            "learning rate %f step-time %.3f perplexity %.6f "
+                             "(loss %.6f)" % (epoch_id, bv_id_m, current_step,
+                             self.sess.run(self.lr), step_time, perplex, loss[-1]))
                     step_time = 0.0
                     loss.append(0.0)
                     sys.stdout.flush()
@@ -320,74 +320,27 @@ class STAGModel(BasicModel):
         topk_ids = np.argsort(np.squeeze(probs))[-k:]
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
-    #
-    # def _decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
-    #     """Return the topK results and new decoder states."""
-    #     input_feed = {
-    #         self.tag_init : dec_init_states,
-    #         self.t_in: np.array(latest_tokens),
-    #         self.encode_state : enc_state,
-    #         self.tag_len: np.squeeze(np.ones_like(latest_tokens, np.int32), 1)}
-    #     # import ipdb; ipdb.set_trace()
-    #     output_feed = [self.decode_state, self.pred]
-    #     states, probs = self.sess.run(output_feed, input_feed)
-    #     topk_ids = np.argsort(probs)[:,-k:]
-    #     rows = np.repeat(np.arange(topk_ids.shape[0]), k).reshape(-1, k)
-    #     topk_probs = probs[rows, topk_ids]
-    #     return topk_ids, topk_probs, states
-    #
-    # def decode_bs(self, bv, vocab):
-    #     bs = BeamSearch(self.config['beam_size'],
-    #                     vocab['tags'].token_to_id('GO'),
-    #                     vocab['tags'].token_to_id('EOS'),
-    #                     self.config['dec_timesteps'])
-    #
-    #     bv_cp = copy.copy(bv)
-    #     return bs.beam_search(self.encode_top_state, self.decode_topk, bv_cp)
-    #
-    # def beam_to_tag(self, beam, vocab, t_op):
-    #
-    #     tags = t_op.combine_fn(vocab['tags'].to_tokens(beam['tokens']))
-    #     import pdb; pdb.set_trace()
-    #     return map(lambda x, y: zip(x, y), tags, beam['scores'])
-    #
-    # def decode_batch(self, beam_pair, word_tokens):
-    #
-    #     ngoals = self.config['num_goals']
-    #     t_out = self.config['time_out']
-    #     no_val = self.config['no_val_gap']
-    #     decode_trees = []
-    #     nsentences = len(word_tokens)
-    #     for i, (beam_tag, sent) in enumerate(zip(beam_pair, word_tokens)):
-    #         print ("[[decode_batch]] Staring astar search for sentence %d/%d [tag length %d]"
-    #                     %(i+1, nsentences, len(beam_tag)))
-    #
-    #         if all(beam_tag):
-    #             import pdb; pdb.set_trace()
-    #             trees = solve_tree_search(beam_tag, sent, no_val, ngoals, t_out)
-    #         else:
-    #             trees = []
-    #         decode_trees.append(trees)
-    #     return decode_trees
-    #
+
     def decode(self, batcher):
 
         decode_trees = []
-        bv_tag = []
-        bm_tag = []
-
         bs = BeamSearch(self.config['beam_size'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
         for bv in batcher.get_subset_permute_batch(self.subset_idx, 'train'):
-            bv = batcher.process(bv)
-            #TODO fix the UNK words
-            words_id = batcher.remove_delim_len(bv['word'])
-            words_token = batcher._vocab['words'].to_tokens(words_id)
-            beams, _ = bs.beam_search(self.encode_top_state, self.decode_topk, bv)
-            bv_tag.append([bv[1:blen].tolist() for bv,blen in zip(bv['tag']['in'], bv['tag']['len'])][1:-1])
-            # bm_tag.append([bm[0] if bm!=[] else bm for bm in beams['tokens']])
+        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        for bv in batcher.get_batch(subset_idx=subset_idx):
+
+            #TODO:  (1) Fix batcher format
+            #       (2) Fix UNK words
+            #       (3) profile beam_search
+            #       (4) remove unnecessary code from beam search
+            words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
+
+            beams, _ = bs.beam_search(self.encode_top_state,
+                                        self.decode_topk,
+                                        batcher.process(bv))
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
@@ -396,71 +349,20 @@ class STAGModel(BasicModel):
             for ts_entry, w_entry in zip(tag_score_mat, words_token):
                 if all(tag_score_mat):
                     trees, _ = solve_tree_search(ts_entry, w_entry,
-                                            # batcher._tags_type.no_val_gap,
                                             batcher._t_op.no_val_gap,
                                             self.config['num_goals'],
                                             self.config['time_out'])
                 else:
                     trees = []
-                # import pdb; pdb.set_trace()
+
                 decode_trees.append(trees)
         return decode_trees
-            #     for bv in tqdm(batcher.get_batch()):
-            #         import cProfile, pstats
-            #         from io import StringIO
-            #         pr = cProfile.Profile()
-            #         pr.enable()
-            #         beams, _ = self.decode_bs(bv, vocab)
-            #         pr.disable()
-            #         s = StringIO()
-            #         sortby = 'cumulative'
-            #         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            #         ps.print_stats()
-            #         print (s.getvalue())
-            #
-            #         tag_score_pairs = batcher.restore(self.beam_to_tag(beams, vocab, t_op))
-            #         import pdb; pdb.set_trace()
-            #         decoded_trees.extend(self.decode_batch(tag_score_pairs,words_token))
-            #
-            #     return decoded_trees
-    #
-    # def convert_to_structer(self, tag, beam_tokens, miss_r, miss_l):
-    #     beam_mod = []
-    #     for b in beam_tokens:
-    #         _beam_mod = []
-    #         for t in b:
-    #             if t == miss_r or t == miss_l:
-    #                 _beam_mod.append(t)
-    #             else:
-    #                 _beam_mod.append(-1)
-    #         beam_mod.append(_beam_mod)
-    #     tag_mod = [t if t==miss_r or t == miss_l else -1  for t in tag]
-    #     return beam_mod, tag_mod
-    #
-    # def stats(self, batcher, vocab):
-    #
-    #     beam_rank = []
-    #     beam_rank_mod = []
-    #     beam_rank_out = []
-    #     for bv in batcher.get_batch():
-    #         bv = batcher.process(bv)
-    #         beams, outside_beams = self.decode_bs(bv, vocab)
-    #         # tags = batcher.remove_pad(bv['tag'])
-    #         miss_r = vocab['tags'].token_to_id(R+ANY)
-    #         miss_l = vocab['tags'].token_to_id(L+ANY)
-    #         for tag, beam in zip(batcher.remove_pad(bv['tag']), beams['tokens']):
-    #             beam_mod, tag_mod = self.convert_to_structer(tag, beam, miss_r, miss_l)
-    #             try:
-    #                 beam_rank_out.append(outside_beams.index(tag) + 1)
-    #             except ValueError:
-    #                 beam_rank_out.append(self.config['beam_size'] + 1)
-    #             try:
-    #                 beam_rank_mod.append(beam_mod.index(tag_mod) + 1)
-    #             except ValueError:
-    #                 beam_rank_mod.append(self.config['beam_size'] + 1)
-    #             try:
-    #                 beam_rank.append(beam.index(tag) + 1)
-    #             except ValueError:
-    #                 beam_rank.append(self.config['beam_size'] + 1)
-    #         # import pdb; pdb.set_trace()
-    #     return beam_rank, beam_rank_mod, beam_rank_out
+
+    def stats(self, batcher):
+        bv_tag = []
+        for bv in batcher.get_subset_batch(self.subset_idx, 'train', False):
+    # miss_idx = np.where([not bv in bm for bv,bm in zip(bv_tag[-1], beams['tokens'])])[0].tolist()
+    # miss_rep_idx = np.where([not bv in bm for bv,bm in zip(bv_tag[-1], batcher.replace_fn(beams['tokens']))])[0].tolist()
+    # bv_miss_idx.update({beam_size: {'reg':miss_idx,'rep': miss_rep_idx}})
+            bv = batcher.process(bv)
+            bv_tag.append([bv[1:blen].tolist() for bv,blen in zip(bv['tag']['in'], bv['tag']['len'])][1:-1])
