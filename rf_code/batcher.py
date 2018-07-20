@@ -310,18 +310,17 @@ class Batcher(object):
 
     def process(self, bv):
         batch = dict()
-        # import pdb; pdb.set_trace()
-        self._seq_len = self.seq_len(bv['words'].tolist())
-        seq_len_w, bv_w_in, max_len_w = self.process_words(bv['words'].tolist())
+        self._seq_len = self.seq_len(bv['words'])
+        seq_len_w, bv_w_in, max_len_w = self.process_words(bv['words'])
         batch.update({'word': {'in': bv_w_in, 'len': seq_len_w}})
 
-        seq_len_t, bv_t_in, bv_t_eos = self.process_tags(bv['tags'].tolist(), max_len_w)
+        seq_len_t, bv_t_in, bv_t_eos = self.process_tags(bv['tags'], max_len_w)
         batch.update({'tag': {'in': bv_t_in, 'len': seq_len_t, 'out': bv_t_eos}})
 
-        bv_pos_in = self.process_pos(bv['pos'].tolist(), max_len_w)
+        bv_pos_in = self.process_pos(bv['pos'], max_len_w)
         batch.update({'pos': {'in': bv_pos_in, 'out': bv_pos_in}})
 
-        seq_len_c, bv_c_in = self.process_chars(bv['chars'].tolist(), max_len_w)
+        seq_len_c, bv_c_in = self.process_chars(bv['chars'], max_len_w)
         batch.update({'char': {'in': bv_c_in, 'len': seq_len_c}})
 
         return batch
