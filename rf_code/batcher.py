@@ -18,11 +18,15 @@ class Batcher(object):
     def __init__(self, **kwargs):
         for k,v in kwargs.items():
             setattr(self, '_'+k, v)
-        self._vocab = {}
-        self._data = {}
+
         self._t_op = TagOp(**self._tags_type)
 
+        # self._data = {}
+        # self._vocab = {}
+
     def create_data_file(self, src_dir, fout):
+        print ("[[Batcher.create_data_file]] Creating data file: \
+                    %s from source dir %s" % (fout, src_dir))
         data = {}
         for directory, dirnames, filenames in os.walk(src_dir):
             if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
@@ -35,65 +39,129 @@ class Batcher(object):
         with open(fout, 'w') as outfile:
             json.dump(data, outfile)
 
-    def load_fn(self, src_dir, data_file):
+    def load_fn(self, src_dir=None, data_file=None):
         """ """
+        start_time = time.clock()
+
+        if src_dir is None:
+            src_dir = self._src_dir
+        if data_file is None:
+            data_file = self._data_file
+
         if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
+            print ("[[Batcher.load_data]] Couldn't find data file: %s" % data_file)
             data = self.create_data_file(src_dir, data_file)
         else:
-            print ("[[Batcher.load_fn]] File used: %s" % data_file)
+            print ("[[Batcher.load_data]] Loading data file: %s" % data_file)
             with open (data_file, 'r') as outfile:
                 data = json.load(outfile)
+        print ("[[Batcher.load_fn]] %.3f to load data" % (time.clock()-start_time))
         return data
 
-    def modify(self, data):
-        print ("[[Batcher.modify]] Tags properties are %s" % (self._tags_type))
+    def modify_data(self, data):
+
+        self._data = {}
+
         start_time = time.clock()
-        self._data = {'words': {}, 'tags': {}, 'chars': {}, 'pos': {}}
-        for mode in self._dir_range.keys():
-            words = []
-            tags = []
-            chars = []
-            pos = []
-            for dir_k in range(*self._dir_range[mode]):
-                dir_k = str(dir_k).zfill(2)
-                for f_k in data[dir_k].keys():
-                    words.extend(data[dir_k][f_k]['words'])
-                    tags.extend(self._t_op.modify_fn(data[dir_k][f_k]['tags']))
-                    chars.extend([[list(w) for w in s] for s in data[dir_k][f_k]['words']])
-                    pos.extend(self._t_op.get_pos(data[dir_k][f_k]['tags']))
-            self._data['words'].update({mode : words})
-            self._data['tags'].update({mode : tags})
-            self._data['chars'].update({mode : chars})
-            self._data['pos'].update({mode : pos})
-        self.to_ids()
-        print ("[[Batcher.modify]] %.3f to modify dataset" % (time.clock()-start_time))
+        for dir_k in data.keys():
+            self._data.update({dir_k: {}})
+            for f_k in data[dir_k].keys():
+                self._data[dir_k].update({f_k: {}})
+                # tags = self._t_op.modify_fn(data[dir_k][f_k]['tags'])
+                tags = [[self._t_op.modify_tag(t) for t in ts] for ts in data[dir_k][f_k]['tags']]
+                # pos = self._t_op.get_pos(data[dir_k][f_k]['tags'])
+                pos = [[t[-1] for t in ts] for ts in data[dir_k][f_k]['tags']]
+                chars = [[list(w) for w in s] for s in data[dir_k][f_k]['words']]
+                self._data[dir_k][f_k].update({ 'words': data[dir_k][f_k]['words'],
+                                'pos' : pos, 'chars' : chars, 'tags' : tags})
+        print ("[[Batcher.modify_data]] %.3f to create dataset" % (time.clock()-start_time))
+        return self
+
+    def set_dataset(self, ds):
+        self._ds = ds
 
     def get_vocab(self):
+
+        vocab_data = {}
+        self._vocab = {}
         start_time = time.clock()
-        for k in self._data.keys():
-            data = []
-            for mode in self._data[k].keys():
-                data.extend(self._data[k][mode])
-            self._vocab[k] = Vocab(flatten_to_1D(data))
+        for dir_k, dir_v in self._data.items():
+            for f_k, f_v in dir_v.items():
+                for k, v in f_v.items():
+                    vocab_data.setdefault(k,[]).extend(v)
+        print ("[[Batcher.get_vocab]] %.3f to aggregate data" % (time.clock()-start_time))
+
+        self._types = vocab_data.keys()
+        for k, v in vocab_data.items():
+            start_time = time.clock()
+            self._vocab[k] = Vocab(flatten_to_1D(v))
             self._nsize[k] = self._vocab[k].vocab_size()
             print ("[[Batcher.get_vocab]] %.3f for %s vocab (size: %s)" %
-                            (time.clock()-start_time, k, self._nsize[k]))
+                    (time.clock()-start_time, k, self._nsize[k]))
+        self._vocab.update({'pos': self._vocab['tags']})
+        return self
 
-    def use_data(self, data):
-        self._data = data
-        self._d_size = len(list(data.values())[0])
-
-    def use_vocab(self, vocab):
+    def set_vocab(self, vocab):
         self._vocab = vocab
+
+    def convert_to_ids(self):
+
+        for k, v in self._vocab.items():
+            start_time = time.clock()
+            for dir_k, dir_v in self._data.items():
+                for f_k, f_v in dir_v.items():
+                    self._data[dir_k][f_k][k] = v.to_ids(f_v[k])
+            print ("[[Batcher.convert_to_ids]] %.3f for %s vocab" %
+                    (time.clock()-start_time, k))
+        return self
+
+    def create_dataset(self, data, mode):
+
+        self.modify_data(data).get_vocab().convert_to_ids()
+        self._ds = {}
+        for k in self._types:
+            for dir_k in range(*self._dir_range[mode]):
+                dir_k = str(dir_k).zfill(2)
+                for f_k in sorted(self._data[dir_k].keys()):
+                    self._ds.setdefault(k,[]).extend(self._data[dir_k][f_k][k])
+        self._d_size = len(self._ds[k])
+        return self
+
+    def get_subset_idx(self, src_file, precentage):
+
+        if os.path.exists(src_file):
+            with open(src_file, 'r') as f:
+                    subset_idx = json.load(f)
+        else:
+            import random
+            size_subset = int(np.ceil(self._d_size * precentage))
+            subset_idx = random.sample(range(1, self._d_size), size_subset)
+            with open(src_file, 'w') as f:
+                json.dump(subset_idx, f)
+        return subset_idx
+
+    def get_batch(self, permute=False, subset_idx=None):
+
+        if not subset_idx is None:
+            self._d_size = len(subset_idx)
+
+        n_batches = int(np.ceil(float(self._d_size)/self._batch_size))
+        if permute:
+            batch_idx = np.random.permutation(n_batches)
+        else:
+            batch_idx = range(n_batches)
+
+        batched = {}
+        for k in self._types:
+            if not subset_idx is None:
+                self._ds[k] = np.array(self._ds[k])[subset_idx].tolist()
+            batched.setdefault(k, np.array_split(self._ds[k], n_batches))
+
+        return [{k: batched[k][i].tolist() for k in self._types} for i in batch_idx]
+
 
     def get_batch_size(self):
         return self._batch_size
-
-    # def _get_pos(self, data, pos_id):
-    #     return data[pos_id]
-    #
-    # def get_pos(self, batch_data, pos_id):
-    #     return operate_on_Narray(batch_data, self._get_pos, pos_id)
 
     def seq_len(self, batch_data):
         return operate_on_Narray(batch_data, len)
@@ -165,76 +233,7 @@ class Batcher(object):
     def remove_pad(self, data):
         return list(filter(None, self.remove_len(data)))
 
-    def to_ids(self):
-        self.get_vocab()
-        for k in self._data.keys():
-            start_time = time.clock()
-            for mode in self._data[k].keys():
-                self._data[k][mode] = self._vocab[k].to_ids(self._data[k][mode])
-                print ("[[Batcher.to_ids]] %.3f for %s, %s" % (time.clock()-start_time, k, mode))
 
-    def get_batch(self, mode):
-
-        self._d_size = len(self._data['words'][mode])
-        num_batches = np.ceil(float(self._d_size)/self._batch_size)
-        batch_permute = np.random.permutation(int(num_batches))
-        batch = {k : np.array_split(self._data[k][mode], num_batches)
-                        for k in self._data.keys()}
-
-        return [{k: batch[k][i] for k in self._data.keys()}
-                        for i in batch_permute]
-
-    def get_subset_idx(self, mode, precentage):
-        import random
-        self._d_size = len(self._data['words'][mode])
-        size_subset = np.ceil(self._d_size * precentage)
-        return random.sample(range(1, self._d_size), int(size_subset))
-
-    def get_subset_permute_batch(self, subset_idx, mode):
-        size_subset = len(subset_idx)
-        num_batches = np.ceil(size_subset/self._batch_size)
-        batch_permute = np.random.permutation(int(num_batches))
-        batch = {k: np.array_split(np.array(self._data[k][mode])[subset_idx],
-                    num_batches) for k in self._data.keys()}
-
-        return [{k: batch[k][i] for k in self._data.keys()}
-                                    for i in batch_permute]
-
-    def get_subset_batch(self, subset_idx, mode):
-        size_subset = len(subset_idx)
-        num_batches = np.ceil(size_subset/self._batch_size)
-        # batch_permute = np.random.permutation(int(num_batches))
-        batch = {k: np.array_split(np.array(self._data[k][mode])[subset_idx],
-                    num_batches) for k in self._data.keys()}
-
-        return [{k: batch[k][i] for k in self._data.keys()}
-                                for i in range(int(num_batches))]
-
-
-
-    # def get_random_batch(self):
-    #     batch = dict()
-    #     d_index = np.random.randint(self._d_size, size=self._batch_size)
-    #     for k in self._data.keys():
-    #         batch[k] = np.array(self._data[k])[d_index]
-    #     return batch
-    #
-    # def get_permute_batch(self):
-    #     batch = dict()
-    #     num_batches = np.ceil(float(self._d_size)/self._batch_size)
-    #     batch_permute = np.random.permutation(int(num_batches))
-    #     batch = {k : np.array_split(self._data[k], num_batches)
-    #                 for k in self._data.keys()}
-    #     return [{k: batch[k][i] for k in self._data.keys()}
-    #                 for i in batch_permute]
-    #
-    # def get_batch(self):
-    #     num_batches = np.ceil(float(self._d_size)/self._batch_size)
-    #     words = np.array_split(self._data['words'], num_batches)
-    #     tags = np.array_split(self._data['tags'], num_batches)
-    #     chars = np.array_split(self._data['chars'], num_batches)
-    #     return [dict(zip(('words','tags','chars'),(w,t,c)))
-    #                     for w,t,c in zip(words, tags, chars)]
 
     def id_to_unk(self, _id, vocab):
         rnd_val = np.random.random()
@@ -330,3 +329,18 @@ class Batcher(object):
     def restore(self, batch):
         it = iter(batch)
         return [x for x in (list(islice(it, n)) for n in self._seq_len)]
+
+    def _replace_fn(self, idx):
+        if idx == 7:
+            return 6
+        elif idx == 6:
+            return 7
+        # elif idx == 5:
+        #     return 4
+        # elif idx == 4:
+        #     return 5
+        else:
+            return idx
+
+    def replace_fn(self, tag_ids):
+        return _operate_on_Narray(tag_ids, self._replace_fn)

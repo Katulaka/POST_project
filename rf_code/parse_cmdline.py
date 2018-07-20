@@ -2,7 +2,6 @@ import argparse
 import os
 import numpy as np
 
-# import json
 # import time
 # import tensorflow as tf
 
@@ -78,6 +77,9 @@ def parse_cmdline():
     config['btch']['dir_range'] = {'train': (2,22), 'dev': (22,23), 'test': (23,24)}
 
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
+    config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
+    config['btch']['data_file'] = 'at_data.out'
+    config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
 
     #embedding size
     config['dim_word'] = args.dim_word
@@ -94,8 +96,7 @@ def parse_cmdline():
     config['use_c_embed'] = args.use_c_embed
     config['attn'] = args.attn
 
-    config['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
-    config['at_fout'] = 'at_data.out'
+
 
     if config['mode'] == 'train':
         config['lr'] = args.lr
@@ -104,7 +105,7 @@ def parse_cmdline():
         config['grad_clip'] = args.grad_clip
         config['grad_norm'] = args.grad_norm
 
-    elif config['mode'] == 'decode':
+    elif config['mode'] == 'test':
         config['beam_size'] = args.beam_size
         config['beam_timesteps'] = args.beam_timesteps
         config['num_goals'] = args.num_goals

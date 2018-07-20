@@ -87,13 +87,6 @@ class BasicModel(object):
             print('Loading the model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
-        import os, json
-        if os.path.exists(os.path.join(self.config['result_dir'],'sub_batch.json')):
-            with open(os.path.join(self.config['result_dir'],'sub_batch.json'), 'r') as f:
-                self.subset_idx =  json.load(f)
-        else:
-            self.subset_idx =  batcher.get_subset_idx(self.config['mode'], 0.1)
-
 
     @abstractmethod
     def build_graph(self, graph):
@@ -126,9 +119,8 @@ class BasicModel(object):
         # if not os.path.isfile(self.ckpt_dir + '/config.json'):
         with open(os.path.join(self.result_dir,'config.json'), 'w') as f:
             json.dump({self.config['mode']: self.config}, f)
-        with open(os.path.join(self.result_dir,'sub_batch.json'), 'w') as f:
-            json.dump(self.subset_idx, f)
 
+        
     def freeze_graph(self, output_node_names):
         if not tf.gfile.Exists(self.ckpt_dir):
             raise AssertionError(

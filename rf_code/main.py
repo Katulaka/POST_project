@@ -66,8 +66,8 @@ def main(_):
 
     elif (config['mode'] == 'train'):
         batcher = Batcher(**config['btch'])
-        data = batcher.load_fn(config['src_dir'], config['at_fout'])
-        batcher.modify(data)
+        data = batcher.load_fn()
+        batcher.create_dataset(data, config['mode'])
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._nsize[k]
         model = POSModel(config) if config['pos'] else STAGModel(config)
@@ -77,7 +77,7 @@ def main(_):
         # pass
     elif (config['mode'] == 'dev'):
         pass
-    elif (config['mode'] == 'decode'):
+    elif (config['mode'] == 'test'):
 
         # now = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
         # fname = now
@@ -86,15 +86,14 @@ def main(_):
         # if not os.path.isdir(dir_name):
         #     os.makedirs(dir_name)
 
-        # batcher.use_data(ds.dataset['test'])
         batcher = Batcher(**config['btch'])
-        data = batcher.load_fn(config['src_dir'], config['at_fout'])
-        batcher.modify(data)
+        data = batcher.load_fn()
+        batcher.create_dataset(data, 'train')
+
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._nsize[k]
         model = POSModel(config) if config['pos'] else STAGModel(config)
         decoded = model.decode(batcher)
-
         # for tags, words in zip(res['tags'], res['words']):
         #     mod_tags = [[t] for t in t_op.combine_fn(t_op.modify_fn(tags))]
         #     score = [[1.]]*len(tags)

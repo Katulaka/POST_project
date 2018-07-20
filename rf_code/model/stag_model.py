@@ -254,6 +254,7 @@ class STAGModel(BasicModel):
 
     def train(self, batcher):
 
+
         # Create a summary to monitor loss tensor
         self.m_loss = tf.summary.scalar("loss", self.loss)
         # # Create a summary to monitor accuracy tensor
@@ -261,9 +262,9 @@ class STAGModel(BasicModel):
         # # Merge all summaries into a single op
         # self.merged_summary_op = tf.summary.merge_all()
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
-        # loss = 0.1
         epoch_id = 0
         loss = [0.1]
+        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         # for epoch_id in range(0, self.num_epochs):
         while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
@@ -271,8 +272,7 @@ class STAGModel(BasicModel):
             current_step = self.sess.run(self.global_step)
             steps_per_ckpt = self.config['steps_per_ckpt']
             epoch_id += 1
-            # for bv in batcher.get_batch('train'):
-            for bv in batcher.get_subset_permute_batch(self.subset_idx, 'train'):
+            for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)

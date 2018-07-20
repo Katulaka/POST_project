@@ -34,13 +34,19 @@ class TagOp(object):
             tag = tag[::-1]
 
         if self.no_val_gap:
-            # tag = tag.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0]
-            tag = [t.replace(L, L+ANY+NA).replace(R, R+ANY+NA).split(NA)[0] for t in tag]
+            _tag = []
+            for t in tag:
+                if t.startswith(L):
+                    _tag.append(L+ANY)
+                elif t.startswith(R):
+                    _tag.append(R+ANY)
+                else:
+                    _tag.append(t)
+            tag = _tag
         return tag
 
 
     def modify_fn(self, tags):
-        # return _operate_on_Narray(tags, self.modify_tag)
         return operate_on_Narray(tags, self.modify_tag)
 
     def _get_pos(self, tag):
