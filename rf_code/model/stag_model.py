@@ -284,11 +284,10 @@ class STAGModel(BasicModel):
                 if  current_step % steps_per_ckpt == 0:
                     self.save()
                     perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
-                    import pdb; pdb.set_trace()
-                    bv_id = int(np.ceil(bv_id/steps_per_ckpt))
+                    bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
                     print ("[[stag_model.train::train_epoch %d.%d]] step %d learning"
                             "rate %f step-time %.3f perplexity %.6f (loss %.6f)" %
-                               (epoch_id, bv_id, current_step, self.sess.run(self.lr),
+                               (epoch_id, bv_id_m, current_step, self.sess.run(self.lr),
                                step_time, perplex, loss[-1]))
                     step_time = 0.0
                     loss.append(0.0)
