@@ -272,11 +272,13 @@ class STAGModel(BasicModel):
             current_step = self.sess.run(self.global_step)
             steps_per_ckpt = self.config['steps_per_ckpt']
             epoch_id += 1
+            bv_id = 0
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
+                bv_id += 1
                 step_time += (time.clock() - start_time) / steps_per_ckpt
                 loss[-1] += step_loss / steps_per_ckpt
                 if  current_step % steps_per_ckpt == 0:
@@ -285,6 +287,7 @@ class STAGModel(BasicModel):
                     bv_id = int(np.ceil(bv_id/steps_per_ckpt))
                     print ("[[stag_model.train::train_epoch %d.%d]] step %d learning"
                             "rate %f step-time %.3f perplexity %.6f (loss %.6f)" %
+                               (epoch_id, bv_id, current_step, self.sess.run(self.lr),
                                step_time, perplex, loss[-1]))
                     step_time = 0.0
                     loss.append(0.0)
