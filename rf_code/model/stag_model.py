@@ -275,7 +275,7 @@ class STAGModel(BasicModel):
             bv_id = 0
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 start_time = time.clock()
-                step_loss, summary, _ = self.step(batcher.process(bv))
+                step_loss, summary, _ = self.step(batcher.process(bv, add_unk=False))
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
                 bv_id += 1

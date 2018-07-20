@@ -246,10 +246,10 @@ class Batcher(object):
     def to_unks(self, bv, vocab):
         return _operate_on_Narray(bv, self.id_to_unk, vocab)
 
-    def process_words(self, bv_w):
+    def process_words(self, bv_w, add_unk):
 
         #Process words input batch
-        if self._vocab != []:
+        if self._vocab != [] and add_unk:
             bv_w = self.to_unks(bv_w, self._vocab['words'])
         #Add GO tken and EOS token
         bv_w_delim = self.add_eos(self.add_go(bv_w))
@@ -310,10 +310,10 @@ class Batcher(object):
         seq_len_c = np.reshape(seq_len_c, [-1])
         return seq_len_c, bv_c_in
 
-    def process(self, bv):
+    def process(self, bv, add_unk=True):
         batch = dict()
         self._seq_len = self.seq_len(bv['words'])
-        seq_len_w, bv_w_in, max_len_w = self.process_words(bv['words'])
+        seq_len_w, bv_w_in, max_len_w = self.process_words(bv['words'], add_unk)
         batch.update({'word': {'in': bv_w_in, 'len': seq_len_w}})
 
         seq_len_t, bv_t_in, bv_t_eos = self.process_tags(bv['tags'], max_len_w)
