@@ -328,7 +328,7 @@ class STAGModel(BasicModel):
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
-        for bv in batcher.get_subset_permute_batch(self.subset_idx, 'train'):
+
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
 
