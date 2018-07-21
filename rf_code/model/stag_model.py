@@ -193,8 +193,6 @@ class STAGModel(BasicModel):
             self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
                                                     global_step=self.global_step)
 
-
-
     def build_graph(self):
         with tf.device('/gpu:0'):
             with tf.Graph().as_default() as g:
@@ -248,12 +246,10 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        # output_feed = [self.loss, self.optimizer] if not dev else [self.loss]
         output_feed = [self.loss, self.m_loss, self.optimizer]
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
-
 
         # Create a summary to monitor loss tensor
         self.m_loss = tf.summary.scalar("loss", self.loss)
@@ -265,8 +261,8 @@ class STAGModel(BasicModel):
         epoch_id = 0
         loss = [0.1]
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
-        # for epoch_id in range(0, self.num_epochs):
-        while loss[-1] >= 0.1 or loss[-2] >= 0.1:
+        for epoch_id in range(0, self.num_epochs):
+        # while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
             loss.append(0.0)
             current_step = self.sess.run(self.global_step)
@@ -275,7 +271,7 @@ class STAGModel(BasicModel):
             bv_id = 0
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 start_time = time.clock()
-                step_loss, summary, _ = self.step(batcher.process(bv, add_unk=False))
+                step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
                 bv_id += 1
@@ -334,12 +330,11 @@ class STAGModel(BasicModel):
 
             #TODO:
             #       (3) profile beam_search
-            #       (4) remove unnecessary code from beam search
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
             beams, _ = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
-                                        batcher.process(bv, add_unk=False))
+                                        batcher.process(bv))
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
