@@ -80,16 +80,16 @@ class Batcher(object):
                     (time.clock()-start_time, k))
         return self
 
-    def create_dataset(self, data, mode):
-
-        self.modify_data(data).get_vocab().convert_to_ids()
+    def create_dataset(self, mode):
+        """ """
+        start_time = time.clock()
         self._ds = {}
-        for k in self._types:
-            for dir_k in range(*self._dir_range[mode]):
-                dir_k = str(dir_k).zfill(2)
-                for f_k in sorted(self._data[dir_k].keys()):
-                    self._ds.setdefault(k,[]).extend(self._data[dir_k][f_k][k])
+        for k, v in self._vocab.items():
+            for d_k in sorted(self._data.keys()):
+                if int(d_k[:2]) in range(*self._dir_range[mode]):
+                    self._ds.setdefault(k,[]).extend(self._data[d_k][k])
         self._d_size = len(self._ds[k])
+        print ("[[Batcher.create_dataset]] %.3f to create ds" % (time.clock()-start_time))
         return self
 
     def get_subset_idx(self, src_file, precentage):
