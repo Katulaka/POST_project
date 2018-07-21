@@ -21,6 +21,7 @@ class Batcher(object):
         self._t_op = TagOp(**self._tags_type)
         self._data = self.create_data()
         self._vocab = self.create_vocab()
+        self.convert_to_ids()
 
 
     def load_fn(self, src_dir=None, data_file=None):
@@ -70,12 +71,11 @@ class Batcher(object):
         return _vocab
 
     def convert_to_ids(self):
-
+        """ """
         for k, v in self._vocab.items():
             start_time = time.clock()
-            for dir_k, dir_v in self._data.items():
-                for f_k, f_v in dir_v.items():
-                    self._data[dir_k][f_k][k] = v.to_ids(f_v[k])
+            for d_k, d_v in self._data.items():
+                self._data[d_k][k] = v.to_ids(d_v[k])
             print ("[[Batcher.convert_to_ids]] %.3f for %s vocab" %
                     (time.clock()-start_time, k))
         return self
