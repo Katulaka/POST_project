@@ -274,25 +274,16 @@ def gen_tags(fin):
 
 
 def can_combine_pair(t_dst, t_src, comb_side, miss_side, miss_tag_any):
-    # try:
     if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
         miss_tag = ANY if miss_tag_any else t_src.root_tag
         leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
         if leaves:
             return True
-            # t_dst_cp = fast_copy(t_dst)
-            # t_dst_cp.combine_tree(t_src, leaves[-1])
-            # return t_dst_cp
     return False
-    # except:
-    #     import pdb; pdb.set_trace()
 
 
 def can_combine_trees(tree_lst, miss_tag_any):
     assert len(tree_lst)==2
-    # ptr = 0
-    # trees_cp = list(tree_lst)
-    # while ptr < len(trees_cp)-1:
     t_l = tree_lst[0]
     t_r = tree_lst[1]
     #try combining left tree into right tree
@@ -316,41 +307,4 @@ def combine_trees(tree_lst, miss_tag_any, r_dst_l_src):
     t_dst_cp = fast_copy(t_dst) #TODO try using deep copy of treelib
     miss_tag = ANY if miss_tag_any else t_src.root_tag
     leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
-    # import pdb; pdb.set_trace()
     return [t_dst_cp.combine_tree(t_src, leaves[-1])]
-
-# def combine_pair(t_dst, t_src, comb_side, miss_side, miss_tag_any):
-#     if t_src.is_combine_to(comb_side) and t_src.is_complete_tree():
-#         miss_tag = ANY if miss_tag_any else t_src.root_tag
-#         leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
-#         if leaves:
-#             t_dst_cp = fast_copy(t_dst)
-#             t_dst_cp.combine_tree(t_src, leaves[-1])
-#             return t_dst_cp
-#     return None
-#
-# def combine_trees(tree_lst, miss_tag_any):
-#     ptr = 0
-#     if len(tree_lst) > 2:
-#         import pdb; pdb.set_trace()
-#     trees_cp = list(tree_lst)
-#     while ptr < len(trees_cp)-1:
-#         t_l = trees_cp[ptr]
-#         t_r = trees_cp[ptr+1]
-#         #try combining left tree into right tree
-#         t_comb = combine_pair(t_r, t_l, CR, L, miss_tag_any)
-#         if t_comb:
-#             trees_cp[ptr+1] = t_comb
-#             del trees_cp[ptr]
-#             if ptr > 0: ptr -= 1
-#         else:
-#             #try combining right tree into left tree
-#             t_comb = combine_pair(t_l, t_r, CL, R, miss_tag_any)
-#             if t_comb:
-#                 trees_cp[ptr] = t_comb
-#                 del trees_cp[ptr+1]
-#                 if ptr > 0: ptr -= 1
-#             else:
-#                 ptr += 1
-#
-#     return trees_cp
