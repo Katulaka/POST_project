@@ -20,6 +20,7 @@ class Batcher(object):
 
         self._t_op = TagOp(**self._tags_type)
         self._data = self.create_data()
+        self._vocab = self.create_vocab()
 
 
     def load_fn(self, src_dir=None, data_file=None):
@@ -52,27 +53,21 @@ class Batcher(object):
         print ("[[Batcher.create_data]] %.3f to create dataset" % (time.clock()-start_time))
         return _data
 
+    def create_vocab(self):
+        """ """
         vocab_data = {}
-        self._vocab = {}
-        start_time = time.clock()
-        for dir_k, dir_v in self._data.items():
-            for f_k, f_v in dir_v.items():
-                for k, v in f_v.items():
+        _vocab = {}
+        for d_k, d_v in self._data.items():
+            for k, v in d_v.items():
+                if k != 'gold':
                     vocab_data.setdefault(k,[]).extend(v)
-        print ("[[Batcher.get_vocab]] %.3f to aggregate data" % (time.clock()-start_time))
 
-        self._types = vocab_data.keys()
         for k, v in vocab_data.items():
             start_time = time.clock()
-            self._vocab[k] = Vocab(flatten_to_1D(v))
-            self._nsize[k] = self._vocab[k].vocab_size()
-            print ("[[Batcher.get_vocab]] %.3f for %s vocab (size: %s)" %
-                    (time.clock()-start_time, k, self._nsize[k]))
-        self._vocab.update({'pos': self._vocab['tags']})
-        return self
-
-    def set_vocab(self, vocab):
-        self._vocab = vocab
+            _vocab[k] = Vocab(flatten_to_1D(v))
+            print ("[[Batcher.create_vocab]] %.3f for %s vocab (size: %s)" %
+                    (time.clock()-start_time, k, _vocab[k].vocab_size()))
+        return _vocab
 
     def convert_to_ids(self):
 
