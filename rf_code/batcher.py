@@ -184,18 +184,11 @@ class Batcher(object):
     def remove_delim(self, data, go_token, eos_token):
         return remove_eos(remove_go(data, go_token), eos_token)
 
-    # def remove_delim_len(self, data, d_len):
-    #     return [d[1:l-1].tolist() for d, l in zip(data, d_len)]
-
     def remove_delim_len(self, data):
         return [d[1:l-1].tolist() for d, l in zip(data['in'], data['len'])]
 
     def remove_len(self, data):
         return [d[1:l].tolist() for d, l in zip(data['in'], data['len'])]
-
-    # def remove_delim_len(self, *args):
-    #     if len(args) == 1:
-    #         return remove_delim_len_batch(self, *args)
 
     def remove_pad(self, data):
         return list(filter(None, self.remove_len(data)))
@@ -255,8 +248,6 @@ class Batcher(object):
 
     def process_pos(self, bv_pos, max_len_w):
 
-        # pos_id = 0 if self._reverse else -1
-        # bv_pos = self.get_pos(bv_t, pos_id)
         bv_pos_delim = self.add_eos(self.add_go(bv_pos))
         bv_pos_pad = self.pad(bv_pos_delim, max_len_w)
         bv_pos_in = np.vstack(bv_pos_pad)
@@ -295,18 +286,3 @@ class Batcher(object):
     def restore(self, batch):
         it = iter(batch)
         return [x for x in (list(islice(it, n)) for n in self._seq_len)]
-
-    def _replace_fn(self, idx):
-        if idx == 7:
-            return 6
-        elif idx == 6:
-            return 7
-        # elif idx == 5:
-        #     return 4
-        # elif idx == 4:
-        #     return 5
-        else:
-            return idx
-
-    def replace_fn(self, tag_ids):
-        return _operate_on_Narray(tag_ids, self._replace_fn)
