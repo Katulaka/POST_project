@@ -73,6 +73,8 @@ def main(_):
             print ("[[main]] Couldn't find batcher file: %s" % batch_file)
             print ("[[main]]  Creating new batcher ")
             batcher = Batcher(**config['btch'])
+            if not os.path.exists(config['result_dir']):
+                os.makedirs(config['result_dir'])
             with open(batch_file, 'wb') as output:
                 pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
         else:
@@ -83,7 +85,7 @@ def main(_):
 
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._vocab[k].vocab_size()
-            
+
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
     elif (config['mode'] == 'train'):
