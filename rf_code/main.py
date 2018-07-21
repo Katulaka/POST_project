@@ -65,7 +65,8 @@ def main(_):
                     rfile = os.path.join(lb_c_dir, fname.split('.')[0]+'.evalb')
                     os.popen('%s -p %s %s %s > %s' % (evalb, pfile, fin, fout_lb, rfile))
 
-    elif (config['mode'] == 'train') or (config['mode'] == 'test'):
+    # elif (config['mode'] == 'train') or (config['mode'] == 'test'):
+    else:
         import time
         start_time = time.clock()
         batch_file = config['batch_file']
@@ -88,18 +89,18 @@ def main(_):
 
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
-    elif (config['mode'] == 'train'):
+        if (config['mode'] == 'train'):
+            batcher.create_dataset('train')
+            model.train(batcher)
 
-        batcher.create_dataset('train')
-        model.train(batcher)
+        elif (config['mode'] == 'test'):
+            batcher.create_dataset('train')
+            decoded = model.stats(batcher)
 
-    elif (config['mode'] == 'dev'):
-        pass
+        elif (config['mode'] == 'dev'):
+            pass
 
-    elif (config['mode'] == 'test'):
 
-        batcher.create_dataset('train')
-        decoded = model.stats(batcher)
 
 
 if __name__ == "__main__":
