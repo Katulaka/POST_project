@@ -332,15 +332,14 @@ class STAGModel(BasicModel):
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
 
-            #TODO:  (1) Fix batcher format
-            #       (2) Fix UNK words
+            #TODO:
             #       (3) profile beam_search
             #       (4) remove unnecessary code from beam search
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
             beams, _ = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
-                                        batcher.process(bv))
+                                        batcher.process(bv, add_unk=False))
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
@@ -359,10 +358,27 @@ class STAGModel(BasicModel):
         return decode_trees
 
     def stats(self, batcher):
-        bv_tag = []
-        for bv in batcher.get_subset_batch(self.subset_idx, 'train', False):
-    # miss_idx = np.where([not bv in bm for bv,bm in zip(bv_tag[-1], beams['tokens'])])[0].tolist()
-    # miss_rep_idx = np.where([not bv in bm for bv,bm in zip(bv_tag[-1], batcher.replace_fn(beams['tokens']))])[0].tolist()
-    # bv_miss_idx.update({beam_size: {'reg':miss_idx,'rep': miss_rep_idx}})
-            bv = batcher.process(bv)
-            bv_tag.append([bv[1:blen].tolist() for bv,blen in zip(bv['tag']['in'], bv['tag']['len'])][1:-1])
+
+        beam_rank = []
+        beams_rank = []
+        matches = []
+        bs = BeamSearch(self.config['beam_size'],
+                        batcher._vocab['tags'].token_to_id('GO'),
+                        batcher._vocab['tags'].token_to_id('EOS'),
+                        self.config['beam_timesteps'])
+
+        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        for bv in batcher.get_batch(subset_idx=subset_idx):
+            import pdb; pdb.set_trace()
+            beams, _ = bs.beam_search(self.encode_top_state,
+                                        self.decode_topk,
+                                        batcher.process(bv, add_unk=False))
+
+            matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
+            for beam, tag in zip(beams['tokens'], bv['tags'][0]):
+                try:
+                    beam_rank.append(beam.index(tag) + 1)
+                except ValueError:
+                    beam_rank.append(self.config['beam_size'] + 1)
+            beams_rank.append(beam_rank)
+        return matches
