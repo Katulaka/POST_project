@@ -4,12 +4,11 @@ import os
 import json
 import time
 import numpy as np
-
 from itertools import islice
 
+from data_preproc import create_data_file
 from vocab import PAD, GO, EOS, UNK, Vocab
 from utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
-from tree_t import gen_tags
 from tag_ops import TagOp
 
 
@@ -21,23 +20,6 @@ class Batcher(object):
 
         self._t_op = TagOp(**self._tags_type)
 
-        # self._data = {}
-        # self._vocab = {}
-
-    def create_data_file(self, src_dir, fout):
-        print ("[[Batcher.create_data_file]] Creating data file: \
-                    %s from source dir %s" % (fout, src_dir))
-        data = {}
-        for directory, dirnames, filenames in os.walk(src_dir):
-            if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
-                dir_idx = directory.split('/')[-1]
-                data[dir_idx] = {}
-                for fname in sorted(filenames):
-                    f_idx = fname.split('_')[-1].split('.')[0][-2:]
-                    fin = os.path.join(directory, fname)
-                    data[dir_idx][f_idx] = gen_tags(fin)
-        with open(fout, 'w') as outfile:
-            json.dump(data, outfile)
 
     def load_fn(self, src_dir=None, data_file=None):
         """ """
@@ -49,18 +31,14 @@ class Batcher(object):
             data_file = self._data_file
 
         if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
-            print ("[[Batcher.load_data]] Couldn't find data file: %s" % data_file)
-            data = self.create_data_file(src_dir, data_file)
+            print ("[[Batcher.load_fn]] Couldn't find data file: %s" % data_file)
+            data = create_data_file(src_dir, data_file)
         else:
-            print ("[[Batcher.load_data]] Loading data file: %s" % data_file)
+            print ("[[Batcher.load_fn]] Loading data file: %s" % data_file)
             with open (data_file, 'r') as outfile:
                 data = json.load(outfile)
         print ("[[Batcher.load_fn]] %.3f to load data" % (time.clock()-start_time))
         return data
-
-    def modify_data(self, data):
-
-        self._data = {}
 
         start_time = time.clock()
         for dir_k in data.keys():

@@ -5,7 +5,7 @@ from parse_cmdline import parse_cmdline
 # from dataset import Dataset
 from batcher import Batcher
 
-from tree_t import gen_tags
+from tree_t import gen_aug_tags
 from tag_ops import TagOp
 from astar.search import solve_tree_search
 
@@ -44,7 +44,7 @@ def main(_):
                 for fname in sorted(filenames):
                     fin = os.path.join(directory, fname)
                     fout_lb = os.path.join(lb_c_dir, fname.split('.')[0]+'.lb')
-                    res = gen_tags(fin)
+                    res = gen_aug_tags(fin)
                     reconst = []
                     for tags, words in zip(res['tags'], res['words']):
                         mod_tags = [[t] for t in t_op.combine_fn(t_op.modify_fn(tags))]

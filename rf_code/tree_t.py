@@ -255,21 +255,22 @@ def get_dependancies(fin, penn_path='pennconverter.jar'):
 
     return dep_dict_file
 
-def gen_tags(fin):
+def gen_aug_tags(fin):
 
     tree_deps = get_dependancies(fin)
-    res = {'tags':[], 'words':[]}
+    res = {}
     with open(fin) as f:
         for i, line in enumerate(f.readlines()):
-            line = line.strip('\n')
+            in_line = line.strip('\n')
             #max_id is the number of words in line + 1.
             # This is index kept in order to number words from 1 to num of words
-            max_id = len(Tree_.fromstring(line).leaves()) + 1
-            line = line.replace('(', ' ( ').replace(')', ' ) ').split()
+            max_id = len(Tree_.fromstring(in_line).leaves()) + 1
+            out_line = line.replace('(', ' ( ').replace(')', ' ) ').split()
             tree = TreeT()
-            _res = tree.from_ptb_to_tag(line, max_id, tree_deps[i])
-            res['tags'].append(_res['tags'])
-            res['words'].append(_res['words'])
+            _res = tree.from_ptb_to_tag(out_line, max_id, tree_deps[i])
+            res.setdefault('gold',[]).append([in_line])
+            res.setdefault('tags',[]).append(_res['tags'])
+            res.setdefault('words',[]).append(_res['words'])
     return res
 
 
