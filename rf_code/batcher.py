@@ -267,7 +267,7 @@ class Batcher(object):
         seq_len_c = np.reshape(seq_len_c, [-1])
         return seq_len_c, bv_c_in
 
-    def process(self, bv, add_unk=True):
+    def process(self, bv, add_unk=False):
         batch = dict()
         self._seq_len = self.seq_len(bv['words'])
         seq_len_w, bv_w_in, max_len_w = self.process_words(bv['words'], add_unk)
