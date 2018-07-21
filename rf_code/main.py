@@ -1,5 +1,6 @@
 import tensorflow as tf
 import os
+import pickle
 
 from parse_cmdline import parse_cmdline
 # from dataset import Dataset
@@ -64,22 +65,39 @@ def main(_):
                     rfile = os.path.join(lb_c_dir, fname.split('.')[0]+'.evalb')
                     os.popen('%s -p %s %s %s > %s' % (evalb, pfile, fin, fout_lb, rfile))
 
-    elif (config['mode'] == 'train'):
-        batcher = Batcher(**config['btch'])
-        data = batcher.load_fn()
-        batcher.create_dataset(data, config['mode'])
+    elif (config['mode'] == 'train') or (config['mode'] == 'test'):
+        import time
+        start_time = time.clock()
+        batch_file = config['batch_file']
+        if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
+            print ("[[main]] Couldn't find batcher file: %s" % batch_file)
+            print ("[[main]]  Creating new batcher ")
+            batcher = Batcher(**config['btch'])
+            with open(batch_file, 'wb') as output:
+                pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
+        else:
+            print ("[[main]] Loading batcher file: %s" % batch_file)
+            with open(batch_file, 'rb') as input:
+                batcher = pickle.load(input)
+        print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
+
         for k in batcher._vocab.keys():
-            config['n'+k] = batcher._nsize[k]
+            config['n'+k] = batcher._vocab[k].vocab_size()
+            
         model = POSModel(config) if config['pos'] else STAGModel(config)
+
+    elif (config['mode'] == 'train'):
+
+        batcher.create_dataset('train')
         model.train(batcher)
 
     elif (config['mode'] == 'dev'):
         pass
 
+    elif (config['mode'] == 'test'):
 
-        for k in batcher._vocab.keys():
-            config['n'+k] = batcher._nsize[k]
-        model = POSModel(config) if config['pos'] else STAGModel(config)
+        batcher.create_dataset('train')
+        decoded = model.stats(batcher)
 
 
 if __name__ == "__main__":
