@@ -93,6 +93,7 @@ class Batcher(object):
         return self
 
     def get_subset_idx(self, src_file, precentage):
+        """ """
 
         if os.path.exists(src_file):
             with open(src_file, 'r') as f:
@@ -117,14 +118,14 @@ class Batcher(object):
             batch_idx = range(n_batches)
 
         batched = {}
-        for k in self._types:
+        for k in self._vocab.keys():
             if not subset_idx is None:
                 data = np.array(self._ds[k])[subset_idx].tolist()
             else:
                 data = self._ds[k]
             batched.setdefault(k, np.array_split(data, n_batches))
 
-        return [{k: batched[k][i].tolist() for k in self._types} for i in batch_idx]
+        return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
 
 
     def get_batch_size(self):
