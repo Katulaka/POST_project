@@ -79,6 +79,7 @@ def parse_cmdline():
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
     config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['btch']['data_file'] = 'at_data.out'
+    config['batch_file'] = os.path.join(config['result_dir'],'batch.pickle')
     config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
 
     #embedding size
