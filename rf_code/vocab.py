@@ -18,8 +18,8 @@ class Vocab(object):
         self._token_to_id = dict()
         self._id_to_token = dict()
 
-        self._special_tokens = dict([PAD, GO, EOS, UNK])
-        s_tokens_sort = sorted(self._special_tokens.items(), key=lambda x: x[1])
+        _special_tokens = dict([PAD, GO, EOS, UNK])
+        s_tokens_sort = sorted(_special_tokens.items(), key=lambda x: x[1])
         self._count = list(map(lambda t: [t[0], -1], s_tokens_sort))
 
         if _size > 0 :
@@ -33,7 +33,7 @@ class Vocab(object):
         for token in _text:
             if token not in self._token_to_id:
                 unk_count += 1
-        self._count[self._special_tokens['UNK']][1] = unk_count
+        self._count[_special_tokens['UNK']][1] = unk_count
         self._id_to_token = dict(zip(self._token_to_id.values(),
                                 self._token_to_id.keys()))
 
@@ -67,8 +67,8 @@ class Vocab(object):
     def to_tokens(self, ids):
         return operate_on_Narray(ids, self.ids_to_tokens)
 
-    def get_ctrl_tokens(self):
-        return self._special_tokens
+    # def get_ctrl_tokens(self):
+    #     return self._special_tokens
 
     def get_unk_id(self):
         return UNK[1]
