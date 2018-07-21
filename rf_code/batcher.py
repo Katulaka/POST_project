@@ -19,6 +19,7 @@ class Batcher(object):
             setattr(self, '_'+k, v)
 
         self._t_op = TagOp(**self._tags_type)
+        self._data = self.create_data()
 
 
     def load_fn(self, src_dir=None, data_file=None):
@@ -40,25 +41,16 @@ class Batcher(object):
         print ("[[Batcher.load_fn]] %.3f to load data" % (time.clock()-start_time))
         return data
 
+    def create_data(self):
+        """ """
+        _data = self.load_fn()
         start_time = time.clock()
-        for dir_k in data.keys():
-            self._data.update({dir_k: {}})
-            for f_k in data[dir_k].keys():
-                self._data[dir_k].update({f_k: {}})
-                # tags = self._t_op.modify_fn(data[dir_k][f_k]['tags'])
-                tags = [[self._t_op.modify_tag(t) for t in ts] for ts in data[dir_k][f_k]['tags']]
-                # pos = self._t_op.get_pos(data[dir_k][f_k]['tags'])
-                pos = [[t[-1] for t in ts] for ts in data[dir_k][f_k]['tags']]
-                chars = [[list(w) for w in s] for s in data[dir_k][f_k]['words']]
-                self._data[dir_k][f_k].update({ 'words': data[dir_k][f_k]['words'],
-                                'pos' : pos, 'chars' : chars, 'tags' : tags})
-        print ("[[Batcher.modify_data]] %.3f to create dataset" % (time.clock()-start_time))
-        return self
-
-    def set_dataset(self, ds):
-        self._ds = ds
-
-    def get_vocab(self):
+        for k in _data.keys():
+            _data[k].setdefault('pos',[]).extend([[t[-1] for t in ts] for ts in _data[k]['tags']])
+            _data[k].setdefault('chars',[]).extend([[list(w) for w in s] for s in _data[k]['words']])
+            _data[k]['tags'] = [[self._t_op.modify_tag(t) for t in ts] for ts in _data[k]['tags']]
+        print ("[[Batcher.create_data]] %.3f to create dataset" % (time.clock()-start_time))
+        return _data
 
         vocab_data = {}
         self._vocab = {}
