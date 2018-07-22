@@ -82,6 +82,7 @@ def main(_):
             print ("[[main]] Loading batcher file: %s" % batch_file)
             with open(batch_file, 'rb') as input:
                 batcher = pickle.load(input)
+            batcher.update_vars()
 
             import pdb; pdb.set_trace()
 

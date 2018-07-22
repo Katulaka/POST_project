@@ -367,7 +367,7 @@ class STAGModel(BasicModel):
             import pdb; pdb.set_trace()
             beams, _ = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
-                                        batcher.process(bv, add_unk=False))
+                                        batcher.process(bv))
 
             matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
             for beam, tag in zip(beams['tokens'], bv['tags'][0]):
