@@ -71,8 +71,7 @@ def parse_cmdline():
 
     config['btch'] = {}
     config['btch']['batch_size'] = args.batch
-    config['btch']['tags_type'] = {'reverse' : args.reverse,
-                            'no_val_gap': args.no_val_gap}
+    config['btch']['tags_type'] = {'reverse' : args.reverse, 'no_val_gap': args.no_val_gap}
 
     config['btch']['dir_range'] = {'train': (2,22), 'dev': (22,23), 'test': (23,24)}
 
@@ -112,6 +111,8 @@ def parse_cmdline():
         config['num_goals'] = args.num_goals
         config['time_out'] = args.time_out
 
+    args, unparsed = parser.parse_known_args()
+    import pdb; pdb.set_trace()
     # ds_dir = '../data'
     # ds_fname = 'data.txt'
     # gold_fname = 'gold'
