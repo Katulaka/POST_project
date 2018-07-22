@@ -364,7 +364,6 @@ class STAGModel(BasicModel):
 
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
-            import pdb; pdb.set_trace()
             beams, _ = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv))
@@ -376,4 +375,5 @@ class STAGModel(BasicModel):
                 except ValueError:
                     beam_rank.append(self.config['beam_size'] + 1)
             beams_rank.append(beam_rank)
+            import pdb; pdb.set_trace()
         return matches
