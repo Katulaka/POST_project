@@ -84,10 +84,6 @@ def main(_):
                 batcher = pickle.load(input)
             batcher.update_vars()
 
-            import pdb; pdb.set_trace()
-
-
-
         print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
 
         for k in batcher._vocab.keys():
