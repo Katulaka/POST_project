@@ -96,8 +96,6 @@ def parse_cmdline():
     config['use_c_embed'] = args.use_c_embed
     config['attn'] = args.attn
 
-
-
     if config['mode'] == 'train':
         config['lr'] = args.lr
         config['num_epochs'] = args.num_epochs
@@ -110,13 +108,5 @@ def parse_cmdline():
         config['beam_timesteps'] = args.beam_timesteps
         config['num_goals'] = args.num_goals
         config['time_out'] = args.time_out
-
-    args, unparsed = parser.parse_known_args()
-    import pdb; pdb.set_trace()
-    # ds_dir = '../data'
-    # ds_fname = 'data.txt'
-    # gold_fname = 'gold'
-    # config['ds']['ds_file'] = os.path.join(os.getcwd(), ds_dir, ds_fname)
-    # config['ds']['gold_file'] = os.path.join(os.getcwd(), ds_dir, gold_fname)
 
     return config
