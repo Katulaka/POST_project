@@ -354,7 +354,7 @@ class STAGModel(BasicModel):
 
     def stats(self, batcher):
 
-        beam_rank = []
+
         beams_rank = []
         matches = []
         bs = BeamSearch(self.config['beam_size'],
@@ -364,6 +364,7 @@ class STAGModel(BasicModel):
 
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
+            beam_rank = []
             beams, _ = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv))
