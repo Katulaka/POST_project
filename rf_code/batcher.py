@@ -127,11 +127,11 @@ class Batcher(object):
 
         return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
 
-        def update_vars(self):
-            import sys
-            if '--batch' in sys.argv[1:]:
-                self._batch_size = int(sys.argv[1:][sys.argv[1:].index('--batch')+1])
-            return self
+    def update_vars(self):
+        import sys
+        if '--batch' in sys.argv[1:]:
+            self._batch_size = int(sys.argv[1:][sys.argv[1:].index('--batch')+1])
+        return self
 
     def get_batch_size(self):
         return self._batch_size
