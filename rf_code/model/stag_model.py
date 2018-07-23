@@ -317,6 +317,22 @@ class STAGModel(BasicModel):
         topk_probs = np.squeeze(probs)[topk_ids]
         return topk_ids, topk_probs, states
 
+    # def decode_topk_b(self, latest_tokens, dec_init_states, enc_state, batch_size, k):
+    #     """Return the topK results and new decoder states."""
+    #     input_feed = {
+    #         self.tag_init : dec_init_states,
+    #         self.t_in: latest_tokens,
+    #         self.encode_state : enc_state,
+    #         self.tag_len: np.ones(batch_size, np.int32)}
+    #     output_feed = [self.decode_state, self.pred]
+    #     states, probs = self.sess.run(output_feed, input_feed)
+    #     topk_ids = []
+    #     topk_probs = []
+    #     for b in range(batch_size):
+    #         topk_ids.append(np.argsort(probs[b])[-k:])
+    #         topk_probs.append(probs[b][topk_ids[b]])
+    #     return topk_ids, topk_probs, states
+
     def decode(self, batcher):
 
         decode_trees = []
@@ -328,8 +344,6 @@ class STAGModel(BasicModel):
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
 
-            #TODO:
-            #       (3) profile beam_search
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
             beams, _ = bs.beam_search(self.encode_top_state,
@@ -365,10 +379,17 @@ class STAGModel(BasicModel):
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
             beam_rank = []
-            beams, _ = bs.beam_search(self.encode_top_state,
+            import cProfile
+
+            pr = cProfile.Profile()
+            pr.enable()
+            beams = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv))
+            pr.disable()
+            pr.dump_stats('tst.pr')
 
+            import pdb; pdb.set_trace()
             matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
             for beam, tag in zip(beams['tokens'], bv['tags'][0]):
                 try:
