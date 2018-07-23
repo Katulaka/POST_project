@@ -381,14 +381,13 @@ class STAGModel(BasicModel):
             beam_rank = []
             import cProfile
 
-            pr = cProfile.Profile()
-            pr.enable()
+            # pr = cProfile.Profile()
+            # pr.enable()
             beams = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv))
-            pr.disable()
-            pr.dump_stats('tst.pr')
-
+            # pr.disable()
+            # pr.dump_stats('tst.pr')
             import pdb; pdb.set_trace()
             matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
             for beam, tag in zip(beams['tokens'], bv['tags'][0]):
