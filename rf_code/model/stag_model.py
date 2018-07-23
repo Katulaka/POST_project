@@ -388,7 +388,6 @@ class STAGModel(BasicModel):
                                         batcher.process(bv))
             # pr.disable()
             # pr.dump_stats('tst.pr')
-            import pdb; pdb.set_trace()
             matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
             for beam, tag in zip(beams['tokens'], bv['tags'][0]):
                 try:
