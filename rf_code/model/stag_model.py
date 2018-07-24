@@ -190,8 +190,8 @@ class STAGModel(BasicModel):
             self.optimizer = self.optimizer_fn(self.loss).apply_gradients(zip(gradients, variables),
                 global_step=self.global_step)
         else:
-            self.optimizer = self.optimizer_fn(self.lr).minimize(self.loss,
-                                                    global_step=self.global_step)
+            self.optimizer = self.optimizer_fn(learning_rate=self.lr).minimize(
+                                        self.loss, global_step=self.global_step)
 
     def build_graph(self):
         with tf.device('/gpu:0'):
