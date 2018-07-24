@@ -79,8 +79,9 @@ def parse_cmdline():
     config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['btch']['data_file'] = 'at_data.out'
     # config['batch_file'] = os.path.join(config['result_dir'],'batch.pickle')
+    # config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
     config['batch_file'] = os.path.join(os.getcwd(), 'batcher', 'batch_nvg_r.pickle')
-    config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
+    config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
 
     #embedding size
     config['dim_word'] = args.dim_word
