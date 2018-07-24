@@ -23,13 +23,14 @@ def parse_cmdline():
     parser.add_argument('--grad_norm', default=5.0, type=float)
     parser.add_argument('--opt_fn', type=str, default='', help='')
 
-    parser.add_argument('--dim_word', default=64, type=int)
-    parser.add_argument('--dim_tag', default=64, type=int)
-    parser.add_argument('--dim_char', default=32, type=int)
-    parser.add_argument('--dim_pos', default=64, type=int)
+
+    parser.add_argument('--dim_word', default=64, type=int) # maybe too small: 256
+    parser.add_argument('--dim_tag', default=64, type=int)  # plenty
+    parser.add_argument('--dim_char', default=32, type=int) # plenty
+    parser.add_argument('--dim_pos', default=64, type=int)  # plenty
 
     parser.add_argument('--h_word', default=64, type=int)
-    parser.add_argument('--h_tag', default=64, type=int)
+    parser.add_argument('--h_tag', default=64, type=int)    # maybe too small: 256
     parser.add_argument('--h_char', default=32, type=int)
     parser.add_argument('--h_pos', default=64, type=int)
 
@@ -41,7 +42,7 @@ def parse_cmdline():
     parser.add_argument('--reverse', action='store_true', help='')
 
     parser.add_argument('--beam_size', type=int, default=5, help='')
-    parser.add_argument('--beam_timesteps', type=int, default=25, help='')
+    parser.add_argument('--beam_timesteps', type=int, default=30, help='')
     parser.add_argument('--time_out', type=float, default=100., help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
 
