@@ -104,6 +104,7 @@ class Batcher(object):
             subset_idx = random.sample(range(1, self._d_size), size_subset)
             with open(src_file, 'w') as f:
                 json.dump(subset_idx, f)
+        print ("[[Batcher.get_subset_idx]] Loading sub indices from: %s" % src_file)
         return subset_idx
 
     def get_batch(self, permute=False, subset_idx=None):
