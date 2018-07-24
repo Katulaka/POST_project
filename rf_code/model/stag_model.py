@@ -281,10 +281,10 @@ class STAGModel(BasicModel):
                     self.save()
                     perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
                     bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
-                    print ("[[stag_model.train::train_epoch %d.%d]] step %d "
-                            "learning rate %f step-time %.3f perplexity %.6f "
-                             "(loss %.6f)" % (epoch_id, bv_id_m, current_step,
-                             self.sess.run(self.lr), step_time, perplex, loss[-1]))
+                    # print ("[[stag_model.train::train_epoch %d.%d]] step %d "
+                    #         "learning rate %f step-time %.3f perplexity %.6f "
+                    #          "(loss %.6f)" % (epoch_id, bv_id_m, current_step,
+                    #          self.sess.run(self.lr), step_time, perplex, loss[-1]))
                     step_time = 0.0
                     loss.append(0.0)
                     sys.stdout.flush()
@@ -370,7 +370,8 @@ class STAGModel(BasicModel):
 
 
         beams_rank = []
-        matches = []
+        beams = []
+        tags = []
         bs = BeamSearch(self.config['beam_size'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
@@ -378,22 +379,17 @@ class STAGModel(BasicModel):
 
         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         for bv in batcher.get_batch(subset_idx=subset_idx):
-            beam_rank = []
-            import cProfile
 
-            # pr = cProfile.Profile()
-            # pr.enable()
-            beams = bs.beam_search(self.encode_top_state,
+            beams.append(bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
-                                        batcher.process(bv))
-            # pr.disable()
-            # pr.dump_stats('tst.pr')
-            matches.append([b in bm for bm, b in zip(beams['tokens'], bv['tags'][0])])
+                                        batcher.process(bv)))
+            tags.append(bv['tags'][0])
+
             for beam, tag in zip(beams['tokens'], bv['tags'][0]):
                 try:
                     beam_rank.append(beam.index(tag) + 1)
                 except ValueError:
                     beam_rank.append(self.config['beam_size'] + 1)
             beams_rank.append(beam_rank)
-            import pdb; pdb.set_trace()
-        return matches
+
+        return beams, tags, beams_rank
