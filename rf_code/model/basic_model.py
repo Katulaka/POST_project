@@ -27,7 +27,10 @@ class BasicModel(object):
         self.dtype = tf.float32
         self.initializer = tf.contrib.layers.xavier_initializer()
 
-        self.optimizer_fn = tf.train.GradientDescentOptimizer
+        if self.config['opt_fn'] == 'adam':
+            self.optimizer_fn = tf.train.AdamOptimizer
+        else:
+            self.optimizer_fn = tf.train.GradientDescentOptimizer
 
         self.activation_fn = tf.nn.relu
 

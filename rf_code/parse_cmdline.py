@@ -21,6 +21,7 @@ def parse_cmdline():
     parser.add_argument('--steps_per_ckpt', default=10, type=int)
     parser.add_argument('--grad_clip', action='store_true', help='')
     parser.add_argument('--grad_norm', default=5.0, type=float)
+    parser.add_argument('--opt_fn', type=str, default='', help='')
 
     parser.add_argument('--dim_word', default=64, type=int)
     parser.add_argument('--dim_tag', default=64, type=int)
@@ -100,6 +101,7 @@ def parse_cmdline():
 
     if config['mode'] == 'train':
         config['lr'] = args.lr
+        config['opt_fn'] = args.opt_fn
         config['num_epochs'] = args.num_epochs
         config['steps_per_ckpt'] = args.steps_per_ckpt
         config['grad_clip'] = args.grad_clip
