@@ -25,6 +25,8 @@ class BasicModel(object):
             self.num_epochs = self.config['num_epochs']
             if self.config['opt_fn'] == 'adam':
                 self.optimizer_fn = tf.train.AdamOptimizer
+            elif self.config['opt_fn'] == 'adagrad':
+                self.optimizer_fn = tf.train.AdagradOptimizer
             else:
                 self.optimizer_fn = tf.train.GradientDescentOptimizer
 
