@@ -81,6 +81,7 @@ class BeamSearch(object):
             hyps: list of Hypothesis, the best hypotheses found by beam search,
                     ordered by score
          """
+
         # Run the encoder and extract the outputs and final state.
         enc_state_batch = encode_top_state(enc_bv)
         decs = []
