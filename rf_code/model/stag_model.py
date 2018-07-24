@@ -260,7 +260,10 @@ class STAGModel(BasicModel):
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         epoch_id = 0
         loss = [0.1]
-        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        if self.config['use_subset']:
+            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        else:
+            subset_idx = None
         for epoch_id in range(0, self.num_epochs):
         # while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0

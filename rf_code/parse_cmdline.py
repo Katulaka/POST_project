@@ -36,6 +36,7 @@ def parse_cmdline():
 
     parser.add_argument('--use_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
+    parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
 
     parser.add_argument('--no_val_gap', action='store_true', help='')
@@ -83,6 +84,7 @@ def parse_cmdline():
     # config['batch_file'] = os.path.join(config['result_dir'],'batch.pickle')
     # config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
     config['batch_file'] = os.path.join(os.getcwd(), 'batcher', 'batch_nvg_r.pickle')
+    config['use_subset'] = args.use_subset
     config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
 
     #embedding size
