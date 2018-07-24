@@ -97,7 +97,9 @@ def main(_):
 
         elif (config['mode'] == 'test'):
             batcher.create_dataset('train')
-            decoded = model.stats(batcher)
+            beams, tags, beams_rank = model.stats(batcher)
+            # import pdb; pdb.set_trace()
+
 
         elif (config['mode'] == 'dev'):
             pass
