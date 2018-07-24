@@ -385,6 +385,7 @@ class STAGModel(BasicModel):
                                         batcher.process(bv)))
             tags.append(bv['tags'][0])
 
+            beam_rank = []
             for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
                 try:
                     beam_rank.append(beam.index(tag) + 1)
