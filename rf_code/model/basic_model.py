@@ -29,6 +29,8 @@ class BasicModel(object):
                 self.optimizer_fn = tf.train.AdagradOptimizer
             elif self.config['opt_fn'] == 'adadelta':
                 self.optimizer_fn = tf.train.AdadeltaOptimizer
+            elif self.config['opt_fn'] == 'rms':
+                self.optimizer_fn = tf.train.RMSPropOptimizer
             elif self.config['opt_fn'] == 'momentum':
                 self.optimizer_fn = tf.train.MomentumOptimizer(momentum=0.9)
             else:
