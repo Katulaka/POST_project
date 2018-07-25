@@ -27,6 +27,8 @@ class BasicModel(object):
                 self.optimizer_fn = tf.train.AdamOptimizer
             elif self.config['opt_fn'] == 'adagrad':
                 self.optimizer_fn = tf.train.AdagradOptimizer
+            elif self.config['opt_fn'] == 'adadelta':
+                self.optimizer_fn = tf.train.AdadeltaOptimizer
             else:
                 self.optimizer_fn = tf.train.GradientDescentOptimizer
 
