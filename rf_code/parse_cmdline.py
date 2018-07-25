@@ -21,7 +21,7 @@ def parse_cmdline():
     parser.add_argument('--steps_per_ckpt', default=10, type=int)
     parser.add_argument('--grad_clip', action='store_true', help='')
     parser.add_argument('--grad_norm', default=5.0, type=float)
-    parser.add_argument('--opt_fn', type=str, default='', help='')
+    parser.add_argument('--opt_fn', type=str, default='sgd', help='')
 
 
     parser.add_argument('--dim_word', default=64, type=int) # maybe too small: 256
