@@ -157,8 +157,12 @@ class STAGModel(BasicModel):
                                         use_bias=False,
                                         # activation=self.activation_fn)
                                         activation=tf.tanh)
-            mask_t = tf.sequence_mask(self.tag_len)
-            v = tf.boolean_mask(proj_in, mask_t)
+            # mask_t = tf.sequence_mask(self.tag_len, dtype=tf.bool)
+            # v = tf.boolean_mask(proj_in, self.mask_t)
+
+            mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
+            v = tf.dynamic_partition(proj_in, mask_t, 2)
+            v = v[1]
 
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
