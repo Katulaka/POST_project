@@ -268,7 +268,6 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
-        import pdb; pdb.set_trace()
         for epoch_id in range(0, self.num_epochs):
         # while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
@@ -349,7 +348,10 @@ class STAGModel(BasicModel):
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
 
-        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        if self.config['use_subset']:
+            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        else:
+            subset_idx = None
         for bv in batcher.get_batch(subset_idx=subset_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
@@ -385,7 +387,10 @@ class STAGModel(BasicModel):
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
 
-        subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        if self.config['use_subset']:
+            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+        else:
+            subset_idx = None
         for bv in batcher.get_batch(subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state,
