@@ -250,46 +250,33 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        output_feed = [self.loss, self.m_loss, self.optimizer]
+        # output_feed = [self.loss, self.t_loss, self.optimizer]
+        output_feed = [self.t_loss, self.optimizer]
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
 
-        # Create a summary to monitor loss tensor
-        self.m_loss = tf.summary.scalar("loss", self.loss)
-        summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
-        steps_per_ckpt = self.config['steps_per_ckpt']
-        epoch_id = 0
-        # loss = [0.1]
+        batcher.create_dataset('train')
         if self.config['use_subset']:
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
+        # Create a summary to monitor loss tensor
+        self.t_loss = tf.summary.scalar("train_loss", self.loss)
+        summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
+        steps_per_ckpt = self.config['steps_per_ckpt']
         for epoch_id in range(0, self.num_epochs):
             step_time = 0.0
-            # loss.append(0.0)
             current_step = self.sess.run(self.global_step)
-            epoch_id += 1
-            # bv_id = 0
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
-                # start_time = time.clock()
-                step_loss, summary, _ = self.step(batcher.process(bv))
-                summary_writer.add_summary(summary, current_step)
+                # step_loss, summary, _ = self.step(batcher.process(bv))
+                t_loss, _ = self.step(batcher.process(bv))
+                summary_writer.add_summary(t_loss, current_step)
                 current_step += 1
-                # bv_id += 1
-                # step_time += (time.clock() - start_time) / steps_per_ckpt
-                # loss[-1] += step_loss / steps_per_ckpt
                 if  current_step % steps_per_ckpt == 0:
                     self.save()
-                    # perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
-                    # bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
-                    # print ("[[stag_model.train::train_epoch %d.%d]] step %d "
-                    #         "learning rate %f step-time %.3f perplexity %.6f "
-                    #          "(loss %.6f)" % (epoch_id, bv_id_m, current_step,
-                    #          self.sess.run(self.lr), step_time, perplex, loss[-1]))
-                    # step_time = 0.0
-                    # loss.append(0.0)
                     sys.stdout.flush()
+
         summary_writer.close()
 
 
