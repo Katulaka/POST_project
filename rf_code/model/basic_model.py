@@ -52,7 +52,7 @@ class BasicModel(object):
             # all_variables = [k for k in tf.global_variables()
             #                 if k.name.startswith(self.config['scope_name'])]
             # self.saver = tf.train.Saver(all_variables, max_to_keep=4)
-            self.saver = tf.train.Saver(max_to_keep=4)
+            self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
 
         # gpu_options = tf.GPUOptions(allow_growth=True)
