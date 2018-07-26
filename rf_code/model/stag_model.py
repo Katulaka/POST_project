@@ -398,13 +398,17 @@ class STAGModel(BasicModel):
                                         batcher.process(bv)))
             tags.append(bv['tags'][-1])
 
-            beam_rank = []
-            for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
-                try:
-                    beam_rank.append(beam.index(tag) + 1)
-                except ValueError:
-                    beam_rank.append(-1)
-            beams_rank.append(beam_rank)
-            # import pdb; pdb.set_trace()
+            beam = beams[-1]['tokens']
+            tag = bv['tags'][-1]
+
+            beams_rank.append([b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)])
+            # beam_rank = []
+            # for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
+            #     try:
+            #         beam_rank.append(beam.index(tag) + 1)
+            #     except ValueError:
+            #         beam_rank.append(-1)
+            # beams_rank.append(beam_rank)
+            import pdb; pdb.set_trace()
 
         return beams, tags, beams_rank
