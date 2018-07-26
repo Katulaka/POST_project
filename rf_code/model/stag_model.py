@@ -416,6 +416,6 @@ class STAGModel(BasicModel):
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
-            # import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
 
         return beams, tags, beams_rank
