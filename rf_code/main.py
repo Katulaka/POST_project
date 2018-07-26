@@ -92,9 +92,7 @@ def main(_):
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
         if (config['mode'] == 'train'):
-            batcher.create_dataset('train')
             model.train(batcher)
-
 
         elif (config['mode'] == 'dev'):
             batcher.create_dataset('dev')

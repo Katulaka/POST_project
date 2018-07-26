@@ -264,16 +264,14 @@ class STAGModel(BasicModel):
         # Create a summary to monitor loss tensor
         self.t_loss = tf.summary.scalar("train_loss", self.loss)
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
-        steps_per_ckpt = self.config['steps_per_ckpt']
-        for epoch_id in range(0, self.num_epochs):
-            step_time = 0.0
+        for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 # step_loss, summary, _ = self.step(batcher.process(bv))
                 t_loss, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(t_loss, current_step)
                 current_step += 1
-                if  current_step % steps_per_ckpt == 0:
+                if current_step % self.config['steps_per_ckpt'] == 0:
                     self.save()
                     sys.stdout.flush()
 
