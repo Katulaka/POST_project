@@ -236,7 +236,6 @@ class STAGModel(BasicModel):
                 out = self.pos_g.get_tensor_by_name(op.name+':0')
         return self.pos_sess.run(out, input_feed)
 
-    # def step(self, bv, dev=False):
     def step(self, bv, output_feed):
         """ Training step, returns the loss"""
         input_feed = {
@@ -251,11 +250,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        # output_feed = [self.loss, self.t_loss, self.optimizer]
-        # if dev:
-        #     output_feed = [self.t_loss]
-        # else:
-        #     output_feed = [self.t_loss, self.optimizer]
+
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -268,28 +263,26 @@ class STAGModel(BasicModel):
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         summary_writer_dev = tf.summary.FileWriter(self.result_dir+'/graphs/dev', self.graph)
         # Create a summary to monitor loss tensor
-        mean_loss = 0.0
-        self.t_loss = tf.summary.scalar("loss", self.loss)
-
-        write_op = tf.summary.merge_all()
+        t_loss = tf.summary.scalar("loss", self.loss)
 
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
+
             batcher.create_dataset('train')
             loss = []
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
-                # step_loss, summary, _ = self.step(batcher.process(bv))
-                _loss, t_loss, _ = self.step(batcher.process(bv), [self.loss, self.t_loss, self.optimizer])
-                # _loss, _ = self.step(batcher.process(bv), [self.loss, self.optimizer])
-                loss.append(_loss)
-                summary_writer.add_summary(t_loss, current_step)
+                input_feed = batcher.process(bv)
+                output_feed = [self.loss, t_loss, self.optimizer]
+                step_loss, summary_loss, _ = self.step(input_feed, output_feed)
+                loss.append(step_loss)
+                summary_writer.add_summary(summary_loss, current_step)
                 current_step += 1
                 if current_step % self.config['steps_per_ckpt'] == 0:
                     self.save()
                     sys.stdout.flush()
-            mean_loss = np.mean(loss)
+
             summary = tf.Summary()
-            summary.value.add(tag="loss_epoch", simple_value=mean_loss)
+            summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, epoch_id)
 
             batcher.create_dataset('dev')
@@ -301,16 +294,7 @@ class STAGModel(BasicModel):
         summary_writer.close()
         summary_writer_dev.close()
 
-    # def validation(self, batcher, epoch_id):
-    #     batcher.create_dataset('dev')
-    #     self.d_loss = tf.summary.scalar("dev_loss", self.loss)
-    #     summary_writer_dev = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
-    #     for bv in batcher.get_batch():
-    #         current_step += 1
-    #         d_loss = self.step(batcher.process(bv), dev=True)
-    #         summary_writer_dev.add_summary(d_loss, current_step)
-    #
-    #     summary_writer.close()
+
         """"Decode Part """
 
     def encode_top_state(self, enc_bv):
