@@ -269,7 +269,7 @@ class STAGModel(BasicModel):
         summary_writer_dev = tf.summary.FileWriter(self.result_dir+'/graphs/dev', self.graph)
         # Create a summary to monitor loss tensor
         mean_loss = 0.0
-        self.t_loss = tf.summary.scalar("loss", mean_loss)
+        self.t_loss = tf.summary.scalar("loss", self.loss)
 
         write_op = tf.summary.merge_all()
 
@@ -279,23 +279,23 @@ class STAGModel(BasicModel):
             loss = []
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
                 # step_loss, summary, _ = self.step(batcher.process(bv))
-                # t_loss, _ = self.step(batcher.process(bv))
-                _loss, _ = self.step(batcher.process(bv), [self.loss, self.optimizer])
+                _loss, t_loss, _ = self.step(batcher.process(bv), [self.loss, self.t_loss, self.optimizer])
+                # _loss, _ = self.step(batcher.process(bv), [self.loss, self.optimizer])
                 loss.append(_loss)
-                # summary_writer.add_summary(t_loss, current_step)
+                summary_writer.add_summary(t_loss, current_step)
                 current_step += 1
                 if current_step % self.config['steps_per_ckpt'] == 0:
                     self.save()
                     sys.stdout.flush()
             mean_loss = np.mean(loss)
             summary = tf.Summary()
-            summary.value.add(tag="loss", simple_value=mean_loss)
+            summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer.add_summary(summary, epoch_id)
 
             batcher.create_dataset('dev')
             mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch()])
             summary = tf.Summary()
-            summary.value.add(tag="loss", simple_value=mean_loss)
+            summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, epoch_id)
 
         summary_writer.close()
