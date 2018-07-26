@@ -416,13 +416,6 @@ class STAGModel(BasicModel):
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
-            # beam_rank = []
-            # for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
-            #     try:
-            #         beam_rank.append(beam.index(tag) + 1)
-            #     except ValueError:
-            #         beam_rank.append(-1)
-            # beams_rank.append(beam_rank)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
         return beams, tags, beams_rank
