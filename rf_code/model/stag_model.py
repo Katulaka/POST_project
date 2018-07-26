@@ -402,6 +402,20 @@ class STAGModel(BasicModel):
             tag = bv['tags'][-1]
 
             beams_rank.append([b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)])
+            if -1 in beams_rank[-1]:
+                bs = BeamSearch(79,
+                                batcher._vocab['tags'].token_to_id('GO'),
+                                batcher._vocab['tags'].token_to_id('EOS'),
+                                self.config['beam_timesteps'])
+                beams[-1] =  bs.beam_search(self.encode_top_state,
+                                            self.decode_topk,
+                                            batcher.process(bv))
+                beam = beams[-1]['tokens']
+                beams_rank[-1] = [b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)]
+                bs = BeamSearch(self.config['beam_size'],
+                                batcher._vocab['tags'].token_to_id('GO'),
+                                batcher._vocab['tags'].token_to_id('EOS'),
+                                self.config['beam_timesteps'])
             # beam_rank = []
             # for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
             #     try:
