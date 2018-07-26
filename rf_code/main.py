@@ -95,15 +95,19 @@ def main(_):
             batcher.create_dataset('train')
             model.train(batcher)
 
-        elif (config['mode'] == 'test'):
-            batcher.create_dataset('train')
+
+        elif (config['mode'] == 'dev'):
+            batcher.create_dataset('dev')
             beams, tags, beams_rank = model.stats(batcher)
             import pdb; pdb.set_trace()
 
+        elif (config['mode'] == 'test'):
+            batcher.create_dataset('test')
+            beams, tags, beams_rank = model.decode(batcher)
+            import pdb; pdb.set_trace()
 
-        elif (config['mode'] == 'dev'):
+        else:
             pass
-
 
 
 
