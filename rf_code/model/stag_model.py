@@ -396,7 +396,7 @@ class STAGModel(BasicModel):
             beams.append(bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv)))
-            tags.append(bv['tags'][0])
+            tags.append(bv['tags'][-1])
 
             beam_rank = []
             for beam, tag in zip(beams[-1]['tokens'], bv['tags'][-1]):
@@ -405,6 +405,6 @@ class STAGModel(BasicModel):
                 except ValueError:
                     beam_rank.append(-1)
             beams_rank.append(beam_rank)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
         return beams, tags, beams_rank
