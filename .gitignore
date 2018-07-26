@@ -3,6 +3,7 @@
 code/plot/
 rf_code/graphs
 rf_code/results
+rf_code/batcher
 misc/
 results/
 code/checkpoints
