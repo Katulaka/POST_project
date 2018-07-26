@@ -257,45 +257,41 @@ class STAGModel(BasicModel):
 
         # Create a summary to monitor loss tensor
         self.m_loss = tf.summary.scalar("loss", self.loss)
-        # # Create a summary to monitor accuracy tensor
-        # tf.summary.scalar("accuracy", acc)
-        # # Merge all summaries into a single op
-        # self.merged_summary_op = tf.summary.merge_all()
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
+        steps_per_ckpt = self.config['steps_per_ckpt']
         epoch_id = 0
-        loss = [0.1]
+        # loss = [0.1]
         if self.config['use_subset']:
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
         for epoch_id in range(0, self.num_epochs):
-        # while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
-            loss.append(0.0)
+            # loss.append(0.0)
             current_step = self.sess.run(self.global_step)
-            steps_per_ckpt = self.config['steps_per_ckpt']
             epoch_id += 1
-            bv_id = 0
+            # bv_id = 0
             for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
-                start_time = time.clock()
+                # start_time = time.clock()
                 step_loss, summary, _ = self.step(batcher.process(bv))
                 summary_writer.add_summary(summary, current_step)
                 current_step += 1
-                bv_id += 1
-                step_time += (time.clock() - start_time) / steps_per_ckpt
-                loss[-1] += step_loss / steps_per_ckpt
+                # bv_id += 1
+                # step_time += (time.clock() - start_time) / steps_per_ckpt
+                # loss[-1] += step_loss / steps_per_ckpt
                 if  current_step % steps_per_ckpt == 0:
                     self.save()
-                    perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
-                    bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
+                    # perplex = math.exp(loss[-1]) if loss[-1] < 300 else float('inf')
+                    # bv_id_m = int(np.ceil(bv_id/steps_per_ckpt))
                     # print ("[[stag_model.train::train_epoch %d.%d]] step %d "
                     #         "learning rate %f step-time %.3f perplexity %.6f "
                     #          "(loss %.6f)" % (epoch_id, bv_id_m, current_step,
                     #          self.sess.run(self.lr), step_time, perplex, loss[-1]))
-                    step_time = 0.0
-                    loss.append(0.0)
+                    # step_time = 0.0
+                    # loss.append(0.0)
                     sys.stdout.flush()
         summary_writer.close()
+
 
         """"Decode Part """
 
@@ -416,6 +412,6 @@ class STAGModel(BasicModel):
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
         return beams, tags, beams_rank
