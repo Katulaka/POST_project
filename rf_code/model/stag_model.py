@@ -262,7 +262,7 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
         # Create a summary to monitor loss tensor
-        self.t_loss = tf.summary.scalar("train_loss", self.loss)
+        self.t_loss = tf.summary.scalar("loss", self.loss)
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
