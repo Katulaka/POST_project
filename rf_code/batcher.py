@@ -109,8 +109,6 @@ class Batcher(object):
 
     def get_batch(self, permute=False, subset_idx=None):
 
-        # TODO maybe add shuffle on a sentence level -
-        # currently it's batch level
         if not subset_idx is None:
             self._d_size = len(subset_idx)
 
