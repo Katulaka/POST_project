@@ -268,6 +268,7 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
+        import pdb; pdb.set_trace()
         for epoch_id in range(0, self.num_epochs):
         # while loss[-1] >= 0.1 or loss[-2] >= 0.1:
             step_time = 0.0
