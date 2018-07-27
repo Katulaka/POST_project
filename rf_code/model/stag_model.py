@@ -110,13 +110,9 @@ class STAGModel(BasicModel):
                                                 self.config['hidden_tag'],
                                                 use_bias=True)
 
-            # self.encode_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
-
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            # self.dec_in_dim = self.config['hidden_word'] * 2
-            # self.c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
             self.c_dim = self.config['hidden_tag']
             dec_init_state = tf.reshape(self.encode_state, [-1, self.c_dim])
 
@@ -144,8 +140,7 @@ class STAGModel(BasicModel):
 
             self.q = atten_q = tf.layers.dense(self.encode_state,
                                                 self.dec_in_dim,
-                                                activation=tf.tanh,
-                                                # activation=self.activation_fn,
+                                                activation=self.activation_fn,
                                                 use_bias=False)
 
             self.a = alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
@@ -161,18 +156,17 @@ class STAGModel(BasicModel):
 
             proj_in = tf.layers.dense(self.proj_in, self.config['hidden_tag'],
                                         use_bias=False,
-                                        activation=tf.tanh)
-                                        # activation=self.activation_fn)
+                                        activation=self.activation_fn)
 
             mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
             v = tf.dynamic_partition(proj_in, mask_t, 2)
 
-            # self.logits = tf.layers.dense(v[1], self.config['ntags'], use_bias=True)
+            self.logits = tf.layers.dense(v[1], self.config['ntags'], use_bias=True)
             #E from notes
-            E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
-            E_out = tf.get_variable('E-out', shape=E_out_shape)
-            b_out = tf.get_variable('b-out', shape=[self.config['ntags']])
-            self.logits = tf.matmul(v[1], E_out) + b_out
+            # E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
+            # E_out = tf.get_variable('E-out', shape=E_out_shape)
+            # b_out = tf.get_variable('b-out', shape=[self.config['ntags']])
+            # self.logits = tf.matmul(v[1], E_out) + b_out
             # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
