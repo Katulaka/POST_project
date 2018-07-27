@@ -84,12 +84,17 @@ class Batcher(object):
         """ """
         start_time = time.clock()
         self._ds = {}
-        import pdb; pdb.set_trace()
-        for k, v in self._vocab.items():
-            for d_k in sorted(self._data.keys()):
-                if int(d_k[:2]) in range(*self._dir_range[mode]):
-                    self._ds.setdefault(k,[]).extend(self._data[d_k][k])
-        self._d_size = len(self._ds[k])
+        for mode_k, mode_v in self._dir_range.items():
+            _ds = {}
+            for k, v in self._vocab.items():
+                for d_k in sorted(self._data.keys()):
+                    # if int(d_k[:2]) in range(*self._dir_range[mode]):
+                    if int(d_k[:2]) in range(*mode_v):
+                        _ds.setdefault(k,[]).extend(self._data[d_k][k])
+            import pdb; pdb.set_trace()
+            self._d_size.setdefault(mode_k,len(_ds[k]))
+            self._ds.setdefault(mode_k,{}).update(_ds)
+        # self._d_size = len(self._ds[k])
         print ("[[Batcher.create_dataset]] %.3f to create ds" % (time.clock()-start_time))
         return self
 
