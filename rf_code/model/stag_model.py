@@ -105,13 +105,19 @@ class STAGModel(BasicModel):
 
             self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
-            self.encode_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            self.encode_state = tf.layers.dense(w_bidi_in_out,
+                                                self.config['hidden_tag'],
+                                                use_bias=True)
+
+            # self.encode_state = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            self.dec_in_dim = self.config['hidden_word'] * 2
-            self.c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
+            # self.dec_in_dim = self.config['hidden_word'] * 2
+            # self.c_dim = self.dim_word_f + self.config['dim_pos'] + self.dec_in_dim
+            self.c_dim = self.config['hidden_tag']
             dec_init_state = tf.reshape(self.encode_state, [-1, self.c_dim])
 
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
@@ -127,7 +133,7 @@ class STAGModel(BasicModel):
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
-
+            self.dec_in_dim = self.config['hidden_word'] * 2
             do_shape = tf.shape(self.decode_out)
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, self.dec_in_dim]
@@ -152,18 +158,16 @@ class STAGModel(BasicModel):
 
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            proj_in = tf.layers.dense(self.proj_in,
-                                        self.config['hidden_tag'],
+            proj_in = tf.layers.dense(self.proj_in, self.config['hidden_tag'],
                                         use_bias=False,
-                                        # activation=self.activation_fn)
                                         activation=tf.tanh)
-            # mask_t = tf.sequence_mask(self.tag_len, dtype=tf.bool)
-            # v = tf.boolean_mask(proj_in, self.mask_t)
+                                        # activation=self.activation_fn)
 
             mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
             v = tf.dynamic_partition(proj_in, mask_t, 2)
             v = v[1]
 
+            # self.logits = tf.layers.dense(v[1], self.config['ntags'], use_bias=True)
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
             E_out = tf.get_variable('E-out', shape=E_out_shape)
