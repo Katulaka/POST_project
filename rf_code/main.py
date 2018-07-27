@@ -83,8 +83,8 @@ def main(_):
             with open(batch_file, 'rb') as input:
                 batcher = pickle.load(input)
             batcher.update_vars()
-        batcher.create_dataset()
         print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
+        batcher.create_dataset()
 
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._vocab[k].vocab_size()
@@ -95,12 +95,10 @@ def main(_):
             model.train(batcher)
 
         elif (config['mode'] == 'dev'):
-            # batcher.create_dataset('train')
             beams, tags, beams_rank = model.stats('train', batcher)
             import pdb; pdb.set_trace()
 
         elif (config['mode'] == 'test'):
-            # batcher.create_dataset('test')
             beams, tags, beams_rank = model.decode(batcher)
             import pdb; pdb.set_trace()
 
