@@ -69,15 +69,15 @@ class STAGModel(BasicModel):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
             char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
 
-            ch_out, ch_state = tf.nn.dynamic_rnn(char_cell,
+            self.ch_out, self.ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
                                             sequence_length=self.char_len,
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            self.ch_out = ch_out
-            self.ch_state = ch_state
-            char_out = tf.layers.dense(ch_state[1], self.config['dim_word'],
+            # self.ch_out = ch_out
+            # self.ch_state = ch_state
+            char_out = tf.layers.dense(self.ch_state[1], self.config['dim_word'],
                                         use_bias=False)
 
             char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
