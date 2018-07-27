@@ -74,6 +74,7 @@ def main(_):
             print ("[[main]] Couldn't find batcher file: %s" % batch_file)
             print ("[[main]]  Creating new batcher ")
             batcher = Batcher(**config['btch'])
+            batcher.create_dataset()
             if not os.path.exists(config['result_dir']):
                 os.makedirs(config['result_dir'])
             with open(batch_file, 'wb') as output:
@@ -95,12 +96,12 @@ def main(_):
             model.train(batcher)
 
         elif (config['mode'] == 'dev'):
-            batcher.create_dataset('train')
-            beams, tags, beams_rank = model.stats(batcher)
+            # batcher.create_dataset('train')
+            beams, tags, beams_rank = model.stats('train', batcher)
             import pdb; pdb.set_trace()
 
         elif (config['mode'] == 'test'):
-            batcher.create_dataset('test')
+            # batcher.create_dataset('test')
             beams, tags, beams_rank = model.decode(batcher)
             import pdb; pdb.set_trace()
 

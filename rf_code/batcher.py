@@ -80,7 +80,7 @@ class Batcher(object):
                     (time.clock()-start_time, k))
         return self
 
-    def create_dataset(self, mode):
+    def create_dataset(self):
         """ """
         start_time = time.clock()
         self._ds = {}
@@ -94,12 +94,12 @@ class Batcher(object):
                         _ds.setdefault(k,[]).extend(self._data[d_k][k])
             self._ds.setdefault(mode_k,{}).update(_ds)
             self._d_size.setdefault(mode_k,len(_ds[k]))
-        import pdb; pdb.set_trace()
         # self._d_size = len(self._ds[k])
-        print ("[[Batcher.create_dataset]] %.3f to create ds" % (time.clock()-start_time))
+            print ("[[Batcher.create_dataset]] %.3f to create ds %s" %
+            (time.clock()-start_time, mode_k))
         return self
 
-    def get_subset_idx(self, src_file, precentage):
+    def get_subset_idx(self, src_file, precentage, mode):
         """ """
 
         if os.path.exists(src_file):
@@ -107,19 +107,21 @@ class Batcher(object):
                     subset_idx = json.load(f)
         else:
             import random
-            size_subset = int(np.ceil(self._d_size * precentage))
-            subset_idx = random.sample(range(1, self._d_size), size_subset)
+            size_subset = int(np.ceil(self._d_size[mode] * precentage))
+            subset_idx = random.sample(range(1, self._d_size[mode]), size_subset)
             with open(src_file, 'w') as f:
                 json.dump(subset_idx, f)
         print ("[[Batcher.get_subset_idx]] Loading sub indices from: %s" % src_file)
         return subset_idx
 
-    def get_batch(self, permute=False, subset_idx=None):
+    def get_batch(self, mode, permute=False, subset_idx=None):
 
-        if not subset_idx is None:
-            self._d_size = len(subset_idx)
+        if subset_idx is None:
+            _d_size = self._d_size[mode]
+        else:
+            _d_size = len(subset_idx)
 
-        n_batches = int(np.ceil(float(self._d_size)/self._batch_size))
+        n_batches = int(np.ceil(float(_d_size)/self._batch_size))
         if permute:
             batch_idx = np.random.permutation(n_batches)
         else:
@@ -127,10 +129,10 @@ class Batcher(object):
 
         batched = {}
         for k in self._vocab.keys():
-            if not subset_idx is None:
-                data = np.array(self._ds[k])[subset_idx].tolist()
+            if subset_idx is None:
+                data = self._ds[mode][k]
             else:
-                data = self._ds[k]
+                data = np.array(self._ds[mode][k])[subset_idx].tolist()
             batched.setdefault(k, np.array_split(data, n_batches))
 
         return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]

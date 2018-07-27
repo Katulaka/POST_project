@@ -260,9 +260,9 @@ class STAGModel(BasicModel):
 
     def train(self, batcher):
 
-        batcher.create_dataset('train')
+        # batcher.create_dataset('train')
         if self.config['use_subset']:
-            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.01)
+            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'train')
         else:
             subset_idx = None
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
@@ -273,9 +273,9 @@ class STAGModel(BasicModel):
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
 
-            batcher.create_dataset('train')
+            # batcher.create_dataset('train')
             loss = []
-            for bv in batcher.get_batch(permute=True, subset_idx=subset_idx):
+            for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
                 output_feed = [self.loss, t_loss, self.optimizer]
                 step_loss, summary_loss, _ = self.step(input_feed, output_feed)
@@ -290,8 +290,7 @@ class STAGModel(BasicModel):
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, epoch_id)
 
-            batcher.create_dataset('dev')
-            mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch()])
+            mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch(mode='dev')])
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, epoch_id)
@@ -379,7 +378,7 @@ class STAGModel(BasicModel):
                 decode_trees.append(trees)
         return decode_trees
 
-    def stats(self, batcher):
+    def stats(self, mode, batcher):
 
 
         beams_rank = []
@@ -394,7 +393,7 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
-        for bv in batcher.get_batch(subset_idx=subset_idx):
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
