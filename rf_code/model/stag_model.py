@@ -80,15 +80,12 @@ class STAGModel(BasicModel):
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
             we_shape = tf.shape(self.word_embed)
-            cs_shape = tf.shape(self.ch_state[1])
-            self.co_shape = [we_shape[0], we_shape[1], cs_shape[-1]]
-            self.char_out_reshape = tf.reshape(self.ch_state[1], tf.shape(self.co_shape))
+            co_shape = [we_shape[0], we_shape[1], -1]
+            char_out_reshape = tf.reshape(self.ch_state[1], co_shape)
 
-            # self.word_embed_f = tf.concat([self.word_embed, self.char_out_reshape],
-                                        # -1, 'mod_word_embed')
-            # self.dim_word_f = self.config['dim_word'] * 2
-            self.word_embed_f = self.word_embed
-            self.dim_word_f = self.config['dim_word']
+            self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
+                                        -1, 'mod_word_embed')
+            self.dim_word_f = self.config['dim_word'] * 2
 
     def _add_char_bridge(self):
         with tf.variable_scope('char-Bridge'):
