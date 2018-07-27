@@ -84,6 +84,7 @@ class Batcher(object):
         """ """
         start_time = time.clock()
         self._ds = {}
+        import pdb; pdb.set_trace()
         for k, v in self._vocab.items():
             for d_k in sorted(self._data.keys()):
                 if int(d_k[:2]) in range(*self._dir_range[mode]):
