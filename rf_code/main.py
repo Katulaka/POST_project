@@ -95,7 +95,7 @@ def main(_):
             model.train(batcher)
 
         elif (config['mode'] == 'dev'):
-            batcher.create_dataset('dev')
+            batcher.create_dataset('train')
             beams, tags, beams_rank = model.stats(batcher)
             import pdb; pdb.set_trace()
 
