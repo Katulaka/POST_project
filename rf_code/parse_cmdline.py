@@ -34,7 +34,7 @@ def parse_cmdline():
     parser.add_argument('--h_char', default=32, type=int)
     parser.add_argument('--h_pos', default=64, type=int)
 
-    parser.add_argument('--use_c_embed', action='store_true', help='')
+    parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch', type=int, default=32, help='')

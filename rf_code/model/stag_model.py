@@ -201,10 +201,10 @@ class STAGModel(BasicModel):
                 with tf.variable_scope(self.config['scope_name']):
                     self._add_placeholders()
                     self._add_embeddings()
-                    if self.config['use_c_embed']:
-                        self._add_char_lstm()
-                    else:
+                    if self.config['no_c_embed']:
                         self._add_char_bridge()
+                    else:
+                        self._add_char_lstm()
                     self._add_word_bidi_lstm()
                     self._add_tag_lstm_layer()
                     if self.config['attn']:
