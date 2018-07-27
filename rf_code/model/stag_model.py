@@ -69,12 +69,14 @@ class STAGModel(BasicModel):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
             char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
 
-            _, ch_state = tf.nn.dynamic_rnn(char_cell,
+            ch_out, ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
                                             sequence_length=self.char_len,
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
+            self.ch_out = ch_out
+            self.ch_state = ch_state
             char_out = tf.layers.dense(ch_state[1], self.config['dim_word'],
                                         use_bias=False)
 
@@ -248,7 +250,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
