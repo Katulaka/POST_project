@@ -99,7 +99,7 @@ def parse_cmdline():
     config['hidden_tag'] = args.h_tag
 
     #model arch
-    config['use_c_embed'] = args.use_c_embed
+    config['no_c_embed'] = args.no_c_embed
     config['attn'] = args.attn
 
     if config['mode'] == 'train':
