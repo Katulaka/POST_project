@@ -144,7 +144,8 @@ class STAGModel(BasicModel):
 
             self.q = atten_q = tf.layers.dense(self.encode_state,
                                                 self.dec_in_dim,
-                                                activation=self.activation_fn,
+                                                activation=tf.tanh,
+                                                # activation=self.activation_fn,
                                                 use_bias=False)
 
             self.a = alpha = tf.nn.softmax(tf.einsum('aij,akj->aik',
