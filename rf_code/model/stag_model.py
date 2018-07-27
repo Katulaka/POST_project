@@ -80,7 +80,6 @@ class STAGModel(BasicModel):
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
             we_shape = tf.shape(self.word_embed)
-            # ch_shape = tf.shape(ch_state[1])
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
             char_out_reshape = tf.reshape(ch_state[1], co_shape)
 
@@ -246,7 +245,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
