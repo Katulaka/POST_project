@@ -74,7 +74,6 @@ def main(_):
             print ("[[main]] Couldn't find batcher file: %s" % batch_file)
             print ("[[main]]  Creating new batcher ")
             batcher = Batcher(**config['btch'])
-            batcher.create_dataset()
             if not os.path.exists(config['result_dir']):
                 os.makedirs(config['result_dir'])
             with open(batch_file, 'wb') as output:
@@ -84,7 +83,7 @@ def main(_):
             with open(batch_file, 'rb') as input:
                 batcher = pickle.load(input)
             batcher.update_vars()
-
+        batcher.create_dataset()
         print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
 
         for k in batcher._vocab.keys():
