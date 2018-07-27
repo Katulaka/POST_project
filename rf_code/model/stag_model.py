@@ -166,14 +166,13 @@ class STAGModel(BasicModel):
 
             mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
             v = tf.dynamic_partition(proj_in, mask_t, 2)
-            v = v[1]
 
             # self.logits = tf.layers.dense(v[1], self.config['ntags'], use_bias=True)
             #E from notes
             E_out_shape = [self.config['hidden_tag'], self.config['ntags']]
             E_out = tf.get_variable('E-out', shape=E_out_shape)
             b_out = tf.get_variable('b-out', shape=[self.config['ntags']])
-            self.logits = tf.matmul(v, E_out) + b_out
+            self.logits = tf.matmul(v[1], E_out) + b_out
             # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
@@ -390,7 +389,7 @@ class STAGModel(BasicModel):
                         self.config['beam_timesteps'])
 
         if self.config['use_subset']:
-            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
+            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
         else:
             subset_idx = None
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
