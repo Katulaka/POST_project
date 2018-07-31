@@ -212,16 +212,6 @@ class STAGModel(BasicModel):
                     self._add_loss()
                     if (self.config['mode'] == 'train'):
                         self._add_train_op()
-
-                    total_parameters = 0
-                    for variable in tf.trainable_variables():
-                        shape = variable.get_shape()
-                        variable_parameters = 1
-                        for dim in shape:
-                            variable_parameters *= dim.value
-                        total_parameters += variable_parameters
-                    print(total_parameters)
-                    import pdb; pdb.set_trace()
             return g
 
         """"TRAIN Part """
@@ -270,10 +260,18 @@ class STAGModel(BasicModel):
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
 
+        total_parameters = 0
+        for variable in tf.trainable_variables():
+            shape = variable.get_shape()
+            variable_parameters = 1
+            for dim in shape:
+                variable_parameters *= dim.value
+            total_parameters += variable_parameters
+        print(total_parameters)
+        import pdb; pdb.set_trace()
+
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
-
-            # batcher.create_dataset('train')
             loss = []
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
