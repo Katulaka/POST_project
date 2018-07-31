@@ -48,6 +48,16 @@ class BasicModel(object):
 
         self.graph = self.build_graph()
 
+        total_parameters = 0
+        for variable in self.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
+            shape = variable.get_shape()
+            variable_parameters = 1
+            for dim in shape:
+                variable_parameters *= dim.value
+            total_parameters += variable_parameters
+        print(total_parameters)
+        import pdb; pdb.set_trace()
+
         with self.graph.as_default():
             # all_variables = [k for k in tf.global_variables()
             #                 if k.name.startswith(self.config['scope_name'])]
