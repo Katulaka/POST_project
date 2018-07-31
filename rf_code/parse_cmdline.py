@@ -25,14 +25,14 @@ def parse_cmdline():
 
 
     parser.add_argument('--dim_word', default=64, type=int) # maybe too small: 256
-    parser.add_argument('--dim_tag', default=64, type=int)  # plenty
-    parser.add_argument('--dim_char', default=32, type=int) # plenty
+    parser.add_argument('--dim_tag', default=16, type=int)  # plenty
+    parser.add_argument('--dim_char', default=16, type=int) # plenty
     parser.add_argument('--dim_pos', default=16, type=int)  # plenty
 
-    parser.add_argument('--h_word', default=64, type=int)
+    parser.add_argument('--h_word', default=16, type=int)
     parser.add_argument('--h_tag', default=64, type=int)    # maybe too small: 256
-    parser.add_argument('--h_char', default=32, type=int)
-    parser.add_argument('--h_pos', default=64, type=int)
+    parser.add_argument('--h_char', default=16, type=int)
+    parser.add_argument('--h_pos', default=16, type=int)
 
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--attn', action='store_true', help='')
