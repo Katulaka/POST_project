@@ -41,7 +41,7 @@ class STAGModel(BasicModel):
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
             #probability for dropout
-            self.keep_prob = tf.placeholder(tf.floa32, 'keep-prob')
+            self.keep_prob = tf.placeholder(tf.float32, 'keep-prob')
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
