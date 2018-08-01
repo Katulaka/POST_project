@@ -107,7 +107,7 @@ class STAGModel(BasicModel):
                                         name='word-bidi-in')
             w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
                                                 word_cell_bw,
-                                                self.w_bidi_in,
+                                                w_bidi_in,
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
