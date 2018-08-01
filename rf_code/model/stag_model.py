@@ -112,7 +112,7 @@ class STAGModel(BasicModel):
     def _no_affine_trans(self):
         with tf.variable_scope('no-affine'):
             self.encode_state = self.w_bidi_in_out
-            self.c_dim = self.config['hidden_cahr'] + self.config['dim_word'] \
+            self.c_dim = self.config['hidden_char'] + self.config['dim_word'] \
                         + self.config['dim_pos'] + 2*self.config['hidden_word']
 
     def _affine_trans(self):
