@@ -273,11 +273,12 @@ class STAGModel(BasicModel):
 
     def train(self, batcher):
 
-        # batcher.create_dataset('train')
         if self.config['use_subset']:
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'train')
+            subset_idx_dev = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'dev')
         else:
             subset_idx = None
+            subset_idx_dev = None
         summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         summary_writer_dev = tf.summary.FileWriter(self.result_dir+'/graphs/dev', self.graph)
         # Create a summary to monitor loss tensor
@@ -301,7 +302,7 @@ class STAGModel(BasicModel):
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, epoch_id)
 
-            mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch(mode='dev')])
+            mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, epoch_id)
