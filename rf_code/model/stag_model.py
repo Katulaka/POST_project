@@ -275,7 +275,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_subset']:
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'train')
-            subset_idx_dev = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'dev')
+            subset_idx_dev = batcher.get_subset_idx(self.config['subset_file_dev'], 0.1, 'dev')
         else:
             subset_idx = None
             subset_idx_dev = None

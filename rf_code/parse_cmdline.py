@@ -89,7 +89,7 @@ def parse_cmdline():
     config['batch_file'] = os.path.join(os.getcwd(), 'batcher', 'batch_nvg_r.pickle')
     config['use_subset'] = args.use_subset
     config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
-    config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch_dev.json')
+    config['subset_file_dev'] = os.path.join(os.getcwd(), 'batcher','sub_batch_dev.json')
 
     #embedding size
     config['dim_word'] = args.dim_word
