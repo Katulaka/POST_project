@@ -35,7 +35,8 @@ def parse_cmdline():
     parser.add_argument('--h_pos', default=16, type=int)
 
     parser.add_argument('--no_c_embed', action='store_true', help='')
-    parser.add_argument('--attn', action='store_true', help='')
+    parser.add_argument('--no_attn', action='store_true', help='')
+    parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch', type=int, default=32, help='')
 
@@ -100,7 +101,8 @@ def parse_cmdline():
 
     #model arch
     config['no_c_embed'] = args.no_c_embed
-    config['attn'] = args.attn
+    config['no_attn'] = args.no_attn
+    config['affine'] = args.affine
 
     if config['mode'] == 'train':
         config['lr'] = args.lr

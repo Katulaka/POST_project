@@ -107,15 +107,24 @@ class STAGModel(BasicModel):
 
             self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
 
-            w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
-            self.encode_state = tf.layers.dense(w_bidi_in_out,
+            self.w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+
+    def _no_affine_trans(self):
+        with tf.variable_scope('no-affine'):
+            self.encode_state = self.w_bidi_in_out
+            self.c_dim = self.config['hidden_cahr'] + self.config['dim_word']
+                        + self.config['dim_pos'] + 2*self.config['hidden_word']
+
+    def _affine_trans(self):
+        with tf.variable_scope('affine'):
+            self.encode_state = tf.layers.dense(self.w_bidi_in_out,
                                                 self.config['hidden_tag'],
                                                 use_bias=True)
+            self.c_dim = self.config['hidden_tag']
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
-            self.c_dim = self.config['hidden_tag']
             dec_init_state = tf.reshape(self.encode_state, [-1, self.c_dim])
 
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
@@ -203,11 +212,15 @@ class STAGModel(BasicModel):
                     else:
                         self._add_char_lstm()
                     self._add_word_bidi_lstm()
-                    self._add_tag_lstm_layer()
-                    if self.config['attn']:
-                        self._add_attention()
+                    if self.config['affine']:
+                        self._affine_trans()
                     else:
+                        self._no_affine_trans()
+                    self._add_tag_lstm_layer()
+                    if self.config['no_attn']:
                         self.proj_in = self.decode_out
+                    else:
+                        self._add_attention()
                     self._add_projection()
                     self._add_loss()
                     if (self.config['mode'] == 'train'):
