@@ -34,6 +34,8 @@ def parse_cmdline():
     parser.add_argument('--h_char', default=32, type=int)
     parser.add_argument('--h_pos', default=64, type=int)
 
+    parser.add_argument('--keep_prob', default=0.7, type=float)
+
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--affine', action='store_true', help='')
@@ -100,6 +102,7 @@ def parse_cmdline():
     config['hidden_tag'] = args.h_tag
 
     #model arch
+    config['keep_prob'] = args.keep_prob
     config['no_c_embed'] = args.no_c_embed
     config['no_attn'] = args.no_attn
     config['affine'] = args.affine
