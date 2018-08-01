@@ -105,13 +105,13 @@ class STAGModel(BasicModel):
             # Get lstm cell output
             self.w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
-            w_bidi_out, _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
+            self.w_bidi_out, _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
                                                 word_cell_bw,
                                                 self.w_bidi_in,
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            self.w_bidi_out_drop = tf.nn.dropout(w_bidi_out, self.config['keep_prob'],
+            self.w_bidi_out_drop = tf.nn.dropout(self.w_bidi_out, self.config['keep_prob'],
                                             name='word-lstm-dropout')
 
             # self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
