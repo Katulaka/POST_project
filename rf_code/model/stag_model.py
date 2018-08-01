@@ -40,8 +40,6 @@ class STAGModel(BasicModel):
             self.tag_len = tf.placeholder(tf.int32, [None], 'tag-seq-len')
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
-            #probability for dropout
-            self.keep_prob = tf.placeholder(tf.float32, 'keep-prob')
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -81,7 +79,8 @@ class STAGModel(BasicModel):
             #                             use_bias=False)
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
-            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,name='char-lstm-dropout')
+            ch_state_drop = tf.nn.dropout(ch_state[1], self.config['keep_prob'],
+                                    name='char-lstm-dropout')
 
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
@@ -112,7 +111,7 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            w_bidi_out_drop = tf.nn.dropout(w_bidi_out, self.keep_prob,
+            w_bidi_out_drop = tf.nn.dropout(w_bidi_out, self.config['keep_prob'],
                                             name='word-lstm-dropout')
 
             # self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
@@ -148,7 +147,7 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
+            self.decode_out = tf.nn.dropout(decode_out, self.config['keep_prob'],
                                             name='tag-lstm-dropout')
 
     def _add_attention(self):
@@ -267,8 +266,7 @@ class STAGModel(BasicModel):
             self.pos_in : bv['pos']['in'],
             self.t_in: bv['tag']['in'],
             self.tag_len: bv['tag']['len'],
-            self.targets: bv['tag']['out'],
-            self.keep_prob: self.config['keep_prob']}
+            self.targets: bv['tag']['out']}
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
