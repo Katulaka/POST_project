@@ -118,6 +118,7 @@ class STAGModel(BasicModel):
             # self.w_bidi_out = tf.concat(self.w_bidi_out_drop, -1, name='word-bidi-out')
 
             # self.w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            self.w_bidi_in_out = self.w_bidi_in
 
     def _no_affine_trans(self):
         with tf.variable_scope('no-affine'):
