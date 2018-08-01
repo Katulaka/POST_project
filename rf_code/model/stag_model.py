@@ -103,22 +103,20 @@ class STAGModel(BasicModel):
             word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
             word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
             # Get lstm cell output
-            self.w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
+            w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
-            self.w_bidi_out, _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
+            w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
                                                 word_cell_bw,
                                                 self.w_bidi_in,
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            self.w_bidi_out_drop = tf.nn.dropout(self.w_bidi_out, self.config['keep_prob'],
+            w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
+            w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
+                                            self.config['keep_prob'],
                                             name='word-lstm-dropout')
 
-            # self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
-            # self.w_bidi_out = tf.concat(self.w_bidi_out_drop, -1, name='word-bidi-out')
-
-            # self.w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
-            self.w_bidi_in_out = self.w_bidi_in
+            self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_frop], -1)
 
     def _no_affine_trans(self):
         with tf.variable_scope('no-affine'):
@@ -271,7 +269,6 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
