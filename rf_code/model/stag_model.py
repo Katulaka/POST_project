@@ -116,7 +116,7 @@ class STAGModel(BasicModel):
                                             self.config['keep_prob'],
                                             name='word-lstm-dropout')
 
-            self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_frop], -1)
+            self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
     def _no_affine_trans(self):
         with tf.variable_scope('no-affine'):
