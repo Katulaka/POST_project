@@ -111,13 +111,13 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            w_bidi_out_drop = tf.nn.dropout(w_bidi_out, self.config['keep_prob'],
+            self.w_bidi_out_drop = tf.nn.dropout(w_bidi_out, self.config['keep_prob'],
                                             name='word-lstm-dropout')
 
             # self.w_bidi_out = tf.concat(w_bidi_out, -1, name='word-bidi-out')
-            self.w_bidi_out = tf.concat(w_bidi_out_drop, -1, name='word-bidi-out')
+            # self.w_bidi_out = tf.concat(self.w_bidi_out_drop, -1, name='word-bidi-out')
 
-            self.w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
+            # self.w_bidi_in_out = tf.concat([self.w_bidi_in, self.w_bidi_out], -1)
 
     def _no_affine_trans(self):
         with tf.variable_scope('no-affine'):
