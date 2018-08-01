@@ -209,6 +209,7 @@ class STAGModel(BasicModel):
                     self._add_embeddings()
                     if self.config['no_c_embed']:
                         self._add_char_bridge()
+                        import pdb; pdb.set_trace()
                     else:
                         self._add_char_lstm()
                     self._add_word_bidi_lstm()
