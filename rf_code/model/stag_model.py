@@ -40,6 +40,8 @@ class STAGModel(BasicModel):
             self.tag_len = tf.placeholder(tf.int32, [None], 'tag-seq-len')
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
+            #dropout rate
+            self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -79,8 +81,9 @@ class STAGModel(BasicModel):
             #                             use_bias=False)
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
-            ch_state_drop = tf.nn.dropout(ch_state[1], self.config['keep_prob'],
+            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
                                     name='char-lstm-dropout')
+                                    # self.config['keep_prob'],
 
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
@@ -113,8 +116,9 @@ class STAGModel(BasicModel):
 
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
             w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
-                                            self.config['keep_prob'],
+                                            self.keep_prob,
                                             name='word-lstm-dropout')
+                                            # self.config['keep_prob'],
 
             self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
@@ -146,8 +150,9 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.nn.dropout(decode_out, self.config['keep_prob'],
+            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
                                             name='tag-lstm-dropout')
+                                            # self.config['keep_prob'],
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
@@ -255,7 +260,7 @@ class STAGModel(BasicModel):
                 out = self.pos_g.get_tensor_by_name(op.name+':0')
         return self.pos_sess.run(out, input_feed)
 
-    def step(self, bv, output_feed):
+    def step(self, bv, output_feed, dev=False):
         """ Training step, returns the loss"""
         input_feed = {
             self.w_in: bv['word']['in'],
@@ -265,10 +270,13 @@ class STAGModel(BasicModel):
             self.pos_in : bv['pos']['in'],
             self.t_in: bv['tag']['in'],
             self.tag_len: bv['tag']['len'],
-            self.targets: bv['tag']['out']}
+            self.targets: bv['tag']['out'],
+            self.keep_prob: self.config['keep_prob']}
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
+        if dev:
+            input_feed[self.keep_prob] = 1.0
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -302,7 +310,8 @@ class STAGModel(BasicModel):
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, epoch_id)
 
-            mean_loss = np.mean([self.step(batcher.process(bv), self.loss) for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
+            mean_loss = np.mean([self.step(batcher.process(bv), self.loss, dev=True)
+            for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, epoch_id)
