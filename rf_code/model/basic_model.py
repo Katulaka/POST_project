@@ -56,7 +56,6 @@ class BasicModel(object):
                 variable_parameters *= dim.value
             total_parameters += variable_parameters
         print('[[basic_model.init]] There are %d trainable parameters in model' %total_parameters)
-        # import pdb; pdb.set_trace()
 
         with self.graph.as_default():
             # all_variables = [k for k in tf.global_variables()
