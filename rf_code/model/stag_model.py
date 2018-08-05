@@ -294,7 +294,7 @@ class STAGModel(BasicModel):
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
 
-        # current_epoch = self.sess.run(self.epoch)
+        current_epoch = self.sess.run(self.epoch)
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
             loss = []
@@ -309,10 +309,6 @@ class STAGModel(BasicModel):
                 #     self.save()
                 #     sys.stdout.flush()
 
-            epoch_inc = tf.assign_add(self.epoch, 1)
-            current_epoch = self.sess.run(epoch_inc)
-            self.save()
-            sys.stdout.flush()
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, current_epoch)
@@ -322,6 +318,11 @@ class STAGModel(BasicModel):
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, current_epoch)
+
+            epoch_inc = tf.assign_add(self.epoch, 1)
+            current_epoch = self.sess.run(epoch_inc)
+            self.save()
+            sys.stdout.flush()
 
         summary_writer.close()
         summary_writer_dev.close()
