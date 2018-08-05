@@ -207,6 +207,8 @@ class STAGModel(BasicModel):
                                 dtype=self.dtype, name='learning_rate')
         self.global_step =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='g_step')
+        self.epoch =  tf.Variable(0, trainable=False,
+                                        dtype=tf.int32, name='epoch')
 
         if self.config['grad_clip']:
             gradients, variables = zip(*self.optimizer_fn(self.lr).compute_gradients(self.loss))
@@ -292,6 +294,7 @@ class STAGModel(BasicModel):
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
 
+        current_epoch = self.sess.run(self.epoch)
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
             loss = []
@@ -305,6 +308,9 @@ class STAGModel(BasicModel):
                 # if current_step % self.config['steps_per_ckpt'] == 0:
                 #     self.save()
                 #     sys.stdout.flush()
+
+            epoch_inc = tf.assign_add(self.epoch, 1)
+            self.sess.run(epoch_inc)
             self.save()
             sys.stdout.flush()
             summary = tf.Summary()
