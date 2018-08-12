@@ -88,14 +88,13 @@ def main(_):
 
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._vocab[k].vocab_size()
-
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
         if (config['mode'] == 'train'):
             model.train(batcher)
 
-        elif (config['mode'] == 'dev'):
-            beams, tags, beams_rank = model.stats('train', batcher)
+        elif (config['mode'] == 'stats'):
+            beams, tags, beams_rank = model.stats('test', batcher)
             import pdb; pdb.set_trace()
 
         elif (config['mode'] == 'test'):
