@@ -34,8 +34,7 @@ def parse_cmdline():
     parser.add_argument('--h_char', default=32, type=int)
     parser.add_argument('--h_pos', default=64, type=int)
 
-    # parser.add_argument('--keep_prob', default=1.0, type=float)
-    parser.add_argument('--keep_prob', nargs='+', type=float,  default=[0.8, 0.8, 0,8])
+    parser.add_argument('--keep_prob', default=0.8, type=float)
 
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--no_attn', action='store_true', help='')

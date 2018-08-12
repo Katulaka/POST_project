@@ -276,7 +276,7 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
         if dev:
-            input_feed[self.keep_prob] = [1.0, 1.0, 1.0]
+            input_feed[self.keep_prob] = 1.0
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -335,7 +335,7 @@ class STAGModel(BasicModel):
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
                         self.pos_in: enc_bv['pos']['in'],
-                        self.keep_prob: [1.0, 1.0, 1.0]}
+                        self.keep_prob: 1.0}
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(enc_bv)
         output_feed = self.encode_state
