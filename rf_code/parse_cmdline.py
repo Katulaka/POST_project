@@ -117,7 +117,7 @@ def parse_cmdline():
         config['grad_clip'] = args.grad_clip
         config['grad_norm'] = args.grad_norm
 
-    elif config['mode'] == 'test' or config['mode'] == 'dev':
+    else:
         config['beam_size'] = args.beam_size
         config['beam_timesteps'] = args.beam_timesteps
         config['num_goals'] = args.num_goals
