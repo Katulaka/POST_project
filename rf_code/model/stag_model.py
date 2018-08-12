@@ -40,8 +40,9 @@ class STAGModel(BasicModel):
             self.tag_len = tf.placeholder(tf.int32, [None], 'tag-seq-len')
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
-            #dropout rate
-            self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
+            #dropout rate 0-char 1-word 2-tag
+            self.keep_prob = tf.placeholder(tf.float32, [None], name="keep-prob")
+
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -81,9 +82,8 @@ class STAGModel(BasicModel):
             #                             use_bias=False)
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
-            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
+            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob[0],
                                     name='char-lstm-dropout')
-                                    # self.config['keep_prob'],
 
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
@@ -116,9 +116,8 @@ class STAGModel(BasicModel):
 
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
             w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
-                                            self.keep_prob,
+                                            self.keep_prob[1],
                                             name='word-lstm-dropout')
-                                            # self.config['keep_prob'],
 
             self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
@@ -150,9 +149,8 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
+            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob[2],
                                             name='tag-lstm-dropout')
-                                            # self.config['keep_prob'],
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
@@ -278,7 +276,7 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
         if dev:
-            input_feed[self.keep_prob] = 1.0
+            input_feed[self.keep_prob] = [1.0, 1.0, 1.0]
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
