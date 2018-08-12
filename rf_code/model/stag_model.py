@@ -334,7 +334,8 @@ class STAGModel(BasicModel):
                         self.word_len: enc_bv['word']['len'],
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
-                        self.pos_in: enc_bv['pos']['in']}
+                        self.pos_in: enc_bv['pos']['in'],
+                        self.keep_prob: [1.0, 1.0, 1.0]}
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(enc_bv)
         output_feed = self.encode_state
