@@ -41,7 +41,7 @@ class STAGModel(BasicModel):
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
             #dropout rate 0-char 1-word 2-tag
-            self.keep_prob = tf.placeholder(tf.float32, shapep=(), name="keep-prob")
+            self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
 
 
     def _add_embeddings(self):
