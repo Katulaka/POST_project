@@ -82,7 +82,7 @@ class STAGModel(BasicModel):
             #                             use_bias=False)
             # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
-            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob[0],
+            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
                                     name='char-lstm-dropout')
 
             we_shape = tf.shape(self.word_embed)
@@ -116,7 +116,7 @@ class STAGModel(BasicModel):
 
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
             w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
-                                            self.keep_prob[1],
+                                            self.keep_prob,
                                             name='word-lstm-dropout')
 
             self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
@@ -149,7 +149,7 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob[2],
+            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
                                             name='tag-lstm-dropout')
 
     def _add_attention(self):
