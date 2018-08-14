@@ -433,7 +433,7 @@ class STAGModel(BasicModel):
             tag = bv['tags'][-1]
 
             beams_rank.append([b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)])
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             if -1 in beams_rank[-1]:
                 bs = BeamSearch(79,
                                 batcher._vocab['tags'].token_to_id('GO'),
