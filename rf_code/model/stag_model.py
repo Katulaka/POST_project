@@ -412,6 +412,7 @@ class STAGModel(BasicModel):
         import os
 
         decode_trees = []
+        astar_ranks = []
         s_idx = 0
         if os.path.exists('decode_trees.p'):
             with open('decode_trees.p', 'rb') as f:
@@ -422,12 +423,20 @@ class STAGModel(BasicModel):
                         break
             s_idx = len(decode_trees)
 
+        if os.path.exists('astar_ranks.p'):
+            with open('astar_ranks.p', 'rb') as f:
+                while True:
+                    try:
+                        astar_ranks.append(dill.load(f))
+                    except EOFError:
+                        break
+
         with open('beams.p', 'rb') as fout:
             all_beams = dill.load(fout)
 
-        with open('ranks.p', 'rb') as f:
-            ranks = dill.load(f)
-        ranks_m1 = [[r-1 for r in rank] for rank in ranks]
+        # with open('ranks.p', 'rb') as f:
+        #     ranks = dill.load(f)
+        # ranks_m1 = [[r-1 for r in rank] for rank in ranks]
 
         for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
@@ -437,7 +446,7 @@ class STAGModel(BasicModel):
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             batcher._seq_len = [len(words_token)]
             tag_score_mat = batcher.restore(tag_score_mat)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             if all(tag_score_mat):
                 trees, astar_rank = solve_tree_search(tag_score_mat[0],
                                         words_token,
@@ -446,12 +455,15 @@ class STAGModel(BasicModel):
                                         self.config['time_out'])
             else:
                 trees = []
-
+                astar_rank = []
             decode_trees.append(trees)
+            astar_ranks.append(astar_rank)
             with open('decode_trees.p', 'ab') as fin:
                 dill.dump(trees, fin)
+            with open('astar_ranks.p', 'ab') as fin:
+                dill.dump(astar_rank, fin)
 
-        return decode_trees
+        return decode_trees, astar_ranks
 
     def stats(self, mode, batcher):
 
