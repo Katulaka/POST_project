@@ -423,8 +423,8 @@ class STAGModel(BasicModel):
             s_idx = len(decode_trees)
 
         with open('beams.p', 'rb' ) as fout:
-            beams = dill.load(fout)
-        for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], beams[s_idx:]):
+            all_beams = dill.load(fout)
+        for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
@@ -443,7 +443,7 @@ class STAGModel(BasicModel):
 
             decode_trees.append(trees)
             with open('decode_trees.p', 'ab') as fin:
-                dill.dump(decode_trees, fin)
+                dill.dump(trees, fin)
 
         return decode_trees
 
