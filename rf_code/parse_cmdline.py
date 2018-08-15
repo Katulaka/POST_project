@@ -39,7 +39,7 @@ def parse_cmdline():
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
-    parser.add_argument('--batch', type=int, default=32, help='')
+    parser.add_argument('--batch_size', type=int, default=32, help='')
 
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
@@ -70,7 +70,7 @@ def parse_cmdline():
         # config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
 
     config['btch'] = {}
-    config['btch']['batch_size'] = args.batch
+    config['btch']['batch_size'] = args.batch_size
     config['btch']['tags_type'] = {'reverse' : args.reverse, 'no_val_gap': args.no_val_gap}
 
     config['btch']['dir_range'] = {'train': (2,22), 'dev': (22,23), 'test': (23,24)}
