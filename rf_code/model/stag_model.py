@@ -411,13 +411,16 @@ class STAGModel(BasicModel):
         import pickle as dill
         import os
 
+        decode_trees = []
+        s_idx = 0
         if os.path.exists('decode_trees.p'):
-            with open( 'decode_trees.p', 'rb' ) as fout:
-                decode_trees = dill.load(fout)
-                s_idx = len(decode_trees)
-        else:
-            decode_trees = []
-            s_idx = 0
+            with open('decode_trees.p', 'rb') as f:
+                while True:
+                    try:
+                        decode_trees.append(dill.load(f))
+                    except EOFError:
+                        break
+            s_idx = len(decode_trees)
 
         with open('beams.p', 'rb' ) as fout:
             beams = dill.load(fout)
