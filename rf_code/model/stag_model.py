@@ -406,15 +406,16 @@ class STAGModel(BasicModel):
 
                 decode_trees.append(trees)
         return decode_trees
+
     def _decode(self, batcher):
 
         # for beam in beams:
         decode_trees = []
-        
+
         import pickle
         beams = pickle.load( open( "beams.p", "rb" ) )
 
-        for bv in batcher.get_batch(subset_idx=subset_idx):
+        for bv in batcher.get_batch('test'):
             import pdb; pdb.set_trace()
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
