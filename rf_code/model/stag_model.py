@@ -421,7 +421,6 @@ class STAGModel(BasicModel):
 
         with open('beams.p', 'rb' ) as fout:
             beams = dill.load(fout)
-        import pdb; pdb.set_trace()
         for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
@@ -442,6 +441,7 @@ class STAGModel(BasicModel):
             with open('decode_trees.p', 'rb') as fin:
                 dill.dump(decode_trees, fin)
 
+            import pdb; pdb.set_trace()
         return decode_trees
 
     def stats(self, mode, batcher):
