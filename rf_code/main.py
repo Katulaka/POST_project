@@ -99,7 +99,8 @@ def main(_):
 
         elif (config['mode'] == 'test'):
             # beams, tags, beams_rank = model.decode(batcher)
-            beams, tags, beams_rank = model._decode(batcher)
+            decode_trees, astar_ranks = model._decode(batcher)
+
             import pdb; pdb.set_trace()
 
         else:
