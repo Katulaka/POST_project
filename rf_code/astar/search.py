@@ -120,7 +120,7 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
     solve = Solver(tree_score_mat, no_val_gap)
     paths, max_path = solve.astar(start, goal, num_goals, time_out)
     trees_res = []
-    patterns = []
+    astar_rank = []
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
