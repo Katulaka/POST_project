@@ -415,7 +415,6 @@ class STAGModel(BasicModel):
         beams = pickle.load( open( "beams.p", "rb" ) )
 
         for bv_w, beams in zip(batcher._ds['test']['words'], beams):
-            import pdb; pdb.set_trace()
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
@@ -423,7 +422,6 @@ class STAGModel(BasicModel):
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             batcher._seq_len = [len(words_token)]
             tag_score_mat = batcher.restore(tag_score_mat)
-            # for ts_entry, w_entry in zip(tag_score_mat, words_token):
             if all(tag_score_mat):
                 trees, _ = solve_tree_search(tag_score_mat[0], words_token,
                                         batcher._t_op.no_val_gap,
