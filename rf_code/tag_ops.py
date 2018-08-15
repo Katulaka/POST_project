@@ -65,19 +65,10 @@ class TagOp(object):
         return operate_on_Narray(tags, self.modify_tag)
 
     def _get_pos(self, tag):
-        # import pdb; pdb.set_trace()
-        # if self.reverse:
-        #     return tag[0]
         return tag[-1]
 
     def get_pos(self, tags):
         return operate_on_Narray(tags, self._get_pos)
-
-    # def _revese(self, tag):
-    #     return tag[::-1]
-    #
-    # def reverse(self, tags):
-    #     return operate_on_Narray(tags, self._revese)
 
     def combine_tag(self, tag):
         res = []
