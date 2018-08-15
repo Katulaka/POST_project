@@ -435,7 +435,8 @@ class STAGModel(BasicModel):
             tag_score_mat = batcher.restore(tag_score_mat)
             import pdb; pdb.set_trace()
             if all(tag_score_mat):
-                trees, paths = solve_tree_search(tag_score_mat[0], words_token,
+                trees, astar_rank = solve_tree_search(tag_score_mat[0],
+                                        words_token,
                                         batcher._t_op.no_val_gap,
                                         self.config['num_goals'],
                                         self.config['time_out'])
