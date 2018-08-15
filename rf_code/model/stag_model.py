@@ -425,6 +425,10 @@ class STAGModel(BasicModel):
         with open('beams.p', 'rb') as fout:
             all_beams = dill.load(fout)
 
+        with open('ranks.p', 'rb') as f:
+            ranks = dill.load(f)
+        ranks_m1 = [[r-1 for r in rank] for rank in ranks]
+
         for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
