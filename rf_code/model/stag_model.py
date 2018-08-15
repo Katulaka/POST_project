@@ -408,13 +408,20 @@ class STAGModel(BasicModel):
         return decode_trees
 
     def _decode(self, batcher):
+        import pickle as dill
 
-        decode_trees = []
+        if os.path.exists('decode_trees.p'):
+            with open( 'decode_trees.p', 'rb' ) as fout:
+                decode_trees = dill.load(fout)
+                s_idx = len(decode_trees)
+        else:
+            decode_trees = []
+            s_idx = 0
 
-        import pickle
-        beams = pickle.load( open( "beams.p", "rb" ) )
-
-        for bv_w, beams in zip(batcher._ds['test']['words'], beams):
+        with open('beams.p', 'rb' ) as fout:
+            beams = dill.load(fout)
+        import pdb; pdb.set_trace()
+        for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
@@ -430,7 +437,10 @@ class STAGModel(BasicModel):
             else:
                 trees = []
 
-                decode_trees.append(trees)
+            decode_trees.append(trees)
+            with open('decode_trees.p', 'ab') as fin:
+                dill.dump(trees, fin)
+
         return decode_trees
 
     def stats(self, mode, batcher):
