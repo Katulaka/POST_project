@@ -438,7 +438,7 @@ class STAGModel(BasicModel):
                 trees = []
 
             decode_trees.append(trees)
-            with open('decode_trees.p', 'rb') as fin:
+            with open('decode_trees.p', 'ab') as fin:
                 dill.dump(decode_trees, fin)
 
             import pdb; pdb.set_trace()
