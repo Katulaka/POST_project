@@ -124,8 +124,9 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
     for path in paths:
         path = list(path)[-1]
         trees_res.append(path.tree[0])
-        pattern = np.concatenate(([np.ones(max_lid, dtype=int)],np.zeros((max_rank-1,max_lid), dtype=int)))
-        for s in solve.seen :
-            pattern[s.rank, range(*s.idx)] += 1
-        patterns.append(pattern)
-    return trees_res, patterns
+        # pattern = np.concatenate(([np.ones(max_lid, dtype=int)],np.zeros((max_rank-1,max_lid), dtype=int)))
+        # for s in solve.seen :
+        #     pattern[s.rank, range(*s.idx)] += 1
+        # patterns.append(pattern)
+    # return trees_res, patterns
+    return trees_res, paths
