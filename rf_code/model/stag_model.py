@@ -406,6 +406,33 @@ class STAGModel(BasicModel):
 
                 decode_trees.append(trees)
         return decode_trees
+    def _decode(self, batcher):
+
+        # for beam in beams:
+        decode_trees = []
+        
+        import pickle
+        beams = pickle.load( open( "beams.p", "rb" ) )
+
+        for bv in batcher.get_batch(subset_idx=subset_idx):
+            import pdb; pdb.set_trace()
+            words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
+
+            tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
+            tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
+            tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
+            tag_score_mat = batcher.restore(tag_score_mat)
+            for ts_entry, w_entry in zip(tag_score_mat, words_token):
+                if all(tag_score_mat):
+                    trees, _ = solve_tree_search(ts_entry, w_entry,
+                                            batcher._t_op.no_val_gap,
+                                            self.config['num_goals'],
+                                            self.config['time_out'])
+                else:
+                    trees = []
+
+                decode_trees.append(trees)
+        return decode_trees
 
     def stats(self, mode, batcher):
 

@@ -98,7 +98,8 @@ def main(_):
             import pdb; pdb.set_trace()
 
         elif (config['mode'] == 'test'):
-            beams, tags, beams_rank = model.decode(batcher)
+            # beams, tags, beams_rank = model.decode(batcher)
+            beams, tags, beams_rank = model._decode(batcher)
             import pdb; pdb.set_trace()
 
         else:
