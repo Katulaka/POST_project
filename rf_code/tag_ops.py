@@ -23,15 +23,29 @@ class TagOp(object):
     def _slash_split(self, tag):
         return self._mod_tag(tag, UP, UP).split(UP)
 
-    # def _revese(self, tag):
-    #     return UP.join(tag.split(UP)[::-1])
+    def _reverse(self, tag):
+
+        # return tag[::-1]
+
+        _tag = []
+        sub_tag = []
+        for t in tag[::-1]:
+            if t.startswith(L) or t.startswith(R):
+                sub_tag.append(t)
+            elif sub_tag != []:
+                sub_tag.append(t)
+                _tag.extend(sub_tag[::-1])
+                sub_tag = []
+            else:
+                _tag.append(t)
+        return _tag
 
     def _remove_val_gap(self, tag):
         return self._mod_tag(tag, '', ANY+NA).split(NA)[0]
 
     def modify_tag(self, tag):
         if self.reverse:
-            tag = tag[::-1]
+            tag = self._reverse(tag)
 
         if self.no_val_gap:
             _tag = []
