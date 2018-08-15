@@ -409,15 +409,14 @@ class STAGModel(BasicModel):
 
     def _decode(self, batcher):
 
-        # for beam in beams:
         decode_trees = []
 
         import pickle
         beams = pickle.load( open( "beams.p", "rb" ) )
 
-        for bv in batcher.get_batch('test'):
+        for bv_w, beams in zip(batcher._ds['test']['words'], beams):
             import pdb; pdb.set_trace()
-            words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
+            words_token = batcher._vocab['words'].to_tokens(bv_w)
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
