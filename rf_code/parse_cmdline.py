@@ -18,11 +18,10 @@ def parse_cmdline():
 
     parser.add_argument('--num_epochs', default=1, type=int)
     parser.add_argument('--lr', default=0.001, type=float)
-    parser.add_argument('--steps_per_ckpt', default=2000, type=int)
+    parser.add_argument('--steps_per_ckpt', default=0, type=int)
     parser.add_argument('--grad_clip', action='store_true', help='')
     parser.add_argument('--grad_norm', default=5.0, type=float)
     parser.add_argument('--opt_fn', type=str, default='adam', help='')
-
 
     parser.add_argument('--dim_word', default=64, type=int) # maybe too small: 256
     parser.add_argument('--dim_tag', default=32, type=int)  # plenty

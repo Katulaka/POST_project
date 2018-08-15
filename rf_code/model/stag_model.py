@@ -303,9 +303,10 @@ class STAGModel(BasicModel):
                 loss.append(step_loss)
                 summary_writer.add_summary(summary_loss, current_step)
                 current_step += 1
-                # if current_step % self.config['steps_per_ckpt'] == 0:
-                #     self.save()
-                #     sys.stdout.flush()
+                if self.config['steps_per_ckpt']!=0:
+                    if current_step % self.config['steps_per_ckpt'] == 0:
+                        self.save()
+                        sys.stdout.flush()
 
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
@@ -319,8 +320,10 @@ class STAGModel(BasicModel):
 
             epoch_inc = tf.assign_add(self.epoch, 1)
             current_epoch = self.sess.run(epoch_inc)
-            self.save()
-            sys.stdout.flush()
+
+            if self.config['steps_per_ckpt']==0:
+                self.save()
+                sys.stdout.flush()
 
         summary_writer.close()
         summary_writer_dev.close()
