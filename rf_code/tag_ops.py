@@ -41,22 +41,23 @@ class TagOp(object):
         return _tag
 
     def _remove_val_gap(self, tag):
-        return self._mod_tag(tag, '', ANY+NA).split(NA)[0]
+        # return self._mod_tag(tag, '', ANY+NA).split(NA)[0]
+        _tag = []
+        for t in tag:
+            if t.startswith(L):
+                _tag.append(L+ANY)
+            elif t.startswith(R):
+                _tag.append(R+ANY)
+            else:
+                _tag.append(t)
+        return _tag
 
     def modify_tag(self, tag):
         if self.reverse:
             tag = self._reverse(tag)
 
         if self.no_val_gap:
-            _tag = []
-            for t in tag:
-                if t.startswith(L):
-                    _tag.append(L+ANY)
-                elif t.startswith(R):
-                    _tag.append(R+ANY)
-                else:
-                    _tag.append(t)
-            tag = _tag
+            tag = self._remove_val_gap(tag)
         return tag
 
 
