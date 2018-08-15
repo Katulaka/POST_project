@@ -421,15 +421,16 @@ class STAGModel(BasicModel):
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
+            batcher._seq_len = [len(words_token)]
             tag_score_mat = batcher.restore(tag_score_mat)
-            for ts_entry, w_entry in zip(tag_score_mat, words_token):
-                if all(tag_score_mat):
-                    trees, _ = solve_tree_search(ts_entry, w_entry,
-                                            batcher._t_op.no_val_gap,
-                                            self.config['num_goals'],
-                                            self.config['time_out'])
-                else:
-                    trees = []
+            # for ts_entry, w_entry in zip(tag_score_mat, words_token):
+            if all(tag_score_mat):
+                trees, _ = solve_tree_search(tag_score_mat[0], words_token,
+                                        batcher._t_op.no_val_gap,
+                                        self.config['num_goals'],
+                                        self.config['time_out'])
+            else:
+                trees = []
 
                 decode_trees.append(trees)
         return decode_trees
