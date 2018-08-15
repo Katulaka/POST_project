@@ -51,11 +51,6 @@ def parse_cmdline():
 
     # parser.add_argument('--load_from_file', type=str, default=None, help='')
 
-    # parser.add_argument('--tesmin', default=0, type=int)
-    # parser.add_argument('--tesmax', default=np.inf, type=int)
-    # parser.add_argument('--dev_min', default=0, type=int)
-    # parser.add_argument('--dev_max', default=np.inf, type=int)
-
     config = dict()
 
     args = parser.parse_args()
@@ -83,8 +78,6 @@ def parse_cmdline():
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
     config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['btch']['data_file'] = 'at_data.out'
-    # config['batch_file'] = os.path.join(config['result_dir'],'batch.pickle')
-    # config['subset_file'] = os.path.join(config['result_dir'],'sub_batch.json')
     config['batch_file'] = os.path.join(os.getcwd(), 'batcher', 'batch_nvg_r.pickle')
     config['use_subset'] = args.use_subset
     config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
