@@ -437,6 +437,7 @@ class STAGModel(BasicModel):
         with open('beams.p', 'rb') as fout:
             all_beams = dill.load(fout)
 
+        cnt_idx = s_idx
         for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
@@ -445,7 +446,6 @@ class STAGModel(BasicModel):
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             batcher._seq_len = [len(words_token)]
             tag_score_mat = batcher.restore(tag_score_mat)
-            # import pdb; pdb.set_trace()
             if all(tag_score_mat):
                 trees, astar_rank = solve_tree_search(tag_score_mat[0],
                                         words_token,
@@ -461,7 +461,8 @@ class STAGModel(BasicModel):
                 dill.dump(trees, fin)
             with open('astar_ranks.p', 'ab') as fin:
                 dill.dump(astar_rank, fin)
-
+            print('decode %d' %cnt_idx)
+            cnt_idx += 1
         return decode_trees, astar_ranks
 
     def stats(self, mode, batcher):
