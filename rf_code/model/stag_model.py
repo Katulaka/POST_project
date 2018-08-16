@@ -493,14 +493,18 @@ class STAGModel(BasicModel):
             with open(self.config['beams_rank_file'], 'rb') as f:
                 beams_rank = dill.load(f)
 
+        if os.path.exists(self.config['tags_file']):
+            with open(self.config['tags_file'], 'rb') as f:
+                tags = dill.load(f)
 
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv)))
-            tags.append(bv['tags'][-1])
 
-            tag = bv['tags'][-1]
+            tags.append(bv['tags'][-1])
+            with open(self.config['tags_file'], 'ab') as f:
+                dill.dump(tags[-1], f)
 
             beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
             if -1 in beams_rank[-1]:
