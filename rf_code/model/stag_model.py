@@ -483,6 +483,16 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
         else:
             subset_idx = None
+
+        import pdb; pdb.set_trace()
+        if os.path.exists(self.config['beams_rank_file']):
+            with open(self.config['beams_rank_file'], 'rb') as f:
+                while True:
+                    try:
+                        beams_rank.append(dill.load(f))
+                    except EOFError:
+                        break
+
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state,
