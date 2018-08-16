@@ -487,15 +487,28 @@ class STAGModel(BasicModel):
 
         if os.path.exists(self.config['beams_file']):
             with open(self.config['beams_file'], 'rb') as f:
-                beams = dill.load(f)
+                while True:
+                    try:
+                        beams.append(dill.load(f))
+                    except EOFError:
+                        break
+
 
         if os.path.exists(self.config['beams_rank_file']):
             with open(self.config['beams_rank_file'], 'rb') as f:
-                beams_rank = dill.load(f)
+                while True:
+                    try:
+                        beams_rank.append(dill.load(f))
+                    except EOFError:
+                        break
 
         if os.path.exists(self.config['tags_file']):
             with open(self.config['tags_file'], 'rb') as f:
-                tags = dill.load(f)
+                while True:
+                    try:
+                        tags.append(dill.load(f))
+                    except EOFError:
+                        break
 
         import pdb; pdb.set_trace()
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
