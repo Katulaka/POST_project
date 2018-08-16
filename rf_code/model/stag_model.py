@@ -438,7 +438,8 @@ class STAGModel(BasicModel):
                     except EOFError:
                         break
 
-        with open('beams.p', 'rb') as fout:
+        # with open('beams.p', 'rb') as fout:
+        with open(self.config['beams_file'], 'rb') as fout:
             all_beams = dill.load(fout)
 
         cnt_idx = s_idx
