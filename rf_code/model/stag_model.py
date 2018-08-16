@@ -439,6 +439,8 @@ class STAGModel(BasicModel):
 
         cnt_idx = s_idx
         for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
+            print('decode %d' %cnt_idx)
+            cnt_idx += 1
             words_token = batcher._vocab['words'].to_tokens(bv_w)
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
@@ -461,8 +463,7 @@ class STAGModel(BasicModel):
                 dill.dump(trees, fin)
             with open('astar_ranks.p', 'ab') as fin:
                 dill.dump(astar_rank, fin)
-            print('decode %d' %cnt_idx)
-            cnt_idx += 1
+
         return decode_trees, astar_ranks
 
     def stats(self, mode, batcher):
