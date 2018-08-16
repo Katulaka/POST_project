@@ -100,9 +100,9 @@ def main(_):
         elif (config['mode'] == 'test'):
             # beams, tags, beams_rank = model.decode(batcher)
             decode_trees, astar_ranks = model._decode(batcher)
-            # with open('ranks.p', 'rb') as f:
-            #     ranks = dill.load(f)
-            # ranks_m1 = [[r-1 for r in rank] for rank in ranks]
+            with open(config['beams_rank_file'], 'rb') as f:
+                ranks = pickle.load(f)
+            ranks_m1 = [[r-1 for r in rank] for rank in ranks]
 
 
             import pdb; pdb.set_trace()
