@@ -443,7 +443,8 @@ class STAGModel(BasicModel):
             all_beams = dill.load(fout)
 
         cnt_idx = s_idx
-        for bv_w, beams in zip(batcher._ds['test']['words'][s_idx:], all_beams[s_idx:]):
+        words = batcher._ds['test']['words']
+        for bv_w, beams in zip(words[s_idx:], all_beams[s_idx:]):
             print('decode %d' %cnt_idx)
             cnt_idx += 1
             words_token = batcher._vocab['words'].to_tokens(bv_w)
