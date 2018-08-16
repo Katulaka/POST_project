@@ -139,8 +139,8 @@ class Batcher(object):
 
     def update_vars(self):
         import sys
-        if '--batch' in sys.argv[1:]:
-            self._batch_size = int(sys.argv[1:][sys.argv[1:].index('--batch')+1])
+        if '--batch_size' in sys.argv[1:]:
+            self._batch_size = int(sys.argv[1:][sys.argv[1:].index('--batch_size')+1])
         return self
 
     def get_batch_size(self):
