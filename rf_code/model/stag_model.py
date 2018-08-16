@@ -509,9 +509,10 @@ class STAGModel(BasicModel):
                         tags.append(dill.load(f))
                     except EOFError:
                         break
+        s_idx = len(tags)
 
         import pdb; pdb.set_trace()
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
 
             beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv)))
