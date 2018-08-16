@@ -491,11 +491,8 @@ class STAGModel(BasicModel):
 
         if os.path.exists(self.config['beams_rank_file']):
             with open(self.config['beams_rank_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams_rank.append(dill.load(f))
-                    except EOFError:
-                        break
+                beams_rank = dill.load(f)
+
 
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
@@ -505,7 +502,7 @@ class STAGModel(BasicModel):
 
             tag = bv['tags'][-1]
 
-            beams_rank.append([b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)])
+            beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
             if -1 in beams_rank[-1]:
                 bs = BeamSearch(79,
                                 batcher._vocab['tags'].token_to_id('GO'),
@@ -514,7 +511,8 @@ class STAGModel(BasicModel):
                 beams[-1] =  bs.beam_search(self.encode_top_state,
                                             self.decode_topk,
                                             batcher.process(bv))
-                beams_rank[-1] = [b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)]
+                                            
+                beams_rank[-1] = [b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])]
                 bs = BeamSearch(self.config['beam_size'],
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
@@ -522,4 +520,7 @@ class STAGModel(BasicModel):
 
             with open(self.config['beams_file'], 'ab') as f:
                 dill.dump(beams[-1], f)
+            with open(self.config['beams_rank_file'], 'ab') as f:
+                dill.dump(beams_rank[-1], f)
+
         return beams, tags, beams_rank
