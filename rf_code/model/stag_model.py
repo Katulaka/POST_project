@@ -417,8 +417,6 @@ class STAGModel(BasicModel):
         decode_trees = []
         astar_ranks = []
         s_idx = 0
-        # if os.path.exists('decode_trees.p'):
-            # with open('decode_trees.p', 'rb') as f:
         if os.path.exists(self.config['decode_trees_file']):
             with open(self.config['decode_trees_file'], 'rb') as f:
                 while True:
@@ -428,8 +426,6 @@ class STAGModel(BasicModel):
                         break
             s_idx = len(decode_trees)
 
-        # if os.path.exists('astar_ranks.p'):
-            # with open('astar_ranks.p', 'rb') as f:
         if os.path.exists(self.config['astar_ranks_file']):
             with open(self.config['astar_ranks_file'], 'rb') as f:
                 while True:
@@ -438,16 +434,15 @@ class STAGModel(BasicModel):
                     except EOFError:
                         break
 
-        # with open('beams.p', 'rb') as fout:
         with open(self.config['beams_file'], 'rb') as fout:
             all_beams = dill.load(fout)
 
-        import pdb; pdb.set_trace()
+        len_beam = len(all_beams)
 
         cnt_idx = s_idx
         words = batcher._ds['test']['words']
         for bv_w, beams in zip(words[s_idx:], all_beams[s_idx:]):
-            print('decode %d' %cnt_idx)
+            print('decode %d/%d' %(cnt_idx,len_beam))
             cnt_idx += 1
             words_token = batcher._vocab['words'].to_tokens(bv_w)
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
@@ -466,10 +461,8 @@ class STAGModel(BasicModel):
                 astar_rank = []
             decode_trees.append(trees)
             astar_ranks.append(astar_rank)
-            # with open('decode_trees.p', 'ab') as fin:
             with open(self.config['decode_trees_file'], 'ab') as fin:
                 dill.dump(trees, fin)
-            # with open('astar_ranks.p', 'ab') as fin:
             with open(self.config['astar_ranks_file'], 'ab') as fin:
                 dill.dump(astar_rank, fin)
 
