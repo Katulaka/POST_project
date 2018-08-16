@@ -497,6 +497,7 @@ class STAGModel(BasicModel):
             with open(self.config['tags_file'], 'rb') as f:
                 tags = dill.load(f)
 
+        import pdb; pdb.set_trace()
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
@@ -515,7 +516,7 @@ class STAGModel(BasicModel):
                 beams[-1] =  bs.beam_search(self.encode_top_state,
                                             self.decode_topk,
                                             batcher.process(bv))
-                                            
+
                 beams_rank[-1] = [b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])]
                 bs = BeamSearch(self.config['beam_size'],
                                 batcher._vocab['tags'].token_to_id('GO'),
