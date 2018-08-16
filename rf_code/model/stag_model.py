@@ -469,7 +469,8 @@ class STAGModel(BasicModel):
         return decode_trees, astar_ranks
 
     def stats(self, mode, batcher):
-
+        import pickle as dill
+        import os
 
         beams_rank = []
         beams = []
@@ -484,7 +485,10 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
 
-        import pdb; pdb.set_trace()
+        if os.path.exists(self.config['beams_file']):
+            with open(self.config['beams_file'], 'rb') as f:
+                beams = dill.load(f)
+
         if os.path.exists(self.config['beams_rank_file']):
             with open(self.config['beams_rank_file'], 'rb') as f:
                 while True:
@@ -495,12 +499,10 @@ class STAGModel(BasicModel):
 
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
-            beams.append(bs.beam_search(self.encode_top_state,
-                                        self.decode_topk,
+            beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv)))
             tags.append(bv['tags'][-1])
 
-            beam = beams[-1]['tokens']
             tag = bv['tags'][-1]
 
             beams_rank.append([b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)])
@@ -512,11 +514,12 @@ class STAGModel(BasicModel):
                 beams[-1] =  bs.beam_search(self.encode_top_state,
                                             self.decode_topk,
                                             batcher.process(bv))
-                beam = beams[-1]['tokens']
                 beams_rank[-1] = [b.index(t)+1 if t in b else -1 for b,t in zip(beam,tag)]
                 bs = BeamSearch(self.config['beam_size'],
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
 
+            with open(self.config['beams_file'], 'ab') as f:
+                dill.dump(beams[-1], f)
         return beams, tags, beams_rank
