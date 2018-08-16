@@ -417,8 +417,10 @@ class STAGModel(BasicModel):
         decode_trees = []
         astar_ranks = []
         s_idx = 0
-        if os.path.exists('decode_trees.p'):
-            with open('decode_trees.p', 'rb') as f:
+        # if os.path.exists('decode_trees.p'):
+            # with open('decode_trees.p', 'rb') as f:
+        if os.path.exists(self.config['decode_trees_file']):
+            with open(self.config['decode_trees_file'], 'rb') as f:
                 while True:
                     try:
                         decode_trees.append(dill.load(f))
@@ -458,7 +460,8 @@ class STAGModel(BasicModel):
                 astar_rank = []
             decode_trees.append(trees)
             astar_ranks.append(astar_rank)
-            with open('decode_trees.p', 'ab') as fin:
+            # with open('decode_trees.p', 'ab') as fin:
+            with open(self.config['decode_trees_file'], 'ab') as fin:
                 dill.dump(trees, fin)
             with open('astar_ranks.p', 'ab') as fin:
                 dill.dump(astar_rank, fin)

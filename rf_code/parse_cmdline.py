@@ -62,6 +62,8 @@ def parse_cmdline():
 
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
+    decode_dir = os.path.join(config['result_dir'],'decode')
+    config['decode_trees_file'] = os.path.join(decode_dir ,'decode_trees.p')
 
     config['use_pretrained_pos'] = args.pos_model_name != None
 
