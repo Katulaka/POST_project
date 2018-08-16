@@ -442,6 +442,8 @@ class STAGModel(BasicModel):
         with open(self.config['beams_file'], 'rb') as fout:
             all_beams = dill.load(fout)
 
+        import pdb; pdb.set_trace()
+
         cnt_idx = s_idx
         words = batcher._ds['test']['words']
         for bv_w, beams in zip(words[s_idx:], all_beams[s_idx:]):
