@@ -66,6 +66,7 @@ def parse_cmdline():
     config['decode_trees_file'] = os.path.join(decode_dir ,'decode_trees.p')
     config['astar_ranks_file'] = os.path.join(decode_dir ,'astar_ranks.p')
     config['beams_file'] = os.path.join(decode_dir ,'beams.p')
+    config['beams_rank_file'] = os.path.join(decode_dir ,'ranks.p')
     config['tags_file'] = os.path.join(decode_dir ,'tags.p')
 
     config['use_pretrained_pos'] = args.pos_model_name != None
