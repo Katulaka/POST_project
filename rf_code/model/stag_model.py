@@ -518,8 +518,6 @@ class STAGModel(BasicModel):
                                         batcher.process(bv)))
 
             tags.append(bv['tags'][-1])
-            with open(self.config['tags_file'], 'ab') as f:
-                dill.dump(tags[-1], f)
 
             beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
             if -1 in beams_rank[-1]:
@@ -537,6 +535,8 @@ class STAGModel(BasicModel):
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
 
+            with open(self.config['tags_file'], 'ab') as f:
+                dill.dump(tags[-1], f)
             with open(self.config['beams_file'], 'ab') as f:
                 dill.dump(beams[-1], f)
             with open(self.config['beams_rank_file'], 'ab') as f:
