@@ -508,7 +508,7 @@ class STAGModel(BasicModel):
 
             beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
             if -1 in beams_rank[-1]:
-                bs = BeamSearch(79,
+                bs = BeamSearch(self.config['ntags'],
                                 batcher._vocab['tags'].token_to_id('GO'),
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
