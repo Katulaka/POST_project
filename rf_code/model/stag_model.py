@@ -408,6 +408,7 @@ class STAGModel(BasicModel):
                     trees = []
 
                 decode_trees.append(trees)
+            import pdb; pdb.set_trace()
         return decode_trees
 
     def _decode(self, batcher):
