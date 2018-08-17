@@ -114,6 +114,9 @@ def main(_):
             decode_trees = model.decode('train', batcher)
             print ("%.3f time" % (time.clock()-start_time))
 
+            with open(config['decode_trees_file'], 'wb') as f:
+                pickle.load(decode_trees, f)
+
             import pdb; pdb.set_trace()
 
         else:
