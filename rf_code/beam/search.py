@@ -106,7 +106,11 @@ class BeamSearch(object):
                     # Following steps take the best K results from K*K hyps.
                     all_hyps = []
                     latest_token = [[hyp.latest_token] for hyp in hyps]
-                    states = [hyp.state for hyp in hyps]
+                    c_cell = [hyp.state[0] for hyp in hyps]
+                    h_cell = [hyp.state[1] for hyp in hyps]
+                    states = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
+                    # states = [hyp.state for hyp in hyps]
+
                     ids, probs, new_state = decode_topk(latest_token, states,
                                                         [enc_state],
                                                         self._beam_size)
