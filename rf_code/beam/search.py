@@ -130,13 +130,13 @@ class BeamSearch(object):
                                                             [enc_state],
                                                             self._beam_size)
 
-                        import pdb; pdb.set_trace()
                         ids = np.squeeze(ids)
                         probs = np.squeeze(probs)
                         for j in xrange(self._beam_size):
                             all_hyps.append(hyp.extend_(ids[j],
                                             probs[j],
                                             new_state))
+                    import pdb; pdb.set_trace()
                     hyps = []
 
                     for h in self.best_hyps(self.sort_hyps(all_hyps)):
