@@ -388,7 +388,7 @@ class STAGModel(BasicModel):
             subset_idx = None
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
-            words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
+            words_token = batcher._vocab['words'].to_tokens(bv['words'])
 
             beams = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
