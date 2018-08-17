@@ -114,6 +114,7 @@ class BeamSearch(object):
                     ids, probs, new_state = decode_topk(latest_token, states,
                                                         [enc_state],
                                                         self._beam_size)
+                    import pdb; pdb.set_trace()
                     # for hyp in hyps:
                     #     latest_token = [[hyp.latest_token]]
                     #     states = hyp.state
