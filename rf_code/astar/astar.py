@@ -103,7 +103,7 @@ class AStar:
                             + self.heuristic_cost(t.data, goal, cost_coeff)
                 current_time = time.clock()
             if verbose > 0:
-                # self.print_fn(current, 'current')
+                self.print_fn(current, 'current')
                 max_len, max_node = self.is_max_len(current.data, max_len, max_node)
             if self.is_goal_reached(current.data, goal):
                 goals.append(self.reconstruct_path(current, reverse_path))
