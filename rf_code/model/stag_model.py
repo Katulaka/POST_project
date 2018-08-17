@@ -355,11 +355,7 @@ class STAGModel(BasicModel):
         output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.array([np.argsort(np.squeeze(p))[-k:] for p in probs])
-        import pdb; pdb.set_trace()
         topk_probs = np.array([p[k_id] for p,k_id in zip(probs,topk_ids)])
-        # topk_probs = np.squeeze(probs)[np.squeeze(topk_ids)]
-        # if len(topk_ids) == 1:
-        #     topk_probs = np.expand_dims(topk_probs, axis=0)
         return topk_ids, topk_probs, states
 
     # def decode_topk_b(self, latest_tokens, dec_init_states, enc_state, batch_size, k):
