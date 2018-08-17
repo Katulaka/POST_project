@@ -347,7 +347,7 @@ class STAGModel(BasicModel):
     def decode_topk(self, latest_tokens, dec_init_states, enc_state, k):
         """Return the topK results and new decoder states."""
         input_feed = {
-            self.tag_init : np.array(dec_init_states),
+            self.tag_init : dec_init_states,
             self.t_in: np.array(latest_tokens),
             self.encode_state : enc_state,
             self.tag_len: np.ones(k, np.int32),
