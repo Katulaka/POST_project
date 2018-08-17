@@ -111,7 +111,7 @@ def main(_):
             import time
 
             start_time = time.clock()
-            beams, tags, beams_rank = model.decode('train', batcher)
+            decode_trees = model.decode('train', batcher)
             print ("%.3f time" % (time.clock()-start_time))
 
             import pdb; pdb.set_trace()
