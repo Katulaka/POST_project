@@ -116,8 +116,8 @@ class BeamSearch(object):
 
 
 
-                    import pdb; pdb.set_trace()
                     for i,hyp in enumerate(hyps):
+                        import pdb; pdb.set_trace()
                         c_cell = np.expand_dims(new_state[0][i], axis=0)
                         h_cell = np.expand_dims(new_state[1][i], axis=0)
                         state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
