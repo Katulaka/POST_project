@@ -107,6 +107,13 @@ def main(_):
 
             import pdb; pdb.set_trace()
 
+        elif (config['mode'] == 'decode'):
+
+            beams, tags, beams_rank = model.decode('train', batcher)
+
+
+            import pdb; pdb.set_trace()
+
         else:
             pass
 

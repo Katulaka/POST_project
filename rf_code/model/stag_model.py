@@ -374,7 +374,7 @@ class STAGModel(BasicModel):
     #         topk_probs.append(probs[b][topk_ids[b]])
     #     return topk_ids, topk_probs, states
 
-    def decode(self, batcher):
+    def decode(self, mode, batcher):
 
         decode_trees = []
         bs = BeamSearch(self.config['beam_size'],
@@ -386,7 +386,7 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1)
         else:
             subset_idx = None
-        for bv in batcher.get_batch(subset_idx=subset_idx):
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
