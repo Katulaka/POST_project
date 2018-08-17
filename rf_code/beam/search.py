@@ -105,18 +105,23 @@ class BeamSearch(object):
                     # The first step takes the best K results from first hyps.
                     # Following steps take the best K results from K*K hyps.
                     all_hyps = []
-                    for hyp in hyps:
-                        latest_token = [[hyp.latest_token]]
-                        states = hyp.state
-                        ids, probs, new_state = decode_topk(latest_token,
-                                                            states,
-                                                            [enc_state],
-                                                            self._beam_size)
-
-                        for j in xrange(self._beam_size):
-                            all_hyps.append(hyp.extend_(ids[j],
-                                            probs[j],
-                                            new_state))
+                    latest_token = [[hyp.latest_token] for hyp in hyps]
+                    states = [hyp.state for hyp in hyps]
+                    ids, probs, new_state = decode_topk(latest_token, states,
+                                                        [enc_state],
+                                                        self._beam_size)
+                    # for hyp in hyps:
+                    #     latest_token = [[hyp.latest_token]]
+                    #     states = hyp.state
+                    #     ids, probs, new_state = decode_topk(latest_token,
+                    #                                         states,
+                    #                                         [enc_state],
+                    #                                         self._beam_size)
+                    #
+                    #     for j in xrange(self._beam_size):
+                    #         all_hyps.append(hyp.extend_(ids[j],
+                    #                         probs[j],
+                    #                         new_state))
                     hyps = []
                     # all_hyps_sorted = self.sort_hyps(all_hyps)
                     #collect completed hyps that are outside the beam
