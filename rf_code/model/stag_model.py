@@ -394,7 +394,6 @@ class STAGModel(BasicModel):
                                         self.decode_topk,
                                         batcher.process(bv))
 
-            import pdb; pdb.set_trace()
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
             tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
