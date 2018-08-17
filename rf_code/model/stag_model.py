@@ -390,7 +390,7 @@ class STAGModel(BasicModel):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'][0])
 
-            beams, _ = bs.beam_search(self.encode_top_state,
+            beams = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
                                         batcher.process(bv))
 
