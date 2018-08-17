@@ -108,9 +108,11 @@ def main(_):
             import pdb; pdb.set_trace()
 
         elif (config['mode'] == 'decode'):
+            import time
 
+            start_time = time.clock()
             beams, tags, beams_rank = model.decode('train', batcher)
-
+            print ("%.3f time" % (time.clock()-start_time))
 
             import pdb; pdb.set_trace()
 
