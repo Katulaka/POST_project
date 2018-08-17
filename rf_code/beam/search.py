@@ -114,8 +114,6 @@ class BeamSearch(object):
                                                         [enc_state],
                                                         self._beam_size)
 
-
-
                     for i,hyp in enumerate(hyps):
                         import pdb; pdb.set_trace()
                         c_cell = np.expand_dims(new_state[0][i], axis=0)
