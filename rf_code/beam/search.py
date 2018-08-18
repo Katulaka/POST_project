@@ -107,9 +107,12 @@ class BeamSearch(object):
                     h_cell = np.array([np.squeeze(hyp.state[1]) for hyp in hyps])
 
                     states = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
-                    ids, probs, new_state = decode_topk(latest_token, states,
-                                                        [enc_state],
-                                                        self._beam_size)
+                    try:
+                        ids, probs, new_state = decode_topk(latest_token, states,
+                                                            [enc_state],
+                                                            self._beam_size)
+                    except:
+                        import pdb; pdb.set_trace()
                     for i,hyp in enumerate(hyps):
                         c_cell = np.expand_dims(new_state[0][i], axis=0)
                         h_cell = np.expand_dims(new_state[1][i], axis=0)
