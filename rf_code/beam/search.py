@@ -116,8 +116,12 @@ class BeamSearch(object):
                             h_cell = np.expand_dims(new_state[1][k], axis=0)
                             state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
                             for j in xrange(self._beam_size):
-                                all_hyps.append(hyp.extend_(ids[i][j], probs[i][j],
+                                try:
+                                    all_hyps.append(hyp.extend_(ids[i][j],
+                                                            probs[i][j],
                                                             state))
+                                except:
+                                    import pdb; pdb.set_trace()
 
                     # for hyp in hyps:
                     #     latest_token = [[hyp.latest_token]]
