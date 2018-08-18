@@ -358,6 +358,7 @@ class STAGModel(BasicModel):
 
     def decode(self, mode, batcher):
         import pickle as dill
+        import os
 
         decode_trees = []
         if os.path.exists(self.config['decode_trees_file']):
