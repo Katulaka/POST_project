@@ -1,9 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 
-import math
 import sys
-import time
 import numpy as np
 import tensorflow as tf
 from .basic_model import BasicModel
@@ -455,12 +453,10 @@ class STAGModel(BasicModel):
     def stats(self, mode, batcher):
         import pickle as dill
         import os
-        import time
 
         beams_rank = []
         beams = []
-        tags = []
-        # bs = BeamSearch(self.config['beam_size'],
+
         bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
@@ -471,75 +467,38 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
 
-        # if os.path.exists(self.config['beams_file']):
-        #     with open(self.config['beams_file'], 'rb') as f:
-        #         while True:
-        #             try:
-        #                 beams.append(dill.load(f))
-        #             except EOFError:
-        #                 break
-        #
-        #
-        # if os.path.exists(self.config['beams_rank_file']):
-        #     with open(self.config['beams_rank_file'], 'rb') as f:
-        #         while True:
-        #             try:
-        #                 beams_rank.append(dill.load(f))
-        #             except EOFError:
-        #                 break
-        #
-        # if os.path.exists(self.config['tags_file']):
-        #     with open(self.config['tags_file'], 'rb') as f:
-        #         while True:
-        #             try:
-        #                 tags.append(dill.load(f))
-        #             except EOFError:
-        #                 break
-        # s_idx = len(tags)
+        if os.path.exists(self.config['beams_file']):
+            with open(self.config['beams_file'], 'rb') as f:
+                while True:
+                    try:
+                        beams.append(dill.load(f))
+                    except EOFError:
+                        break
 
-        # for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
+        if os.path.exists(self.config['beams_rank_file']):
+            with open(self.config['beams_rank_file'], 'rb') as f:
+                while True:
+                    try:
+                        beams_rank.append(dill.load(f))
+                    except EOFError:
+                        break
 
+        s_idx = len(beams_rank)
 
-            ctime = time.clock()
-            b1 = bs.beam_search(self.encode_top_state, self.decode_topk,
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
+
+            beams.append(bs.beam_search(self.encode_top_state,
+                                        self.decode_topk,
                                         batcher.process(bv))
-            print('time1: %d' %(time.clock()-ctime))
-            # ctime = time.clock()
-            # b2 = bs._beam_search(self.encode_top_state, self.decode_topk,
-            #                             batcher.process(bv))
-            # print('time2: %d' %(time.clock()-ctime))
-            beams.append(b1)
 
             tags.append(bv['tags'][-1])
 
             beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
-            import pdb; pdb.set_trace()
-            # if -1 in beams_rank[-1]:
-            #     bs = BeamSearch(self.config['ntags'],
-            #                     batcher._vocab['tags'].token_to_id('GO'),
-            #                     batcher._vocab['tags'].token_to_id('EOS'),
-            #                     self.config['beam_timesteps'])
-            #     beams[-1] =  bs.beam_search(self.encode_top_state,
-            #                                 self.decode_topk,
-            #                                 batcher.process(bv))
-            #
-            #     beams_rank[-1] = [b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])]
-            #     bs = BeamSearch(self.config['beam_size'],
-            #                     batcher._vocab['tags'].token_to_id('GO'),
-            #                     batcher._vocab['tags'].token_to_id('EOS'),
-            #                     self.config['beam_timesteps'])
 
-            # with open(self.config['tags_file'], 'ab') as f:
-            #     dill.dump(tags[-1], f)
-            # with open(self.config['beams_file'], 'ab') as f:
-            #     dill.dump(beams[-1], f)
-            # with open(self.config['beams_rank_file'], 'ab') as f:
-            #     dill.dump(beams_rank[-1], f)
-        # with open(self.config['tags_file'], 'wb') as f:
-        #     dill.dump(tags, f)
-        # with open(self.config['beams_file'], 'wb') as f:
-        #     dill.dump(beams, f)
-        # with open(self.config['beams_rank_file'], 'wb') as f:
-        #     dill.dump(beams_rank, f)
+            with open(self.config['beams_file'], 'ab') as f:
+                dill.dump(beams[-1], f)
+
+            with open(self.config['beams_rank_file'], 'ab') as f:
+                dill.dump(beams_rank[-1], f)
+
         return beams, tags, beams_rank
