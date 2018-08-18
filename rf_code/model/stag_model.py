@@ -360,6 +360,17 @@ class STAGModel(BasicModel):
         import pickle as dill
 
         decode_trees = []
+        if os.path.exists(self.config['decode_trees_file']):
+            with open(self.config['decode_trees_file'], 'rb') as f:
+                while True:
+                    try:
+                        decode_trees.append(dill.load(f))
+                    except EOFError:
+                        break
+
+        s_idx = len(decode_trees)
+
+
         bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
@@ -370,8 +381,7 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
 
-        import pdb; pdb.set_trace()
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 
@@ -394,8 +404,8 @@ class STAGModel(BasicModel):
 
                 decode_trees.append(trees)
 
-        with open(config['decode_trees_file'], 'wb') as f:
-            dill.load(decode_trees, f)
+            with open(config['decode_trees_file'], 'ab') as f:
+                dill.load(decode_trees, f)
 
         return decode_trees
 
