@@ -68,7 +68,7 @@ class BeamSearch(object):
         self._end_token = end_token
         self._max_steps = max_steps
 
-    def beam_search(self, encode_top_state, decode_topk, enc_bv):
+    def _beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 
          Args:
@@ -136,7 +136,7 @@ class BeamSearch(object):
         beams['scores'] = [[h.score for h in r ] for r in decs]
         return beams
 
-    def _beam_search(self, encode_top_state, decode_topk, enc_bv):
+    def beam_search(self, encode_top_state, decode_topk, enc_bv):
         """Performs beam search for decoding.
 
          Args:
