@@ -98,7 +98,7 @@ class BeamSearch(object):
                 res = []
                 hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
                 for steps in xrange(self._max_steps):
-
+                    all_hyps = []
                     for hyp in hyps:
                         latest_token = [[hyp.latest_token]]
                         states = hyp.state
@@ -113,8 +113,7 @@ class BeamSearch(object):
                             all_hyps.append(hyp.extend_(ids[j],
                                             probs[j],
                                             new_state))
-                        hyps = []
-
+                    hyps = []
                     for h in self.best_hyps(self.sort_hyps(all_hyps)):
                         # Filter and collect any hypotheses that have the end token.
                         if h.latest_token == self._end_token and len(h.tokens)>2:
