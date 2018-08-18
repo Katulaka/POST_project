@@ -504,17 +504,17 @@ class STAGModel(BasicModel):
             ctime = time.clock()
             b1 = bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv))
-            print('time1: %d' %(time.clock()-ctime))
-            ctime = time.clock()
-            b2 = bs._beam_search(self.encode_top_state, self.decode_topk,
-                                        batcher.process(bv))
-            print('time2: %d' %(time.clock()-ctime))
-            import pdb; pdb.set_trace()
+            # print('time1: %d' %(time.clock()-ctime))
+            # ctime = time.clock()
+            # b2 = bs._beam_search(self.encode_top_state, self.decode_topk,
+            #                             batcher.process(bv))
+            # print('time2: %d' %(time.clock()-ctime))
             beams.append(b1)
 
             tags.append(bv['tags'][-1])
 
             beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
+            import pdb; pdb.set_trace()
             # if -1 in beams_rank[-1]:
             #     bs = BeamSearch(self.config['ntags'],
             #                     batcher._vocab['tags'].token_to_id('GO'),
