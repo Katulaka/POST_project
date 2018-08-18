@@ -39,7 +39,7 @@ class Hypothesis(object):
           New Hypothesis with the results from latest step.
         """
         return Hypothesis(self.tokens+[token], self.prob+[prob],
-                            new_state, self.score *prob)
+                            new_state, self.score + np.log(prob))
 
     @property
     def latest_token(self):
@@ -92,10 +92,9 @@ class BeamSearch(object):
             enc_w_len = enc_bv['word']['len'][j] - 1
             #iterate over words in seq
             for i, dec_in in enumerate(enc_state[1:enc_w_len]):
-                dec_in_state = tf.contrib.rnn.LSTMStateTuple(
-                                    np.expand_dims(dec_in, axis=0),
-                                    np.expand_dims(np.zeros_like(dec_in),
-                                                    axis=0))
+                c_cell = np.expand_dims(dec_in, axis=0)
+                h_cell = np.expand_dims(np.zeros_like(dec_in), axis=0)
+                dec_in_state = tf.contrib.rnn.LSTMStateTuple(c_cell,h_cell)
                 res = []
                 hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
                 for steps in xrange(self._max_steps):
@@ -103,7 +102,6 @@ class BeamSearch(object):
                     # The first step takes the best K results from first hyps.
                     # Following steps take the best K results from K*K hyps.
                     all_hyps = []
-                    # _all_hyps = []
                     latest_token = [[hyp.latest_token] for hyp in hyps]
                     c_cell = np.array([np.squeeze(hyp.state[0]) for hyp in hyps])
                     h_cell = np.array([np.squeeze(hyp.state[1]) for hyp in hyps])
