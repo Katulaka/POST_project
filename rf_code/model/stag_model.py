@@ -405,7 +405,7 @@ class STAGModel(BasicModel):
 
                 decode_trees.append(trees)
 
-            with open(config['decode_trees_file'], 'ab') as f:
+            with open(self.config['decode_trees_file'], 'ab') as f:
                 dill.load(decode_trees, f)
 
         return decode_trees
