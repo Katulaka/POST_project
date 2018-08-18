@@ -506,12 +506,11 @@ class STAGModel(BasicModel):
                                         batcher.process(bv))
             print('time1: %d' %(time.time()-ctime))
             ctime = time.time()
-            b2 = bs.beam_search(self.encode_top_state, self.decode_topk,
+            b2 = bs._beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv))
             print('time2: %d' %(time.time()-ctime))
-            import pdb; pdb.set_trace()                         
-            beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
-                                        batcher.process(bv)))
+            import pdb; pdb.set_trace()
+            beams.append(b1)
 
             tags.append(bv['tags'][-1])
 
