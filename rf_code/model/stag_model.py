@@ -469,33 +469,34 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
 
-        if os.path.exists(self.config['beams_file']):
-            with open(self.config['beams_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams.append(dill.load(f))
-                    except EOFError:
-                        break
+        # if os.path.exists(self.config['beams_file']):
+        #     with open(self.config['beams_file'], 'rb') as f:
+        #         while True:
+        #             try:
+        #                 beams.append(dill.load(f))
+        #             except EOFError:
+        #                 break
+        #
+        #
+        # if os.path.exists(self.config['beams_rank_file']):
+        #     with open(self.config['beams_rank_file'], 'rb') as f:
+        #         while True:
+        #             try:
+        #                 beams_rank.append(dill.load(f))
+        #             except EOFError:
+        #                 break
+        #
+        # if os.path.exists(self.config['tags_file']):
+        #     with open(self.config['tags_file'], 'rb') as f:
+        #         while True:
+        #             try:
+        #                 tags.append(dill.load(f))
+        #             except EOFError:
+        #                 break
+        # s_idx = len(tags)
 
-
-        if os.path.exists(self.config['beams_rank_file']):
-            with open(self.config['beams_rank_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams_rank.append(dill.load(f))
-                    except EOFError:
-                        break
-
-        if os.path.exists(self.config['tags_file']):
-            with open(self.config['tags_file'], 'rb') as f:
-                while True:
-                    try:
-                        tags.append(dill.load(f))
-                    except EOFError:
-                        break
-        s_idx = len(tags)
-
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
+        # for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
+        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv)))
@@ -518,11 +519,16 @@ class STAGModel(BasicModel):
                                 batcher._vocab['tags'].token_to_id('EOS'),
                                 self.config['beam_timesteps'])
 
-            with open(self.config['tags_file'], 'ab') as f:
-                dill.dump(tags[-1], f)
-            with open(self.config['beams_file'], 'ab') as f:
-                dill.dump(beams[-1], f)
-            with open(self.config['beams_rank_file'], 'ab') as f:
-                dill.dump(beams_rank[-1], f)
-
+            # with open(self.config['tags_file'], 'ab') as f:
+            #     dill.dump(tags[-1], f)
+            # with open(self.config['beams_file'], 'ab') as f:
+            #     dill.dump(beams[-1], f)
+            # with open(self.config['beams_rank_file'], 'ab') as f:
+            #     dill.dump(beams_rank[-1], f)
+        with open(self.config['tags_file'], 'wb') as f:
+            dill.dump(tags, f)
+        with open(self.config['beams_file'], 'wb') as f:
+            dill.dump(beams, f)
+        with open(self.config['beams_rank_file'], 'wb') as f:
+            dill.dump(beams_rank, f)
         return beams, tags, beams_rank
