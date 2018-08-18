@@ -504,7 +504,7 @@ class STAGModel(BasicModel):
             ctime = time.clock()
             b1 = bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv))
-            # print('time1: %d' %(time.clock()-ctime))
+            print('time1: %d' %(time.clock()-ctime))
             # ctime = time.clock()
             # b2 = bs._beam_search(self.encode_top_state, self.decode_topk,
             #                             batcher.process(bv))
