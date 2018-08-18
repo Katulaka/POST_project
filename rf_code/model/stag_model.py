@@ -370,6 +370,7 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
 
+        import pdb; pdb.set_trace()
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
