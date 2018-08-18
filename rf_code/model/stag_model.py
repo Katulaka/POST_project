@@ -359,7 +359,7 @@ class STAGModel(BasicModel):
     def decode(self, mode, batcher):
 
         decode_trees = []
-        bs = BeamSearch(self.config['beam_size'],
+        bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])
@@ -368,6 +368,7 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
         else:
             subset_idx = None
+            
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
@@ -491,9 +492,7 @@ class STAGModel(BasicModel):
                                         self.decode_topk,
                                         batcher.process(bv))
 
-            tags.append(bv['tags'][-1])
-
-            beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],tags[-1])])
+            beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],bv['tags'][-1])])
 
             with open(self.config['beams_file'], 'ab') as f:
                 dill.dump(beams[-1], f)
