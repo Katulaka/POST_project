@@ -90,23 +90,24 @@ def main(_):
             config['n'+k] = batcher._vocab[k].vocab_size()
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
+        import cProfile
+
+        def do_cprofile(func):
+            def profiled_func(*args, **kwargs):
+                profile = cProfile.Profile()
+                try:
+                    profile.enable()
+                    result = func(*args, **kwargs)
+                    profile.disable()
+                    return result
+                finally:
+                    profile.print_stats()
+            return profiled_func
+
         if (config['mode'] == 'train'):
             model.train(batcher)
 
         elif (config['mode'] == 'stats'):
-            import cProfile
-
-            def do_cprofile(func):
-                def profiled_func(*args, **kwargs):
-                    profile = cProfile.Profile()
-                    try:
-                        profile.enable()
-                        result = func(*args, **kwargs)
-                        profile.disable()
-                        return result
-                    finally:
-                        profile.print_stats()
-                return profiled_func
 
             @do_cprofile
             beams, tags, beams_rank = model.stats('test', batcher)
