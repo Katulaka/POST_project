@@ -98,28 +98,26 @@ class BeamSearch(object):
                 res = []
                 hyps = [Hypothesis([self._start_token], [1.0], dec_in_state, 1.0)]
                 for steps in xrange(self._max_steps):
-                    # Extend each hypothesis.
-                    # The first step takes the best K results from first hyps.
-                    # Following steps take the best K results from K*K hyps.
-                    all_hyps = []
-                    latest_token = [[hyp.latest_token] for hyp in hyps]
-                    c_cell = np.array([np.squeeze(hyp.state[0]) for hyp in hyps])
-                    h_cell = np.array([np.squeeze(hyp.state[1]) for hyp in hyps])
+                    if hyps != []:
+                        # Extend each hypothesis.
+                        # The first step takes the best K results from first hyps.
+                        # Following steps take the best K results from K*K hyps.
+                        all_hyps = []
+                        latest_token = [[hyp.latest_token] for hyp in hyps]
+                        c_cell = np.array([np.squeeze(hyp.state[0]) for hyp in hyps])
+                        h_cell = np.array([np.squeeze(hyp.state[1]) for hyp in hyps])
 
-                    states = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
-                    try:
+                        states = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
                         ids, probs, new_state = decode_topk(latest_token, states,
                                                             [enc_state],
                                                             self._beam_size)
-                    except:
-                        import pdb; pdb.set_trace()
-                    for k,hyp in enumerate(hyps):
-                        c_cell = np.expand_dims(new_state[0][k], axis=0)
-                        h_cell = np.expand_dims(new_state[1][k], axis=0)
-                        state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
-                        for j in xrange(self._beam_size):
-                            all_hyps.append(hyp.extend_(ids[i][j], probs[i][j],
-                                                        state))
+                        for k,hyp in enumerate(hyps):
+                            c_cell = np.expand_dims(new_state[0][k], axis=0)
+                            h_cell = np.expand_dims(new_state[1][k], axis=0)
+                            state = tf.contrib.rnn.LSTMStateTuple(c_cell, h_cell)
+                            for j in xrange(self._beam_size):
+                                all_hyps.append(hyp.extend_(ids[i][j], probs[i][j],
+                                                            state))
 
                     # for hyp in hyps:
                     #     latest_token = [[hyp.latest_token]]
@@ -135,22 +133,22 @@ class BeamSearch(object):
                     #         all_hyps.append(hyp.extend_(ids[j],
                     #                         probs[j],
                     #                         new_state))
-                    hyps = []
+                        hyps = []
 
-                    for h in self.best_hyps(self.sort_hyps(all_hyps)):
-                        # Filter and collect any hypotheses that have the end token.
-                        if h.latest_token == self._end_token and len(h.tokens)>2:
-                            # Pull the hypothesis off the beam
-                            #if the end token is reached.
-                            res.append(h)
-                        elif h.latest_token == self._end_token:
-                            pass
-                        elif len(res) >= self._beam_size \
-                            and h.score < min(res, key=lambda h: h.score).score:
-                            pass
-                        else:
-                            # Otherwise continue to the extend the hypothesis.
-                            hyps.append(h)
+                        for h in self.best_hyps(self.sort_hyps(all_hyps)):
+                            # Filter and collect any hypotheses that have the end token.
+                            if h.latest_token == self._end_token and len(h.tokens)>2:
+                                # Pull the hypothesis off the beam
+                                #if the end token is reached.
+                                res.append(h)
+                            elif h.latest_token == self._end_token:
+                                pass
+                            elif len(res) >= self._beam_size \
+                                and h.score < min(res, key=lambda h: h.score).score:
+                                pass
+                            else:
+                                # Otherwise continue to the extend the hypothesis.
+                                hyps.append(h)
                 print ("Finished beam search for %d / %d" % (i+1, enc_w_len - 1))
                 decs.append(self.best_hyps(self.sort_hyps(res)))
 
