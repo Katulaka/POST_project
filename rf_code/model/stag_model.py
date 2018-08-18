@@ -395,114 +395,114 @@ class STAGModel(BasicModel):
 
         with open(config['decode_trees_file'], 'wb') as f:
             dill.load(decode_trees, f)
-            
+
         return decode_trees
 
-    def _decode(self, batcher):
-        import pickle as dill
-        import os
-
-        decode_trees = []
-        astar_ranks = []
-        s_idx = 0
-        if os.path.exists(self.config['decode_trees_file']):
-            with open(self.config['decode_trees_file'], 'rb') as f:
-                while True:
-                    try:
-                        decode_trees.append(dill.load(f))
-                    except EOFError:
-                        break
-            s_idx = len(decode_trees)
-
-        if os.path.exists(self.config['astar_ranks_file']):
-            with open(self.config['astar_ranks_file'], 'rb') as f:
-                while True:
-                    try:
-                        astar_ranks.append(dill.load(f))
-                    except EOFError:
-                        break
-
-        with open(self.config['beams_file'], 'rb') as fout:
-            all_beams = dill.load(fout)
-
-        len_beam = len(all_beams)
-
-        cnt_idx = s_idx
-        words = batcher._ds['test']['words']
-        for bv_w, beams in zip(words[s_idx:], all_beams[s_idx:]):
-            print('decode %d/%d' %(cnt_idx,len_beam))
-            cnt_idx += 1
-            words_token = batcher._vocab['words'].to_tokens(bv_w)
-            tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
-            tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
-            tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
-            batcher._seq_len = [len(words_token)]
-            tag_score_mat = batcher.restore(tag_score_mat)
-            if all(tag_score_mat):
-                trees, astar_rank = solve_tree_search(tag_score_mat[0],
-                                        words_token,
-                                        batcher._t_op.no_val_gap,
-                                        self.config['num_goals'],
-                                        self.config['time_out'])
-            else:
-                trees = []
-                astar_rank = []
-            decode_trees.append(trees)
-            astar_ranks.append(astar_rank)
-            with open(self.config['decode_trees_file'], 'ab') as fin:
-                dill.dump(trees, fin)
-            with open(self.config['astar_ranks_file'], 'ab') as fin:
-                dill.dump(astar_rank, fin)
-
-        return decode_trees, astar_ranks
-
-    def stats(self, mode, batcher):
-        import pickle as dill
-        import os
-
-        beams_rank = []
-        beams = []
-
-        bs = BeamSearch(self.config['ntags'],
-                        batcher._vocab['tags'].token_to_id('GO'),
-                        batcher._vocab['tags'].token_to_id('EOS'),
-                        self.config['beam_timesteps'])
-
-        if self.config['use_subset']:
-            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
-        else:
-            subset_idx = None
-
-        if os.path.exists(self.config['beams_file']):
-            with open(self.config['beams_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams.append(dill.load(f))
-                    except EOFError:
-                        break
-
-        if os.path.exists(self.config['beams_rank_file']):
-            with open(self.config['beams_rank_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams_rank.append(dill.load(f))
-                    except EOFError:
-                        break
-
-        s_idx = len(beams_rank)
-
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
-
-            beams.append(bs.beam_search(self.encode_top_state,
-                                        self.decode_topk,
-                                        batcher.process(bv))
-
-            beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],bv['tags'][-1])])
-
-            with open(self.config['beams_file'], 'ab') as f:
-                dill.dump(beams[-1], f)
-
-            with open(self.config['beams_rank_file'], 'ab') as f:
-                dill.dump(beams_rank[-1], f)
-
-        return beams, tags, beams_rank
+    # def _decode(self, batcher):
+    #     import pickle as dill
+    #     import os
+    #
+    #     decode_trees = []
+    #     astar_ranks = []
+    #     s_idx = 0
+    #     if os.path.exists(self.config['decode_trees_file']):
+    #         with open(self.config['decode_trees_file'], 'rb') as f:
+    #             while True:
+    #                 try:
+    #                     decode_trees.append(dill.load(f))
+    #                 except EOFError:
+    #                     break
+    #         s_idx = len(decode_trees)
+    #
+    #     if os.path.exists(self.config['astar_ranks_file']):
+    #         with open(self.config['astar_ranks_file'], 'rb') as f:
+    #             while True:
+    #                 try:
+    #                     astar_ranks.append(dill.load(f))
+    #                 except EOFError:
+    #                     break
+    #
+    #     with open(self.config['beams_file'], 'rb') as fout:
+    #         all_beams = dill.load(fout)
+    #
+    #     len_beam = len(all_beams)
+    #
+    #     cnt_idx = s_idx
+    #     words = batcher._ds['test']['words']
+    #     for bv_w, beams in zip(words[s_idx:], all_beams[s_idx:]):
+    #         print('decode %d/%d' %(cnt_idx,len_beam))
+    #         cnt_idx += 1
+    #         words_token = batcher._vocab['words'].to_tokens(bv_w)
+    #         tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
+    #         tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
+    #         tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
+    #         batcher._seq_len = [len(words_token)]
+    #         tag_score_mat = batcher.restore(tag_score_mat)
+    #         if all(tag_score_mat):
+    #             trees, astar_rank = solve_tree_search(tag_score_mat[0],
+    #                                     words_token,
+    #                                     batcher._t_op.no_val_gap,
+    #                                     self.config['num_goals'],
+    #                                     self.config['time_out'])
+    #         else:
+    #             trees = []
+    #             astar_rank = []
+    #         decode_trees.append(trees)
+    #         astar_ranks.append(astar_rank)
+    #         with open(self.config['decode_trees_file'], 'ab') as fin:
+    #             dill.dump(trees, fin)
+    #         with open(self.config['astar_ranks_file'], 'ab') as fin:
+    #             dill.dump(astar_rank, fin)
+    #
+    #     return decode_trees, astar_ranks
+    #
+    # def stats(self, mode, batcher):
+    #     import pickle as dill
+    #     import os
+    #
+    #     beams_rank = []
+    #     beams = []
+    #
+    #     bs = BeamSearch(self.config['ntags'],
+    #                     batcher._vocab['tags'].token_to_id('GO'),
+    #                     batcher._vocab['tags'].token_to_id('EOS'),
+    #                     self.config['beam_timesteps'])
+    #
+    #     if self.config['use_subset']:
+    #         subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
+    #     else:
+    #         subset_idx = None
+    #
+    #     if os.path.exists(self.config['beams_file']):
+    #         with open(self.config['beams_file'], 'rb') as f:
+    #             while True:
+    #                 try:
+    #                     beams.append(dill.load(f))
+    #                 except EOFError:
+    #                     break
+    #
+    #     if os.path.exists(self.config['beams_rank_file']):
+    #         with open(self.config['beams_rank_file'], 'rb') as f:
+    #             while True:
+    #                 try:
+    #                     beams_rank.append(dill.load(f))
+    #                 except EOFError:
+    #                     break
+    #
+    #     s_idx = len(beams_rank)
+    #
+    #     for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
+    #
+    #         beams.append(bs.beam_search(self.encode_top_state,
+    #                                     self.decode_topk,
+    #                                     batcher.process(bv))
+    #
+    #         beams_rank.append([b.index(t) if t in b else -1 for b,t in zip(beams[-1]['tokens'],bv['tags'][-1])])
+    #
+    #         with open(self.config['beams_file'], 'ab') as f:
+    #             dill.dump(beams[-1], f)
+    #
+    #         with open(self.config['beams_rank_file'], 'ab') as f:
+    #             dill.dump(beams_rank[-1], f)
+    #
+    #     return beams, tags, beams_rank
