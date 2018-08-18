@@ -357,6 +357,7 @@ class STAGModel(BasicModel):
         return topk_ids, topk_probs, states
 
     def decode(self, mode, batcher):
+        import pickle as dill
 
         decode_trees = []
         bs = BeamSearch(self.config['ntags'],
@@ -368,7 +369,7 @@ class STAGModel(BasicModel):
             subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
         else:
             subset_idx = None
-            
+
         for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
@@ -391,6 +392,10 @@ class STAGModel(BasicModel):
                     trees = []
 
                 decode_trees.append(trees)
+
+        with open(config['decode_trees_file'], 'wb') as f:
+            dill.load(decode_trees, f)
+            
         return decode_trees
 
     def _decode(self, batcher):

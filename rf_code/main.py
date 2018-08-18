@@ -90,21 +90,11 @@ def main(_):
             config['n'+k] = batcher._vocab[k].vocab_size()
         model = POSModel(config) if config['pos'] else STAGModel(config)
 
-        # import cProfile
-        # def do_cprofile(func):
-        #     def profiled_func(*args, **kwargs):
-        #         profile = cProfile.Profile()
-        #         try:
-        #             profile.enable()
-        #             result = func(*args, **kwargs)
-        #             profile.disable()
-        #             return result
-        #         finally:
-        #             profile.print_stats()
-        #     return profiled_func
-
         if (config['mode'] == 'train'):
             model.train(batcher)
+
+        elif (config['mode'] == 'test'):
+            decode_trees = model.decode('test', batcher)
 
         elif (config['mode'] == 'stats'):
 
@@ -115,33 +105,14 @@ def main(_):
             beams, tags, beams_rank = model.stats('test', batcher)
             profile.disable()
             profile.print_stats()
-            import pdb; pdb.set_trace()
 
-        elif (config['mode'] == 'test'):
-            # beams, tags, beams_rank = model.decode(batcher)
             decode_trees, astar_ranks = model._decode(batcher)
             with open(config['beams_rank_file'], 'rb') as f:
                 ranks = pickle.load(f)
             ranks_m1 = [[r-1 for r in rank] for rank in ranks]
 
-
-            import pdb; pdb.set_trace()
-
-        elif (config['mode'] == 'decode'):
-            import time
-
-            start_time = time.clock()
-            decode_trees = model.decode('train', batcher)
-            print ("%.3f time" % (time.clock()-start_time))
-
-            with open(config['decode_trees_file'], 'wb') as f:
-                pickle.load(decode_trees, f)
-
-            import pdb; pdb.set_trace()
-
         else:
             pass
-
 
 
 if __name__ == "__main__":
