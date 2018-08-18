@@ -500,6 +500,7 @@ class STAGModel(BasicModel):
 
             beams.append(bs.beam_search(self.encode_top_state, self.decode_topk,
                                         batcher.process(bv)))
+            import pdb; pdb.set_trace()
 
             tags.append(bv['tags'][-1])
 
