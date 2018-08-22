@@ -65,7 +65,33 @@ def main(_):
                     rfile = os.path.join(lb_c_dir, fname.split('.')[0]+'.evalb')
                     os.popen('%s -p %s %s %s > %s' % (evalb, pfile, fin, fout_lb, rfile))
 
-    # elif (config['mode'] == 'train') or (config['mode'] == 'test'):
+    elif(config['mode'] == 'evalb'):
+
+        import pickle
+        tfile = config['decode_trees_file']
+        test = []
+        with open(tfile, 'rb') as tf:
+            while True:
+                try:
+                    test.append(pickle.load(tf))
+                except EOFError:
+                     break
+
+        dfile = os.path.join(config['decode_dir'], 'decode.p')
+        with open(dfile, 'w') as tf:
+            for t in test:
+                try:
+                    tf.write(t[0].from_tree_to_ptb()+'\n')
+                except:
+                    tf.write('\n')
+
+        pdir = '~/Berkeley/Research/Tagger'
+        evalb = os.path.join(pdir, 'EVALB', 'evalb')
+        pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
+        gfile = os.path.join(os.getcwd(),'gold.p')
+        rfile = os.path.join(config['decode_dir'], 'res.eval')
+        os.popen('%s -p %s %s %s > %s' % (evalb, pfile, gfile, dfile, rfile))
+
     else:
         import time
         start_time = time.clock()
