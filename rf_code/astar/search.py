@@ -93,7 +93,7 @@ class Solver(AStar):
         return False
 
 def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
-                        time_th=2. , verbose=1):
+                        time_th, cost_coeff_rate, verbose=1):
 
     tree_score_mat = []
     pos_id = 0
@@ -118,7 +118,8 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
     goal = NodeT(0, max_lid, [])
     # let's solve it
     solve = Solver(tree_score_mat, no_val_gap)
-    paths, max_path = solve.astar(start, goal, num_goals, time_out)
+    paths, max_path = solve.astar(start, goal, num_goals, time_out, time_th,
+                                    cost_coeff_rate)
     trees_res = []
     astar_rank = []
     for path in paths:

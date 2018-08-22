@@ -399,7 +399,9 @@ class STAGModel(BasicModel):
                     trees, _ = solve_tree_search(ts_entry, w_entry,
                                             batcher._t_op.no_val_gap,
                                             self.config['num_goals'],
-                                            self.config['time_out'])
+                                            self.config['time_out'],
+                                            self.config['time_th'],
+                                            self.config['cost_coeff_rate'])
                 else:
                     trees = []
 

@@ -48,6 +48,8 @@ def parse_cmdline():
     parser.add_argument('--beam_size', type=int, default=5, help='')
     parser.add_argument('--beam_timesteps', type=int, default=30, help='')
     parser.add_argument('--time_out', type=float, default=100., help='')
+    parser.add_argument('--time_th', type=float, default=10., help='')
+    parser.add_argument('--cost_coeff_rate', type=float, default=0.5, help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
 
     # parser.add_argument('--load_from_file', type=str, default=None, help='')
@@ -120,5 +122,7 @@ def parse_cmdline():
         config['beam_timesteps'] = args.beam_timesteps
         config['num_goals'] = args.num_goals
         config['time_out'] = args.time_out
+        config['time_th'] = args.time_th
+        config['cost_coeff_rate'] = args.cost_coeff_rate
 
     return config

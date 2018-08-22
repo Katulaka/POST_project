@@ -79,8 +79,8 @@ class AStar:
         else:
             return reversed(list(_gen()))
 
-    def astar(self, start, goal, num_goals, time_out, time_th=10., verbose=1,
-                reverse_path = False):
+    def astar(self, start, goal, num_goals, time_out, time_th,
+                cost_coeff_rate, verbose=1, reverse_path = False):
         current_time = start_time = time.clock()
         cost_coeff = 1.
         searchNodes = AStar.SearchNodeDict()
@@ -97,7 +97,7 @@ class AStar:
         while (time.clock() - start_time < time_out) and openSet and len(goals) < num_goals:
             current = heappop(openSet)
             if (time.clock() - current_time >= time_th):
-                cost_coeff *= 0.5
+                cost_coeff *= cost_coeff_rate
                 for t in openSet:
                     t.fscore = self.real_cost(t.data) \
                             + self.heuristic_cost(t.data, goal, cost_coeff)
