@@ -3,7 +3,6 @@ import os
 import pickle
 
 from parse_cmdline import parse_cmdline
-# from dataset import Dataset
 from batcher import Batcher
 
 from tree_t import gen_aug_tags
@@ -67,7 +66,6 @@ def main(_):
 
     elif(config['mode'] == 'evalb'):
 
-        import pickle
         tfile = config['decode_trees_file']
         test = []
         with open(tfile, 'rb') as tf:
