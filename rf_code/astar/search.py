@@ -75,13 +75,11 @@ class Solver(AStar):
                 neighbors.append(nb_node)
         for nb in self.cl.getl(node.rid):
             nb_node = NodeT(nb.rid, node.lid, nb.rank+node.rank, nb.tree + node.tree)
-            # if nb_node.is_valid(self.ts_mat[nb_node.rid][nb_node.rank[0]].tree, self.miss_tag_any) and nb_node not in self.seen:
             if nb_node.is_valid(self.ts_mat[nb_node.rid][nb_node.rank[0]]['tree'], self.miss_tag_any) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
         if len(node.rank) == 1 and node.rank[0] < len(self.ts_mat[node.rid]) - 1:
             nb_node = NodeT(node.rid, node.lid, [node.rank[0] + 1])
-            # if nb_node.is_valid(self.ts_mat[nb_node.rid][nb_node.rank[0]].tree, self.miss_tag_any) and nb_node not in self.seen:
             if nb_node.is_valid(self.ts_mat[nb_node.rid][nb_node.rank[0]]['tree'], self.miss_tag_any) and nb_node not in self.seen:
                 self.seen.append(nb_node)
                 neighbors.append(nb_node)
@@ -97,7 +95,6 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
 
     tree_score_mat = []
     pos_id = 0
-    # import pdb; pdb.set_trace()
     for tag_score_row, word in zip(tag_score_mat, words):
         tree_score_row = []
         for tag, score in tag_score_row:
@@ -108,10 +105,6 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
             return []
         tree_score_mat.append(tree_score_row)
 
-    # import pdb; pdb.set_trace()
-    # ts_mat = convert_to_TreeTS(tag_score_mat, words)
-    # if any([t == [] for t in ts_mat]):
-    #     return []
     max_lid = len(tree_score_mat)
     max_rank = max([len(t) for t in tree_score_mat])
     start = [NodeT(idx, idx+1, [0]) for idx in range(max_lid)]
@@ -126,9 +119,4 @@ def solve_tree_search(tag_score_mat, words, no_val_gap, num_goals, time_out,
         path = list(path)[-1]
         trees_res.append(path.tree[0])
         astar_rank.append(path.rank)
-        # pattern = np.concatenate(([np.ones(max_lid, dtype=int)],np.zeros((max_rank-1,max_lid), dtype=int)))
-        # for s in solve.seen :
-        #     pattern[s.rank, range(*s.idx)] += 1
-        # patterns.append(pattern)
-    # return trees_res, patterns
     return trees_res, astar_rank
