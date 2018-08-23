@@ -368,6 +368,7 @@ class STAGModel(BasicModel):
                         decode_trees.append(dill.load(f))
                     except EOFError:
                         break
+        print(len(decode_trees))
 
         beams = []
         if os.path.exists(self.config['beams_file']):
