@@ -13,6 +13,7 @@ from astar.search import solve_tree_search
 class STAGModel(BasicModel):
 
     def __init__ (self, config):
+        import pdb; pdb.set_trace()
         BasicModel.__init__(self, config)
         self.initializer = tf.contrib.layers.xavier_initializer()
         self.init_op = tf.global_variables_initializer()
@@ -23,7 +24,6 @@ class STAGModel(BasicModel):
             self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
         else:
             self.cell = tf.contrib.rnn.BasicLSTMCell
-        import pdb; pdb.set_trace()
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
