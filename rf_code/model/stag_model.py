@@ -216,17 +216,16 @@ class STAGModel(BasicModel):
 
         with tf.variable_scope("loss"):
             targets_1hot = tf.one_hot(self.targets, self.config['ntags'])
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                                                    logits=self.logits,
-                                                    labels=targets_1hot)
+            # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            #                                         logits=self.logits,
+            #                                         labels=targets_1hot)
+            # self.loss = tf.reduce_mean(cross_entropy)
 
-            # cross_entropy = tf.losses.softmax_cross_entropy(
-            #                                     logits=self.logits,
-            #                                     onehot_labels=targets_1hot,
-            #                                     label_smoothing=0)
-
-            self.loss = tf.reduce_mean(cross_entropy)
-
+            self.loss = tf.losses.softmax_cross_entropy(
+                                logits=self.logits,
+                                onehot_labels=targets_1hot,
+                                label_smoothing=self.config['label_smoothing'],
+                                reduction=Reduction.MEAN)
 
     def _add_train_op(self):
         self.lr = tf.Variable(float(self.config['lr']), trainable=False,

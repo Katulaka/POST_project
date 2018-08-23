@@ -18,6 +18,7 @@ def parse_cmdline():
 
     parser.add_argument('--num_epochs', default=1, type=int)
     parser.add_argument('--lr', default=0.001, type=float)
+    parser.add_argument('--label_smoothing', default=0., type=float)
     parser.add_argument('--steps_per_ckpt', default=0, type=int)
     parser.add_argument('--grad_clip', action='store_true', help='')
     parser.add_argument('--grad_norm', default=5.0, type=float)
@@ -116,6 +117,7 @@ def parse_cmdline():
 
     if config['mode'] == 'train':
         config['lr'] = args.lr
+        config['label_smoothing'] = args.label_smoothing
         config['opt_fn'] = args.opt_fn
         config['num_epochs'] = args.num_epochs
         config['steps_per_ckpt'] = args.steps_per_ckpt
