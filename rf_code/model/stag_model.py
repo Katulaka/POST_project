@@ -19,6 +19,10 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
             self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
+        if self.config['layer_norm']:
+            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
+        else:
+            self.cell = tf.contrib.rnn.BasicLSTMCell
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
@@ -68,17 +72,14 @@ class STAGModel(BasicModel):
 
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
-            char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
+            # char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
+             char_cell = self.cell(self.config['hidden_char'])
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
                                             sequence_length=self.char_len,
                                             dtype=self.dtype,
                                             scope='char-lstm')
-
-            # char_out = tf.layers.dense(ch_state[1], self.config['dim_word'],
-            #                             use_bias=False)
-            # char_out_reshape =  tf.reshape(char_out, tf.shape(self.word_embed))
 
             ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
                                     name='char-lstm-dropout')
@@ -101,8 +102,10 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
-            word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
+            # word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
+            # word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
+            word_cell_fw = self.cell(self.config['hidden_word'])
+            word_cell_bw = self.cell(self.config['hidden_word'])
             # Get lstm cell output
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
@@ -139,7 +142,8 @@ class STAGModel(BasicModel):
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            tag_cell = tf.contrib.rnn.BasicLSTMCell(self.c_dim)
+            # tag_cell = tf.contrib.rnn.BasicLSTMCell(self.c_dim)
+            tag_cell = self.cell(self.c_dim)
 
             decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
