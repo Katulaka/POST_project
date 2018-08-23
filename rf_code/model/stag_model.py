@@ -369,15 +369,14 @@ class STAGModel(BasicModel):
                     except EOFError:
                         break
 
-        import pdb; pdb.set_trace()
-        beams = []
-        if os.path.exists(self.config['beams_file']):
-            with open(self.config['beams_file'], 'rb') as f:
-                while True:
-                    try:
-                        beams.append(dill.load(f))
-                    except EOFError:
-                        break
+        # beams = []
+        # if os.path.exists(self.config['beams_file']):
+        #     with open(self.config['beams_file'], 'rb') as f:
+        #         while True:
+        #             try:
+        #                 beams.append(dill.load(f))
+        #             except EOFError:
+        #                 break
 
         s_idx = len(decode_trees)
 
@@ -396,13 +395,13 @@ class STAGModel(BasicModel):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 
-            beams.append(bs.beam_search(self.encode_top_state,
+            beams = bs.beam_search(self.encode_top_state,
                                         self.decode_topk,
-                                        batcher.process(bv)))
+                                        batcher.process(bv))
 
-            tags = batcher._vocab['tags'].to_tokens(beams[-1]['tokens'])
+            tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
-            tag_score_mat = map(lambda x, y: zip(x, y), tags, beams[-1]['scores'])
+            tag_score_mat = map(lambda x, y: zip(x, y), tags, beams['scores'])
             tag_score_mat = batcher.restore(tag_score_mat)
             for ts_entry, w_entry in zip(tag_score_mat, words_token):
                 if all(tag_score_mat):
@@ -419,8 +418,8 @@ class STAGModel(BasicModel):
 
             with open(self.config['decode_trees_file'], 'ab') as f:
                 dill.dump(trees, f)
-            with open(self.config['beams_file'], 'ab') as f:
-                dill.dump(beams, f)
+            # with open(self.config['beams_file'], 'ab') as f:
+            #     dill.dump(beams, f)
 
         return decode_trees
 
