@@ -19,7 +19,7 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
             self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
-        
+
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
@@ -196,6 +196,12 @@ class STAGModel(BasicModel):
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                                                     logits=self.logits,
                                                     labels=targets_1hot)
+
+            # cross_entropy = tf.losses.softmax_cross_entropy(
+            #                                     logits=self.logits,
+            #                                     onehot_labels=targets_1hot,
+            #                                     label_smoothing=0)
+
             self.loss = tf.reduce_mean(cross_entropy)
 
 
