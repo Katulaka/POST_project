@@ -75,7 +75,12 @@ def main(_):
                 except EOFError:
                      break
 
-        dfile = os.path.join(config['decode_dir'], 'decode.p')
+        # import pdb; pdb.set_trace()
+        time_out = config['time_out']
+        time_th = config['time_th']
+        cost_coeff_rate = config['cost_coeff_rate']
+        decode_fname = 'decode_to_%.2f_tt_%.2f_ccr_%.2f.p' %(time_out, time_th, cost_coeff_rate)
+        dfile = os.path.join(config['decode_dir'], decode_fname)
         with open(dfile, 'w') as tf:
             for t in test:
                 try:
@@ -87,7 +92,8 @@ def main(_):
         evalb = os.path.join(pdir, 'EVALB', 'evalb')
         pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
         gfile = os.path.join(os.getcwd(),'gold.p')
-        rfile = os.path.join(config['decode_dir'], 'res.eval')
+        res_fname = 'res_to_%.2f_tt_%.2f_ccr_%.2f.eval' %(time_out, time_th, cost_coeff_rate)
+        rfile = os.path.join(config['decode_dir'], res_fname)
         os.popen('%s -p %s %s %s > %s' % (evalb, pfile, gfile, dfile, rfile))
 
     else:
