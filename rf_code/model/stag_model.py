@@ -39,8 +39,11 @@ class STAGModel(BasicModel):
             self.tag_len = tf.placeholder(tf.int32, [None], 'tag-seq-len')
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
-            #dropout rate 0-char 1-word 2-tag
-            self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
+            #dropout rate
+            # self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
+            self.drop_rate = tf.placeholder(tf.float32, shape=(), name="drop-rate")
+            self.is_train = tf.placeholder(tf.bool, shape=(), name="is-train")
+
 
 
     def _add_embeddings(self):
@@ -49,27 +52,38 @@ class STAGModel(BasicModel):
 
             ch_mat_shape = [self.config['nchars'], self.config['dim_char']]
             ch_embed_mat = tf.get_variable('ch-embed-mat', shape=ch_mat_shape)
-            self.char_embed = tf.nn.embedding_lookup(ch_embed_mat, self.char_in,
+            char_embed = tf.nn.embedding_lookup(ch_embed_mat, self.char_in,
                                                     name='char-embed')
+            self.char_embed = tf.layers.dropout(char_embed, self.drop_rate,
+                                                    training = self.is_train,
+                                                    name='char-embed-dropout')
 
             w_mat_shape = [self.config['nwords'], self.config['dim_word']]
             w_embed_mat = tf.get_variable('word-embed-mat', shape=w_mat_shape)
-            self.word_embed = tf.nn.embedding_lookup(w_embed_mat, self.w_in,
+            word_embed = tf.nn.embedding_lookup(w_embed_mat, self.w_in,
                                                     name='word-embed')
+            self.word_embed = tf.layers.dropout(word_embed, self.drop_rate,
+                                                    training = self.is_train,
+                                                    name='word-embed-dropout')
 
             t_mat_shape = [self.config['ntags'], self.config['dim_tag']]
             t_embed_mat = tf.get_variable('tag-embed-mat', shape=t_mat_shape)
-            self.tag_embed = tf.nn.embedding_lookup(t_embed_mat, self.t_in,
+            tag_embed = tf.nn.embedding_lookup(t_embed_mat, self.t_in,
                                                     name='tag-embed')
+            self.tag_embed = tf.layers.dropout(tag_embed, self.drop_rate,
+                                                    training = self.is_train,
+                                                    name='tag-embed-dropout')
 
             pos_mat_shape = [self.config['npos'], self.config['dim_pos']]
             pos_embed_mat = tf.get_variable('pos-embed-mat', shape=pos_mat_shape)
-            self.pos_embed = tf.nn.embedding_lookup(pos_embed_mat, self.pos_in,
+            pos_embed = tf.nn.embedding_lookup(pos_embed_mat, self.pos_in,
                                                     name='pos-embed')
+            self.pos_embed = tf.layers.dropout(pos_embed, self.drop_rate,
+                                            training = self.is_train,
+                                            name='pos-embed-dropout')
 
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
-            # char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
             char_cell = self.cell(self.config['hidden_char'])
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
@@ -78,12 +92,15 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
-                                    name='char-lstm-dropout')
+            # ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
+            #                         name='char-lstm-dropout')
+
+            ch_state_drop = tf.layers.dropout(ch_state[1], self.drop_rate,
+                                            training = self.is_train,
+                                            name='char-lstm-dropout')
 
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
-            # char_out_reshape = tf.reshape(ch_state[1], co_shape)
             char_out_reshape = tf.reshape(ch_state_drop, co_shape)
 
             self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
@@ -113,9 +130,12 @@ class STAGModel(BasicModel):
                                                 dtype=self.dtype)
 
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
-            w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
-                                            self.keep_prob,
-                                            name='word-lstm-dropout')
+            # w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
+            #                                 self.keep_prob,
+            #                                 name='word-lstm-dropout')
+            w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
+                                                training = self.is_train,
+                                                name='word-lstm-dropout')
 
             self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
@@ -139,7 +159,6 @@ class STAGModel(BasicModel):
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            # tag_cell = tf.contrib.rnn.BasicLSTMCell(self.c_dim)
             tag_cell = self.cell(self.c_dim)
 
             decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
@@ -148,8 +167,12 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
-                                            name='tag-lstm-dropout')
+            # self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
+            #                                 name='tag-lstm-dropout')
+
+            self.decode_out = tf.layers.dropout(decode_out, self.drop_rate,
+                                                training = self.is_train,
+                                                name='tag-lstm-dropout')
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
@@ -265,7 +288,7 @@ class STAGModel(BasicModel):
                 out = self.pos_g.get_tensor_by_name(op.name+':0')
         return self.pos_sess.run(out, input_feed)
 
-    def step(self, bv, output_feed, dev=False):
+    def step(self, bv, output_feed, is_train=False):
         """ Training step, returns the loss"""
         input_feed = {
             self.w_in: bv['word']['in'],
@@ -276,12 +299,14 @@ class STAGModel(BasicModel):
             self.t_in: bv['tag']['in'],
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out'],
-            self.keep_prob: self.config['keep_prob']}
+            # self.keep_prob: self.config['keep_prob']}
+            self.drop_rate: self.config['drop_rate'],
+            self.is_train : is_train}
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        if dev:
-            input_feed[self.keep_prob] = 1.0
+        # if dev:
+        #     input_feed[self.keep_prob] = 1.0
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -304,7 +329,7 @@ class STAGModel(BasicModel):
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
                 output_feed = [self.loss, t_loss, self.optimizer]
-                step_loss, summary_loss, _ = self.step(input_feed, output_feed)
+                step_loss, summary_loss, _ = self.step(input_feed, output_feed, True)
                 loss.append(step_loss)
                 summary_writer.add_summary(summary_loss, current_step)
                 current_step += 1
@@ -317,7 +342,7 @@ class STAGModel(BasicModel):
             summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
             summary_writer.add_summary(summary, current_epoch)
 
-            mean_loss = np.mean([self.step(batcher.process(bv), self.loss, dev=True)
+            mean_loss = np.mean([self.step(batcher.process(bv), self.loss, False)
             for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
@@ -343,7 +368,8 @@ class STAGModel(BasicModel):
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
                         self.pos_in: enc_bv['pos']['in'],
-                        self.keep_prob: 1.0}
+                        self.drop_rate: self.config['drop_rate'],
+                        self.is_train : False}
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(enc_bv)
         output_feed = self.encode_state
@@ -356,7 +382,8 @@ class STAGModel(BasicModel):
             self.t_in: np.array(latest_tokens),
             self.encode_state : enc_state,
             self.tag_len: np.ones(len(latest_tokens), np.int32),
-            self.keep_prob: 1.0}
+            self.drop_rate: self.config['drop_rate'],
+            self.is_train : False}
         output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
         topk_ids = np.array([np.argsort(np.squeeze(p))[-k:] for p in probs])
