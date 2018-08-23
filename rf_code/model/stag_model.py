@@ -225,7 +225,7 @@ class STAGModel(BasicModel):
                                 logits=self.logits,
                                 onehot_labels=targets_1hot,
                                 label_smoothing=self.config['label_smoothing'],
-                                reduction=MEAN)
+                                reduction=tf.losses.Reduction.MEAN)
 
     def _add_train_op(self):
         self.lr = tf.Variable(float(self.config['lr']), trainable=False,
