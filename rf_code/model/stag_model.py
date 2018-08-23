@@ -19,10 +19,7 @@ class STAGModel(BasicModel):
         if self.config['use_pretrained_pos']:
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
             self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
-        if self.config['layer_norm']:
-            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
-        else:
-            self.cell = tf.contrib.rnn.BasicLSTMCell
+        
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):

@@ -73,6 +73,10 @@ class BasicModel(object):
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
         import pdb; pdb.set_trace()
+        if self.config['layer_norm']:
+            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
+        else:
+            self.cell = tf.contrib.rnn.BasicLSTMCell
         self.init()
 
         # def set_agent_props(self):
