@@ -20,9 +20,9 @@ class STAGModel(BasicModel):
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
             self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
         if self.config['layer_norm']:
-            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell()
+            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
         else:
-            self.cell = tf.contrib.rnn.BasicLSTMCell()
+            self.cell = tf.contrib.rnn.BasicLSTMCell
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
@@ -73,7 +73,7 @@ class STAGModel(BasicModel):
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
             # char_cell = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_char'])
-             char_cell = self.cell(self.config['hidden_char'])
+            char_cell = self.cell(self.config['hidden_char'])
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
