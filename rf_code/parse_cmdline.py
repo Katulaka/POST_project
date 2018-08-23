@@ -107,7 +107,8 @@ def parse_cmdline():
     config['hidden_tag'] = args.h_tag
 
     #model arch
-    config['keep_prob'] = args.keep_prob
+    # config['keep_prob'] = args.keep_prob
+    config['drop_rate'] = args.drop_rate
     config['no_c_embed'] = args.no_c_embed
     config['no_attn'] = args.no_attn
     config['layer_norm'] = args.layer_norm
