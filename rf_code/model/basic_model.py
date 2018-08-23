@@ -72,7 +72,7 @@ class BasicModel(object):
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
-
+        import pdb; pdb.set_trace()
         self.init()
 
         # def set_agent_props(self):

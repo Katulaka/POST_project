@@ -13,7 +13,6 @@ from astar.search import solve_tree_search
 class STAGModel(BasicModel):
 
     def __init__ (self, config):
-        import pdb; pdb.set_trace()
         BasicModel.__init__(self, config)
         self.initializer = tf.contrib.layers.xavier_initializer()
         self.init_op = tf.global_variables_initializer()
