@@ -23,6 +23,7 @@ class STAGModel(BasicModel):
             self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
         else:
             self.cell = tf.contrib.rnn.BasicLSTMCell
+        import pdb; pdb.set_trace()
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
