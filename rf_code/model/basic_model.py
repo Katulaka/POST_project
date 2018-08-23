@@ -46,6 +46,11 @@ class BasicModel(object):
         self.result_dir = self.config['result_dir']
         self.ckpt_dir = self.config['ckpt_dir']
 
+        if self.config['layer_norm']:
+            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
+        else:
+            self.cell = tf.contrib.rnn.BasicLSTMCell
+
         self.graph = self.build_graph()
 
         total_parameters = 0
@@ -58,9 +63,6 @@ class BasicModel(object):
         print('[[basic_model.init]] There are %d trainable parameters in model' %total_parameters)
 
         with self.graph.as_default():
-            # all_variables = [k for k in tf.global_variables()
-            #                 if k.name.startswith(self.config['scope_name'])]
-            # self.saver = tf.train.Saver(all_variables, max_to_keep=4)
             self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
 
@@ -72,11 +74,7 @@ class BasicModel(object):
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
-        import pdb; pdb.set_trace()
-        if self.config['layer_norm']:
-            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
-        else:
-            self.cell = tf.contrib.rnn.BasicLSTMCell
+
         self.init()
 
         # def set_agent_props(self):
