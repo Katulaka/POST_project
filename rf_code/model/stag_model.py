@@ -40,9 +40,8 @@ class STAGModel(BasicModel):
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
             #dropout rate
-            # self.keep_prob = tf.placeholder(tf.float32, shape=(), name="keep-prob")
-            self.drop_rate = tf.placeholder(tf.float32, shape=(), name="drop-rate")
-            self.is_train = tf.placeholder(tf.bool, shape=(), name="is-train")
+            self.drop_rate = tf.placeholder(tf.float32, shape=(), name='drop-rate')
+            self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
 
 
@@ -92,9 +91,6 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            # ch_state_drop = tf.nn.dropout(ch_state[1], self.keep_prob,
-            #                         name='char-lstm-dropout')
-
             ch_state_drop = tf.layers.dropout(ch_state[1], self.drop_rate,
                                             training = self.is_train,
                                             name='char-lstm-dropout')
@@ -116,8 +112,6 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            # word_cell_fw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
-            # word_cell_bw = tf.contrib.rnn.BasicLSTMCell(self.config['hidden_word'])
             word_cell_fw = self.cell(self.config['hidden_word'])
             word_cell_bw = self.cell(self.config['hidden_word'])
             # Get lstm cell output
@@ -130,9 +124,6 @@ class STAGModel(BasicModel):
                                                 dtype=self.dtype)
 
             w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
-            # w_bidi_out_drop = tf.nn.dropout(w_bidi_out_c,
-            #                                 self.keep_prob,
-            #                                 name='word-lstm-dropout')
             w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
                                                 training = self.is_train,
                                                 name='word-lstm-dropout')
@@ -298,14 +289,11 @@ class STAGModel(BasicModel):
             self.t_in: bv['tag']['in'],
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out'],
-            # self.keep_prob: self.config['keep_prob']}
             self.drop_rate: self.config['drop_rate'],
             self.is_train : is_train}
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        # if dev:
-        #     input_feed[self.keep_prob] = 1.0
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
