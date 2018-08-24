@@ -379,8 +379,13 @@ class STAGModel(BasicModel):
         import pickle as dill
         import os
 
-        # if not os.path.exists(self.config['decode_dir']):
-        import pdb; pdb.set_trace()    
+        if not os.path.exists(self.config['decode_dir']):
+            try:
+                os.makedirs(self.config['decode_dir'])
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        import pdb; pdb.set_trace()
 
         decode_trees = []
         if os.path.exists(self.config['decode_trees_file']):
