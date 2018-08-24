@@ -385,7 +385,6 @@ class STAGModel(BasicModel):
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
-        import pdb; pdb.set_trace()
 
         decode_trees = []
         if os.path.exists(self.config['decode_trees_file']):
