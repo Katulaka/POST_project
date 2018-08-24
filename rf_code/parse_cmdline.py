@@ -2,10 +2,6 @@ import argparse
 import os
 import numpy as np
 
-# import time
-# import tensorflow as tf
-
-
 def parse_cmdline():
     # np.random.seed(int(time.time()))
 
