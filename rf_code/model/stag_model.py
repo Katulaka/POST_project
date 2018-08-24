@@ -158,9 +158,6 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            # self.decode_out = tf.nn.dropout(decode_out, self.keep_prob,
-            #                                 name='tag-lstm-dropout')
-
             self.decode_out = tf.layers.dropout(decode_out, self.drop_rate,
                                                 training = self.is_train,
                                                 name='tag-lstm-dropout')
