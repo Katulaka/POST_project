@@ -253,7 +253,8 @@ class STAGModel(BasicModel):
                     else:
                         self._add_attention()
                     self._add_projection()
-                    self._add_loss()
+                    if (self.config['mode'] != 'test'):
+                        self._add_loss()
                     if (self.config['mode'] == 'train'):
                         self._add_train_op()
             return g
