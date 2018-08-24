@@ -379,6 +379,9 @@ class STAGModel(BasicModel):
         import pickle as dill
         import os
 
+        # if not os.path.exists(self.config['decode_dir']):
+        import pdb; pdb.set_trace()    
+
         decode_trees = []
         if os.path.exists(self.config['decode_trees_file']):
             with open(self.config['decode_trees_file'], 'rb') as f:
