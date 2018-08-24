@@ -394,7 +394,7 @@ class STAGModel(BasicModel):
                         decode_trees.append(dill.load(f))
                     except EOFError:
                         break
-
+        import pdb; pdb.set_trace()
         # beams = []
         # if os.path.exists(self.config['beams_file']):
         #     with open(self.config['beams_file'], 'rb') as f:
