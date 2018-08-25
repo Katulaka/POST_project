@@ -128,10 +128,10 @@ class BasicModel(object):
         return _cell
 
     def _multi_cell(self, nhidden, dropout, is_training, n_layers):
-        _cells = [_single_cell(nhidden, dropout, is_training)]
+        _cells = [self._single_cell(nhidden, dropout, is_training)]
         for _ in range(1,n_layers):
             _cells.append(tf.contrib.rnn.ResidualWrapper(
-                _single_cell(nhidden, dropout, is_training)))
+                self._single_cell(nhidden, dropout, is_training)))
         _cell = tf.contrib.rnn.MultiRNNCell(_cells)
         return _cell
 
