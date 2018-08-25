@@ -34,7 +34,7 @@ def parse_cmdline():
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--layer_norm', action='store_true', help='')
-    parser.add_argument('--affine', action='store_true', help='')
+    # parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch_size', type=int, default=32, help='')
     parser.add_argument('--batch_file', type=str, default='batch.pkl', help='')
@@ -107,7 +107,7 @@ def parse_cmdline():
     config['no_c_embed'] = args.no_c_embed
     config['no_attn'] = args.no_attn
     config['layer_norm'] = args.layer_norm
-    config['affine'] = args.affine
+    # config['affine'] = args.affine
 
     if config['mode'] == 'train':
         config['lr'] = args.lr

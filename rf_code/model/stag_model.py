@@ -157,21 +157,22 @@ class STAGModel(BasicModel):
             # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
             #                                     training = self.is_train,
             #                                     name='word-lstm-dropout')
-            w_bidi_out_drop = w_bidi_out_c
+            # w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
-            self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
-
-    def _no_affine_trans(self):
-        with tf.variable_scope('no-affine'):
-            self.encode_state = self.w_bidi_in_out
+            self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             self.c_dim += self.config['dim_pos'] + 2*self.config['hidden_word']
 
-    def _affine_trans(self):
-        with tf.variable_scope('affine'):
-            self.encode_state = tf.layers.dense(self.w_bidi_in_out,
-                                                self.config['hidden_tag'],
-                                                use_bias=True)
-            self.c_dim = self.config['hidden_tag']
+    # def _no_affine_trans(self):
+    #     with tf.variable_scope('no-affine'):
+    #         self.encode_state = self.w_bidi_in_out
+    #         self.c_dim += self.config['dim_pos'] + 2*self.config['hidden_word']
+    #
+    # def _affine_trans(self):
+    #     with tf.variable_scope('affine'):
+    #         self.encode_state = tf.layers.dense(self.w_bidi_in_out,
+    #                                             self.config['hidden_tag'],
+    #                                             use_bias=True)
+    #         self.c_dim = self.config['hidden_tag']
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
@@ -277,10 +278,10 @@ class STAGModel(BasicModel):
                     else:
                         self._add_char_lstm()
                     self._add_word_bidi_lstm()
-                    if self.config['affine']:
-                        self._affine_trans()
-                    else:
-                        self._no_affine_trans()
+                    # if self.config['affine']:
+                    #     self._affine_trans()
+                    # else:
+                    #     self._no_affine_trans()
                     self._add_tag_lstm_layer()
                     if self.config['no_attn']:
                         self.proj_in = self.decode_out
