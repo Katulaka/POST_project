@@ -84,7 +84,7 @@ class STAGModel(BasicModel):
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
             # char_cell = self.cell(self.config['hidden_char'])
-             char_cell = self._single_cell(self.config['hidden_char'],
+            char_cell = self._single_cell(self.config['hidden_char'],
                                             self.drop_rate,
                                             self.is_train)
 
