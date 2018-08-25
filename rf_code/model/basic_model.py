@@ -132,8 +132,7 @@ class BasicModel(object):
         for _ in range(1,n_layers):
             _cells.append(tf.contrib.rnn.ResidualWrapper(
                 self._single_cell(nhidden, dropout, is_training)))
-        _cell = tf.contrib.rnn.MultiRNNCell(_cells)
-        return _cell
+        return _cells
 
     def save(self):
     # This function is usually common to all your models, Here is an example:

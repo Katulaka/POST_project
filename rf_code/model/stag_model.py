@@ -127,33 +127,24 @@ class STAGModel(BasicModel):
                                             self.is_train,
                                             n_layers)
 
-            # word_cells_fw = [self.cell(self.config['hidden_word'])]
-            # for _ in range(1,n_layers):
-            #     word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
-            #         self.cell(self.config['hidden_word'])))
-            # word_cell_fw = tf.contrib.rnn.MultiRNNCell(word_cells_fw)
-            #
-            # word_cells_bw = [self.cell(self.config['hidden_word'])]
-            # for _ in range(1,n_layers):
-            #     word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
-            #         self.cell(self.config['hidden_word'])))
-            # word_cell_bw = tf.contrib.rnn.MultiRNNCell(word_cells_bw)
-
-
-
-            # word_cell_fw = self.cell(self.config['hidden_word'])
-            # word_cell_bw = self.cell(self.config['hidden_word'])
-            # Get lstm cell output
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
-            w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
+
+            # Get lstm cell output
+            self.w_bidi_out , _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
                                                 word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
-                                                sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
+            # w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
+            #                         tf.contrib.rnn.MultiRNNCell(word_cell_fw),
+            #                         tf.contrib.rnn.MultiRNNCell(word_cell_bw),
+            #                         w_bidi_in,
+            #                         sequence_length=self.word_len,
+            #                         dtype=self.dtype)
+
+            w_bidi_out_c = tf.concat(self.w_bidi_out , -1, name='word-bidi-out')
             # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
             #                                     training = self.is_train,
             #                                     name='word-lstm-dropout')
@@ -240,10 +231,6 @@ class STAGModel(BasicModel):
 
         with tf.variable_scope("loss"):
             targets_1hot = tf.one_hot(self.targets, self.config['ntags'])
-            # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            #                                         logits=self.logits,
-            #                                         labels=targets_1hot)
-            # self.loss = tf.reduce_mean(cross_entropy)
 
             self.loss = tf.losses.softmax_cross_entropy(
                                 logits=self.logits,
@@ -327,6 +314,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
