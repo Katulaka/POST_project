@@ -114,13 +114,13 @@ class STAGModel(BasicModel):
             # Forward and Backward direction cell
             n_layers = 2
             word_cells_fw = [self.cell(self.config['hidden_word'])]
-            for _ in range(1:n_layers):
+            for _ in range(1,n_layers):
                 word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
                     self.cell(self.config['hidden_word'])))
             word_cell_fw = tf.contrib.rnn.MultiRNNCell(word_cells_fw)
 
             word_cells_bw = [self.cell(self.config['hidden_word'])]
-            for _ in range(1:n_layers):
+            for _ in range(1,n_layers):
                 word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
                     self.cell(self.config['hidden_word'])))
             word_cell_bw = tf.contrib.rnn.MultiRNNCell(word_cells_bw)
