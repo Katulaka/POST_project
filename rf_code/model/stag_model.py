@@ -113,17 +113,17 @@ class STAGModel(BasicModel):
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
             n_layers = 3
-            word_cells_fw = [self.cell(self.config['hidden_word'])]
+            self.word_cells_fw = [self.cell(self.config['hidden_word'])]
             for _ in range(1,n_layers):
-                word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
+                self.word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
                     self.cell(self.config['hidden_word'])))
-            word_cell_fw = tf.contrib.rnn.MultiRNNCell(word_cells_fw)
+            self.word_cell_fw = tf.contrib.rnn.MultiRNNCell(word_cells_fw)
 
-            word_cells_bw = [self.cell(self.config['hidden_word'])]
+            self.word_cells_bw = [self.cell(self.config['hidden_word'])]
             for _ in range(1,n_layers):
-                word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
+                self.word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
                     self.cell(self.config['hidden_word'])))
-            word_cell_bw = tf.contrib.rnn.MultiRNNCell(word_cells_bw)
+            self.word_cell_bw = tf.contrib.rnn.MultiRNNCell(word_cells_bw)
 
             # word_cell_fw = self.cell(self.config['hidden_word'])
             # word_cell_bw = self.cell(self.config['hidden_word'])
