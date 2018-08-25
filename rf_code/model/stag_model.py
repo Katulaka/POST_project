@@ -130,7 +130,7 @@ class STAGModel(BasicModel):
             # Get lstm cell output
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
-            self.w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
+            self.w_bidi_out , self.w_bidi_state = tf.nn.bidirectional_dynamic_rnn(word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
                                                 sequence_length=self.word_len,
