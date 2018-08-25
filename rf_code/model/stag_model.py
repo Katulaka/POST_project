@@ -83,7 +83,10 @@ class STAGModel(BasicModel):
 
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
-            char_cell = self.cell(self.config['hidden_char'])
+            # char_cell = self.cell(self.config['hidden_char'])
+             char_cell = self._single_cell(self.config['hidden_char'],
+                                            self.drop_rate,
+                                            self.is_train)
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
                                             self.char_embed,
@@ -91,9 +94,10 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            ch_state_drop = tf.layers.dropout(ch_state[1], self.drop_rate,
-                                            training = self.is_train,
-                                            name='char-lstm-dropout')
+            # ch_state_drop = tf.layers.dropout(ch_state[1], self.drop_rate,
+            #                                 training = self.is_train,
+            #                                 name='char-lstm-dropout')
+            ch_state_drop = ch_state[1]
 
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
@@ -112,34 +116,48 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            n_layers = 3
-            self.word_cells_fw = [self.cell(self.config['hidden_word'])]
-            for _ in range(1,n_layers):
-                self.word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
-                    self.cell(self.config['hidden_word'])))
-            self.word_cell_fw = tf.contrib.rnn.MultiRNNCell(self.word_cells_fw)
+            n_layers = 2
 
-            self.word_cells_bw = [self.cell(self.config['hidden_word'])]
-            for _ in range(1,n_layers):
-                self.word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
-                    self.cell(self.config['hidden_word'])))
-            self.word_cell_bw = tf.contrib.rnn.MultiRNNCell(self.word_cells_bw)
+            word_cell_fw = self._multi_cell(self.config['hidden_word'],
+                                            self.drop_rate,
+                                            self.is_train,
+                                            n_layers)
+            word_cell_bw = self._multi_cell(self.config['hidden_word'],
+                                            self.drop_rate,
+                                            self.is_train,
+                                            n_layers)
+
+            # word_cells_fw = [self.cell(self.config['hidden_word'])]
+            # for _ in range(1,n_layers):
+            #     word_cells_fw.append(tf.contrib.rnn.ResidualWrapper(
+            #         self.cell(self.config['hidden_word'])))
+            # word_cell_fw = tf.contrib.rnn.MultiRNNCell(word_cells_fw)
+            #
+            # word_cells_bw = [self.cell(self.config['hidden_word'])]
+            # for _ in range(1,n_layers):
+            #     word_cells_bw.append(tf.contrib.rnn.ResidualWrapper(
+            #         self.cell(self.config['hidden_word'])))
+            # word_cell_bw = tf.contrib.rnn.MultiRNNCell(word_cells_bw)
+
+
 
             # word_cell_fw = self.cell(self.config['hidden_word'])
             # word_cell_bw = self.cell(self.config['hidden_word'])
             # Get lstm cell output
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
-            self.w_bidi_out , self.w_bidi_state = tf.nn.bidirectional_dynamic_rnn(self.word_cell_fw,
-                                                self.word_cell_bw,
+            w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
+                                                word_cell_fw,
+                                                word_cell_bw,
                                                 w_bidi_in,
                                                 sequence_length=self.word_len,
                                                 dtype=self.dtype)
 
-            w_bidi_out_c = tf.concat(self.w_bidi_out , -1, name='word-bidi-out')
-            w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
-                                                training = self.is_train,
-                                                name='word-lstm-dropout')
+            w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
+            # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
+            #                                     training = self.is_train,
+            #                                     name='word-lstm-dropout')
+            w_bidi_out_drop = w_bidi_out_c
 
             self.w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
@@ -163,7 +181,10 @@ class STAGModel(BasicModel):
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            tag_cell = self.cell(self.c_dim)
+            # tag_cell = self.cell(self.c_dim)
+            tag_cell = self._single_cell(self.c_dim,
+                                         self.drop_rate,
+                                          self.is_train)
 
             decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
@@ -171,9 +192,10 @@ class STAGModel(BasicModel):
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
 
-            self.decode_out = tf.layers.dropout(decode_out, self.drop_rate,
-                                                training = self.is_train,
-                                                name='tag-lstm-dropout')
+            # self.decode_out = tf.layers.dropout(decode_out, self.drop_rate,
+            #                                     training = self.is_train,
+            #                                     name='tag-lstm-dropout')
+            self.decode_out = decode_out
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):

@@ -46,11 +46,6 @@ class BasicModel(object):
         self.result_dir = self.config['result_dir']
         self.ckpt_dir = self.config['ckpt_dir']
 
-        if self.config['layer_norm']:
-            self.cell = tf.contrib.rnn.LayerNormBasicLSTMCell
-        else:
-            self.cell = tf.contrib.rnn.BasicLSTMCell
-
         self.graph = self.build_graph()
 
         total_parameters = 0
@@ -121,6 +116,24 @@ class BasicModel(object):
     @abstractmethod
     def decode(self):
         raise NotImplementedError
+
+    def _single_cell(self, nhidden, dropout, is_training):
+        if self.config['layer_norm']:
+            _cell_fn = tf.contrib.rnn.LayerNormBasicLSTMCell
+        else:
+            _cell_fn = tf.contrib.rnn.BasicLSTMCell
+        _cell = _cell_fn(nhidden)
+        keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
+        _cell = tf.contrib.rnn.DropoutWrapper(_cell, output_keep_prob=keep_prob)
+        return _cell
+
+    def _multi_cell(self, nhidden, dropout, is_training, n_layers):
+        _cells = [_single_cell(nhidden, dropout, is_training)]
+        for _ in range(1,n_layers):
+            _cells.append(tf.contrib.rnn.ResidualWrapper(
+                _single_cell(nhidden, dropout, is_training)))
+        _cell = tf.contrib.rnn.MultiRNNCell(_cells)
+        return _cell
 
     def save(self):
     # This function is usually common to all your models, Here is an example:
