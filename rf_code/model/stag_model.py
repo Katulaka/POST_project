@@ -247,7 +247,6 @@ class STAGModel(BasicModel):
             self.loss = tf.losses.softmax_cross_entropy(
                                 logits=self.logits,
                                 onehot_labels=targets_1hot,
-                                label_smoothing=self.config['label_smoothing'],
                                 reduction=tf.losses.Reduction.MEAN)
 
     def _add_train_op(self):
@@ -327,7 +326,6 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
-        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
