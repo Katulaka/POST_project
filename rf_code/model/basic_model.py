@@ -41,10 +41,6 @@ class BasicModel(object):
         self.initializer = tf.contrib.layers.xavier_initializer()
         self.activation_fn = tf.nn.relu
 
-        self.model_name = self.config['model_name']
-        self.result_dir = self.config['result_dir']
-        self.ckpt_dir = self.config['ckpt_dir']
-
         self.graph = self.build_graph()
 
         total_parameters = 0
@@ -146,11 +142,11 @@ class BasicModel(object):
                 if exc.errno != errno.EEXIST:
                     raise
         self.saver.save(self.sess,
-                        os.path.join(self.ckpt_dir, self.model_name),
+                        os.path.join(self.config['ckpt_dir'], self.config['model_name']),
                         global_step)
 
         # I always keep the configuration that
-        with open(os.path.join(self.result_dir,'config.json'), 'w') as f:
+        with open(os.path.join(self.config['result_dir'],'config.json'), 'w') as f:
             json.dump({self.config['mode']: self.config}, f)
 
 
