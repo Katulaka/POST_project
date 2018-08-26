@@ -1,7 +1,6 @@
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 import copy
 import os
 import tensorflow as tf
@@ -59,11 +58,8 @@ class BasicModel(object):
         self.sess_config = tf.ConfigProto(allow_soft_placement=True)
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
-        # self.sess_config.gpu_options.allocator_type = 'BFC'
-        # self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
 
         self.sw = tf.summary.FileWriter(self.config['sw_dir'], self.graph)
-        # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()
 
@@ -183,7 +179,7 @@ class BasicModel(object):
         print("%d ops in the final graph." % len(output_graph_def.node))
 
         return output_graph_def
-    
+
     def load_graph(self, frozen_graph_filename):
         # We load the protobuf file from the disk and parse it to retrieve the
         # unserialized graph_def
