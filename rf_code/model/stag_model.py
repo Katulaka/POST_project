@@ -114,7 +114,7 @@ class STAGModel(BasicModel):
             # Forward and Backward direction cell
             # self.config['n_layers'] = 2
 
-            word_cell_fw = self._multi_cell(self.config['hidden_word'],
+            self.word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
                                             self.config['n_layers'],
@@ -132,13 +132,13 @@ class STAGModel(BasicModel):
             # Get lstm cell output
             if self.config['is_stack']:
                 w_bidi_out_c, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
-                                                word_cell_fw,
+                                                self.word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
                                                 dtype=self.dtype)
             else:
                 w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
-                                    tf.contrib.rnn.MultiRNNCell(word_cell_fw),
+                                    tf.contrib.rnn.MultiRNNCell(self.word_cell_fw),
                                     tf.contrib.rnn.MultiRNNCell(word_cell_bw),
                                     w_bidi_in,
                                     sequence_length=self.word_len,
