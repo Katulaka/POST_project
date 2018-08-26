@@ -7,6 +7,7 @@ def parse_cmdline():
 
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('mode', type=str, default='debug', help='')
+    parser.add_argument('--gpu_n', type=int, default=0)
 
     parser.add_argument('--model_name', type=str, default='stags', help='')
     parser.add_argument('--pos', action='store_true', help='')
@@ -57,6 +58,7 @@ def parse_cmdline():
 
     args = parser.parse_args()
     config['mode'] = args.mode
+    config['gpu_n'] =args.gpu_n
     config['pos'] = args.pos
     config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
     config['model_name'] = args.model_name
