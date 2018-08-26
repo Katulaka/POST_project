@@ -37,6 +37,7 @@ def parse_cmdline():
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--layer_norm', action='store_true', help='')
     parser.add_argument('--is_stack', action='store_true', help='')
+    parser.add_argument('--kp_bidi', type=float, default=0.5)
     # parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch_size', type=int, default=32, help='')
@@ -112,6 +113,7 @@ def parse_cmdline():
     config['no_attn'] = args.no_attn
     config['layer_norm'] = args.layer_norm
     config['is_stack'] = args.is_stack
+    config['kp_bidi'] = args.kp_bidi
     # config['affine'] = args.affine
 
     if config['mode'] == 'train':
