@@ -17,10 +17,11 @@ class BasicModel(object):
 
         # if config['best']:
         #     config.update(self.get_best_config(config['env_name']))
-        self.config = copy.deepcopy(config)
-
         # if config['debug']: # This is a personal check i like to do
         #     print('config', self.config)
+        # self.random_seed = self.config['random_seed']
+        self.config = copy.deepcopy(config)
+
         if self.config['mode'] == 'train':
             self.num_epochs = self.config['num_epochs']
             if self.config['opt_fn'] == 'adam':
@@ -36,10 +37,8 @@ class BasicModel(object):
             else:
                 self.optimizer_fn = tf.train.GradientDescentOptimizer
 
-        # self.random_seed = self.config['random_seed']
         self.dtype = tf.float32
         self.initializer = tf.contrib.layers.xavier_initializer()
-
         self.activation_fn = tf.nn.relu
 
         self.model_name = self.config['model_name']
@@ -61,12 +60,13 @@ class BasicModel(object):
             self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
 
-        # sessConfig = tf.ConfigProto(gpu_options=gpu_options)
         self.sess_config = tf.ConfigProto(allow_soft_placement=True)
-        # self.sess_config.gpu_options.allocator_type = 'BFC'
-        # self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
+        # self.sess_config.gpu_options.allocator_type = 'BFC'
+        # self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
+
+        self.sw = = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()
@@ -91,7 +91,6 @@ class BasicModel(object):
         # This function is usually common to all your models
         # but making separate than the __init__ function allows it to be overidden cleanly
         # this is an example of such a function
-        # if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
         if checkpoint is None:
             if self.config['mode'] == 'train':
@@ -99,7 +98,6 @@ class BasicModel(object):
             else:
                 raise ValueError('Model not found to restore.')
         else:
-            # if self.config['debug']:
             print('[[basic_model.init]]Loading the model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
@@ -141,8 +139,6 @@ class BasicModel(object):
     def save(self):
     # This function is usually common to all your models, Here is an example:
         global_step = self.sess.run(self.global_step)
-        # if self.config['debug']:
-        #     print('Saving to %s with global_step %d' % (self.ckpt_dir, global_step))
         if not os.path.exists(self.ckpt_dir):
             try:
                 os.makedirs(os.path.abspath(self.ckpt_dir))
@@ -154,7 +150,6 @@ class BasicModel(object):
                         global_step)
 
         # I always keep the configuration that
-        # if not os.path.isfile(self.ckpt_dir + '/config.json'):
         with open(os.path.join(self.result_dir,'config.json'), 'w') as f:
             json.dump({self.config['mode']: self.config}, f)
 
