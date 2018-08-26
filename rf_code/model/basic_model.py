@@ -131,9 +131,9 @@ class BasicModel(object):
     def save(self):
     # This function is usually common to all your models, Here is an example:
         global_step = self.sess.run(self.global_step)
-        if not os.path.exists(self.ckpt_dir):
+        if not os.path.exists(self.config['ckpt_dir']):
             try:
-                os.makedirs(os.path.abspath(self.ckpt_dir))
+                os.makedirs(os.path.abspath(self.config['ckpt_dir']))
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
