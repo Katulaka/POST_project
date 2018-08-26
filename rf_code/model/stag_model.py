@@ -105,8 +105,7 @@ class STAGModel(BasicModel):
 
             self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
-            # self.c_dim = self.config['hidden_char'] + self.config['dim_word']
-            self.c_dim = tf.shape(self.word_embed_f)[-1]
+            self.c_dim = self.config['hidden_char'] + self.config['dim_word']
 
     def _add_char_bridge(self):
         with tf.variable_scope('char-Bridge'):
@@ -156,8 +155,8 @@ class STAGModel(BasicModel):
             # w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
-            # self.c_dim += self.config['dim_pos'] + 2*self.config['hidden_word']
-            self.c_dim =  tf.shape(self.encode_state)[-1]
+            hw_p = n_layers if self.config['is_stack'] else 1
+            self.c_dim += self.config['dim_pos'] + 2^hw_p*self.config['hidden_word']
 
     # def _no_affine_trans(self):
     #     with tf.variable_scope('no-affine'):
