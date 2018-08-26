@@ -87,7 +87,8 @@ def parse_cmdline():
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
     config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['btch']['data_file'] = 'at_data.out'
-    config['batch_file'] = os.path.join(os.getcwd(), 'batcher', args.batch_file)
+    config['batch_dir'] = os.path.join(os.getcwd(), 'batcher')
+    config['batch_file'] = os.path.join(config['batch_dir'], args.batch_file)
     config['use_subset'] = args.use_subset
     config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
     config['subset_file_dev'] = os.path.join(os.getcwd(), 'batcher','sub_batch_dev.json')

@@ -99,13 +99,15 @@ def main(_):
     else:
         import time
         start_time = time.clock()
+        if not os.path.exists(config['result_dir']):
+            os.makedirs(config['result_dir'])
+        if not os.path.exists(config['batch_dir']):
+            os.makedirs(config['batch_dir'])
         batch_file = config['batch_file']
         if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
             print ("[[main]] Couldn't find batcher file: %s" % batch_file)
             print ("[[main]]  Creating new batcher ")
             batcher = Batcher(**config['btch'])
-            if not os.path.exists(config['result_dir']):
-                os.makedirs(config['result_dir'])
             with open(batch_file, 'wb') as output:
                 pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
         else:
