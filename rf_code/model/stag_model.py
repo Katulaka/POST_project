@@ -260,7 +260,7 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
-        with tf.device('/gpu:1')):
+        with tf.device('/gpu:1'):
             # import pdb; pdb.set_trace()
             with tf.Graph().as_default() as g:
                 with tf.variable_scope(self.config['scope_name']):
