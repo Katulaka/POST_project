@@ -124,14 +124,16 @@ class BasicModel(object):
             _cell_fn = tf.contrib.rnn.BasicLSTMCell
         _cell = _cell_fn(nhidden)
         keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
-        _cell = tf.contrib.rnn.DropoutWrapper(_cell, output_keep_prob=keep_prob)
+        _cell = tf.contrib.rnn.DropoutWrapper(_cell,
+                            output_keep_prob=keep_prob,
+                            ariational_recurrent=True)
         return _cell
 
     def _multi_cell(self, nhidden, dropout, is_training, n_layers):
         _cells = [self._single_cell(nhidden, dropout, is_training)]
         for _ in range(1,n_layers):
             _cells.append(tf.contrib.rnn.ResidualWrapper(
-                self._single_cell(nhidden, dropout, is_training)))
+                self._single_cell(2*nhidden, dropout, is_training)))
         return _cells
 
     def save(self):
