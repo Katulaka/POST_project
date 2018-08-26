@@ -83,7 +83,6 @@ class STAGModel(BasicModel):
 
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
-            # char_cell = self.cell(self.config['hidden_char'])
             char_cell = self._single_cell(self.config['hidden_char'],
                                             1. - self.drop_rate,
                                             self.is_train)
@@ -94,9 +93,6 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            # ch_state_drop = tf.layers.dropout(ch_state[1], self.drop_rate,
-            #                                 training = self.is_train,
-            #                                 name='char-lstm-dropout')
             ch_state_drop = ch_state[1]
 
             we_shape = tf.shape(self.word_embed)
@@ -319,6 +315,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
