@@ -87,7 +87,7 @@ class BasicModel(object):
         # This function is usually common to all your models
         # but making separate than the __init__ function allows it to be overidden cleanly
         # this is an example of such a function
-        checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
+        checkpoint = tf.train.get_checkpoint_state(self.config['ckpt_dir'])
         if checkpoint is None:
             if self.config['mode'] == 'train':
                 self.sess.run(self.init_op)
@@ -151,7 +151,7 @@ class BasicModel(object):
 
 
     def freeze_graph(self, output_node_names):
-        if not tf.gfile.Exists(self.ckpt_dir):
+        if not tf.gfile.Exists(self.config['ckpt_dir']):
             raise AssertionError(
                 "Export directory doesn't exists. Please specify an export "
                 "directory: %s" % model_dir)
@@ -161,7 +161,7 @@ class BasicModel(object):
             return -1
 
         # We retrieve our checkpoint fullpath
-        checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
+        checkpoint = tf.train.get_checkpoint_state(self.config['ckpt_dir'])
         input_checkpoint = checkpoint.model_checkpoint_path
 
         # We precise the file fullname of our freezed graph
@@ -183,7 +183,7 @@ class BasicModel(object):
         print("%d ops in the final graph." % len(output_graph_def.node))
 
         return output_graph_def
-
+    
     def load_graph(self, frozen_graph_filename):
         # We load the protobuf file from the disk and parse it to retrieve the
         # unserialized graph_def
