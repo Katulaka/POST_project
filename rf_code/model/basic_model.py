@@ -61,7 +61,6 @@ class BasicModel(object):
             self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
 
-        # gpu_options = tf.GPUOptions(allow_growth=True)
         # sessConfig = tf.ConfigProto(gpu_options=gpu_options)
         self.sess_config = tf.ConfigProto(allow_soft_placement=True)
         self.sess_config.gpu_options.allocator_type = 'BFC'

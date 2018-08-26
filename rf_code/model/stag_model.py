@@ -261,7 +261,7 @@ class STAGModel(BasicModel):
 
     def build_graph(self):
         with tf.Graph().as_default() as g:
-            with tf.device('/gpu:1'):
+            with tf.device('/gpu:%d' %self.config['gpu_n']):
                 with tf.variable_scope(self.config['scope_name']):
                     self._add_placeholders()
                     self._add_embeddings()
