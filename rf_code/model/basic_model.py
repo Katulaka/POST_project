@@ -90,7 +90,7 @@ class BasicModel(object):
             else:
                 raise ValueError('Model not found to restore.')
         else:
-            print('[[basic_model.init]]Loading the model from folder: %s' % self.ckpt_dir)
+            print('[[basic_model.init]] Loading model from folder: %s' % self.config['ckpt_dir'])
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
 
