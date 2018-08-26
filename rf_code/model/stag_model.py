@@ -121,35 +121,39 @@ class STAGModel(BasicModel):
             word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             self.drop_rate,
                                             self.is_train,
-                                            n_layers)
+                                            n_layers,
+                                            self.config['is_stack'])
+
             word_cell_bw = self._multi_cell(self.config['hidden_word'],
                                             self.drop_rate,
                                             self.is_train,
-                                            n_layers)
+                                            n_layers,
+                                            self.config['is_stack'])
 
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
 
             # Get lstm cell output
-            self.w_bidi_out , self.w_bidi_out_fw, self.w_bidi_out_bw = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
+            if self.config['is_stack']:
+                w_bidi_out_c, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
                                                 word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
                                                 dtype=self.dtype)
+            else:
+                w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
+                                    tf.contrib.rnn.MultiRNNCell(word_cell_fw),
+                                    tf.contrib.rnn.MultiRNNCell(word_cell_bw),
+                                    w_bidi_in,
+                                    sequence_length=self.word_len,
+                                    dtype=self.dtype)
+                w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
 
-            # w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
-            #                         tf.contrib.rnn.MultiRNNCell(word_cell_fw),
-            #                         tf.contrib.rnn.MultiRNNCell(word_cell_bw),
-            #                         w_bidi_in,
-            #                         sequence_length=self.word_len,
-            #                         dtype=self.dtype)
-
-            # w_bidi_out_c = tf.concat(self.w_bidi_out , -1, name='word-bidi-out')
             # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
             #                                     training = self.is_train,
             #                                     name='word-lstm-dropout')
             # w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
-            w_bidi_out_c = self.w_bidi_out
+
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             self.c_dim += self.config['dim_pos'] + 2*self.config['hidden_word']
 

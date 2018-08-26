@@ -130,11 +130,13 @@ class BasicModel(object):
                             # variational_recurrent=True)
         return _cell
 
-    def _multi_cell(self, nhidden, dropout, is_training, n_layers):
+    def _multi_cell(self, nhidden, dropout, is_training, n_layers, is_stack):
         _cells = [self._single_cell(nhidden, dropout, is_training)]
         for _ in range(1,n_layers):
+            if is_stack:
+                nhidden *= 2
             _cells.append(tf.contrib.rnn.ResidualWrapper(
-                self._single_cell(2*nhidden, dropout, is_training)))
+                self._single_cell(nhidden, dropout, is_training)))
         return _cells
 
     def save(self):
