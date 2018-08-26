@@ -42,15 +42,6 @@ class BasicModel(object):
 
         self.graph = self.build_graph()
 
-        total_parameters = 0
-        for variable in self.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
-            shape = variable.get_shape()
-            variable_parameters = 1
-            for dim in shape:
-                variable_parameters *= dim.value
-            total_parameters += variable_parameters
-        print('[[basic_model.init]] There are %d trainable parameters in model' %total_parameters)
-
         with self.graph.as_default():
             self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
@@ -62,6 +53,15 @@ class BasicModel(object):
         self.sw = tf.summary.FileWriter(self.config['sw_dir'], self.graph)
 
         self.init()
+
+        total_parameters = 0
+        for variable in self.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
+            shape = variable.get_shape()
+            variable_parameters = 1
+            for dim in shape:
+                variable_parameters *= dim.value
+            total_parameters += variable_parameters
+        print('[[basic_model.init]] There are %d trainable parameters in model' %total_parameters)
 
         # def set_agent_props(self):
         # # This function is here to be overriden completely.
