@@ -350,16 +350,16 @@ class STAGModel(BasicModel):
                         self.save()
                         sys.stdout.flush()
 
-            summary = tf.Summary()
-            summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
-            summary_writer.add_summary(summary, current_epoch)
+            # summary = tf.Summary()
+            # summary.value.add(tag="loss_epoch", simple_value=np.mean(loss))
+            # summary_writer.add_summary(summary, current_epoch)
 
             mean_loss = np.mean([self.step(batcher.process(bv), self.loss, False)
             for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
             summary = tf.Summary()
             summary.value.add(tag="loss_epoch", simple_value=mean_loss)
             summary_writer_dev.add_summary(summary, current_epoch)
-
+            summary_writer_dev.flush()
             epoch_inc = tf.assign_add(self.epoch, 1)
             current_epoch = self.sess.run(epoch_inc)
 
