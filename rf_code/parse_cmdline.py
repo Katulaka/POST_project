@@ -67,6 +67,7 @@ def parse_cmdline():
 
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
+    config['sw_dir'] = os.path.join(config['result_dir'], 'summary')
     config['decode_dir'] = os.path.join(config['result_dir'],'decode')
     dec_tree_f = 'decode_trees_to_%.2f_tt_%.2f_ccr_%.2f.p' %(args.time_out, args.time_th, args.cost_coeff_rate)
     config['decode_trees_file'] = os.path.join(config['decode_dir'], dec_tree_f)
