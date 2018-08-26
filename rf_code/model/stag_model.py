@@ -4,6 +4,8 @@ from __future__ import print_function
 import sys
 import numpy as np
 import tensorflow as tf
+import tensorflow_hub as hub
+
 from .basic_model import BasicModel
 from beam.search import BeamSearch
 
@@ -29,6 +31,7 @@ class STAGModel(BasicModel):
             self.char_len = tf.placeholder(tf.int32, [None], 'char-seq-len')
             #shape = (batch_size, max length of sentence)
             self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
+            self.w_tok_in = tf.placeholder(tf.int32, [None, None], 'word-token-input')
             #shape = (batch_size, max length of sentence)
             self.pos_in = tf.placeholder(tf.int32, [None, None], 'pos-input')
             #shape = (batch_size)
@@ -44,6 +47,16 @@ class STAGModel(BasicModel):
             self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
 
+    def _add_elmo(self):
+        print('_add_elmo')
+        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+        self.word_embed_f = elmo(inputs={
+                                        "tokens": self.w_in,
+                                        "sequence_len": self.word_len
+                                    },
+                                    signature="tokens",
+                                    as_dict=True)["elmo"]
+        self.c_dim = 1024
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -114,6 +127,7 @@ class STAGModel(BasicModel):
             # Forward and Backward direction cell
             # self.config['n_layers'] = 2
 
+            import pdb; pdb.set_trace()
             self.word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
@@ -144,11 +158,6 @@ class STAGModel(BasicModel):
                                     sequence_length=self.word_len,
                                     dtype=self.dtype)
                 w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
-
-            # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
-            #                                     training = self.is_train,
-            #                                     name='word-lstm-dropout')
-            # w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             hw_p = n_layers if self.config['is_stack'] else 1
@@ -256,16 +265,21 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
+        is_add_elmo = False
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:%d' %self.config['gpu_n']):
                 with tf.variable_scope(self.config['scope_name']):
                     self._add_placeholders()
                     self._add_embeddings()
-                    if self.config['no_c_embed']:
-                        self._add_char_bridge()
+                    if is_add_elmo:
+                        self._add_elmo()
                     else:
-                        self._add_char_lstm()
+                        if self.config['no_c_embed']:
+                            self._add_char_bridge()
+                        else:
+                            self._add_char_lstm()
                     self._add_word_bidi_lstm()
+
                     # if self.config['affine']:
                     #     self._affine_trans()
                     # else:
@@ -335,6 +349,8 @@ class STAGModel(BasicModel):
             loss = []
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
+                import pdb; pdb.set_trace()
+
                 # output_feed = [self.loss, t_loss, self.optimizer]
                 # step_loss, summary_loss, _ = self.step(input_feed, output_feed, True)
                 # loss.append(step_loss)
