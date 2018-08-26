@@ -260,31 +260,31 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
-        with tf.device('/gpu:0'):
-            with tf.Graph().as_default() as g:
-                with tf.variable_scope(self.config['scope_name']):
-                    self._add_placeholders()
-                    self._add_embeddings()
-                    if self.config['no_c_embed']:
-                        self._add_char_bridge()
-                    else:
-                        self._add_char_lstm()
-                    self._add_word_bidi_lstm()
-                    # if self.config['affine']:
-                    #     self._affine_trans()
-                    # else:
-                    #     self._no_affine_trans()
-                    self._add_tag_lstm_layer()
-                    if self.config['no_attn']:
-                        self.proj_in = self.decode_out
-                    else:
-                        self._add_attention()
-                    self._add_projection()
-                    if (self.config['mode'] != 'test'):
-                        self._add_loss()
-                    if (self.config['mode'] == 'train'):
-                        self._add_train_op()
-            return g
+        # with tf.device('/gpu:0'):
+        with tf.Graph().as_default() as g:
+            with tf.variable_scope(self.config['scope_name']):
+                self._add_placeholders()
+                self._add_embeddings()
+                if self.config['no_c_embed']:
+                    self._add_char_bridge()
+                else:
+                    self._add_char_lstm()
+                self._add_word_bidi_lstm()
+                # if self.config['affine']:
+                #     self._affine_trans()
+                # else:
+                #     self._no_affine_trans()
+                self._add_tag_lstm_layer()
+                if self.config['no_attn']:
+                    self.proj_in = self.decode_out
+                else:
+                    self._add_attention()
+                self._add_projection()
+                if (self.config['mode'] != 'test'):
+                    self._add_loss()
+                if (self.config['mode'] == 'train'):
+                    self._add_train_op()
+        return g
 
         """"TRAIN Part """
     def pos_step(self, bv):
