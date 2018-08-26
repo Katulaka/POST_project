@@ -66,6 +66,7 @@ class BasicModel(object):
         # self.sess_config.gpu_options.allocator_type = 'BFC'
         # self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.40
 
+        self.sw = = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         # self.sw = tf.summary.FileWriter(self.ckpt_dir, self.sess.graph)
 
         self.init()
