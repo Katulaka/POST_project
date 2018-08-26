@@ -119,13 +119,13 @@ class STAGModel(BasicModel):
             n_layers = 2
 
             word_cell_fw = self._multi_cell(self.config['hidden_word'],
-                                            tf.constant(0.5),
+                                            tf.constant(0.8),
                                             self.is_train,
                                             n_layers,
                                             self.config['is_stack'])
 
             word_cell_bw = self._multi_cell(self.config['hidden_word'],
-                                            tf.constant(0.5),
+                                            tf.constant(0.8),
                                             self.is_train,
                                             n_layers,
                                             self.config['is_stack'])
