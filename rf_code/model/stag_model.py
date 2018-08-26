@@ -85,7 +85,7 @@ class STAGModel(BasicModel):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
             # char_cell = self.cell(self.config['hidden_char'])
             char_cell = self._single_cell(self.config['hidden_char'],
-                                            self.drop_rate,
+                                            1. - self.drop_rate,
                                             self.is_train)
 
             _, ch_state = tf.nn.dynamic_rnn(char_cell,
@@ -179,7 +179,7 @@ class STAGModel(BasicModel):
 
             # tag_cell = self.cell(self.c_dim)
             tag_cell = self._single_cell(self.c_dim,
-                                         self.drop_rate,
+                                         1. - self.drop_rate,
                                           self.is_train)
 
             decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
