@@ -131,8 +131,7 @@ class STAGModel(BasicModel):
                                         name='word-bidi-in')
 
             # Get lstm cell output
-            self.w_bidi_out , self.w_bidi_out_fw, self.w_bidi_out_bw =
-            tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
+            self.w_bidi_out , self.w_bidi_out_fw, self.w_bidi_out_bw = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
                                                 word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
