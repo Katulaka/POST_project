@@ -116,18 +116,18 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            n_layers = 2
+            # self.config['n_layers'] = 2
 
             word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
-                                            n_layers,
+                                            self.config['n_layers'],
                                             self.config['is_stack'])
 
             word_cell_bw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
-                                            n_layers,
+                                            self.config['n_layers'],
                                             self.config['is_stack'])
 
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
