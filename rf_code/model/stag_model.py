@@ -4,6 +4,8 @@ from __future__ import print_function
 import sys
 import numpy as np
 import tensorflow as tf
+import tensorflow_hub as hub
+
 from .basic_model import BasicModel
 from beam.search import BeamSearch
 
@@ -29,6 +31,7 @@ class STAGModel(BasicModel):
             self.char_len = tf.placeholder(tf.int32, [None], 'char-seq-len')
             #shape = (batch_size, max length of sentence)
             self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
+            self.w_tok_in = tf.placeholder(tf.int32, [None, None], 'word-token-input')
             #shape = (batch_size, max length of sentence)
             self.pos_in = tf.placeholder(tf.int32, [None, None], 'pos-input')
             #shape = (batch_size)
@@ -44,6 +47,16 @@ class STAGModel(BasicModel):
             self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
 
+    def _add_elmo(self):
+        print('_add_elmo')
+        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+        self.word_embed_f = elmo(inputs={
+                                        "tokens": self.w_in,
+                                        "sequence_len": self.word_len
+                                    },
+                                    signature="tokens",
+                                    as_dict=True)["elmo"]
+        self.c_dim = 1024
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -252,16 +265,21 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
+        is_add_elmo = False
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:%d' %self.config['gpu_n']):
                 with tf.variable_scope(self.config['scope_name']):
                     self._add_placeholders()
                     self._add_embeddings()
-                    if self.config['no_c_embed']:
-                        self._add_char_bridge()
+                    if is_add_elmo:
+                        self._add_elmo()
                     else:
-                        self._add_char_lstm()
+                        if self.config['no_c_embed']:
+                            self._add_char_bridge()
+                        else:
+                            self._add_char_lstm()
                     self._add_word_bidi_lstm()
+
                     # if self.config['affine']:
                     #     self._affine_trans()
                     # else:
@@ -331,6 +349,8 @@ class STAGModel(BasicModel):
             loss = []
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
+                import pdb; pdb.set_trace()
+
                 # output_feed = [self.loss, t_loss, self.optimizer]
                 # step_loss, summary_loss, _ = self.step(input_feed, output_feed, True)
                 # loss.append(step_loss)
