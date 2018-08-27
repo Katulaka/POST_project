@@ -119,21 +119,6 @@ class STAGModel(BasicModel):
                                         -1, 'mod_word_embed')
             self.c_dim = self.config['hidden_char'] + self.config['dim_word']
 
-    def _add_elmo_and_ch_lstm(self):
-        self.c_dim = self.config['elmo_dim']
-        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
-        word_embed = elmo(inputs={
-                                        "tokens": self.w_t_in,
-                                        "sequence_len": self.word_t_len
-                                    },
-                                    signature="tokens",
-                                    as_dict=True)["elmo"]
-        word_elmo_pad = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
-        w_em_ch_elmo = tf.concat([self.word_embed_f, word_elmo_pad], -1)
-        word_embed_t = tf.layers.dense(w_em_ch_elmo, self.c_dim)
-        self.word_embed_f = tf.contrib.layers.layer_norm(word_embed_t)
-
-
     def _add_char_bridge(self):
         with tf.variable_scope('char-Bridge'):
             self.word_embed_f = self.word_embed
@@ -274,7 +259,6 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
-        both = False
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:%d' %self.config['gpu_n']):
                 with tf.variable_scope(self.config['scope_name']):
@@ -282,18 +266,11 @@ class STAGModel(BasicModel):
                     self._add_embeddings()
                     if self.config['is_add_elmo']:
                         self._add_elmo()
-                    elif both:
-                        if self.config['no_c_embed']:
-                            self._add_char_bridge()
-                        else:
-                            self._add_char_lstm()
-                        self._add_elmo_and_ch_lstm()
                     else:
                         if self.config['no_c_embed']:
                             self._add_char_bridge()
                         else:
                             self._add_char_lstm()
-
                     self._add_word_bidi_lstm()
                     # if self.config['affine']:
                     #     self._affine_trans()
