@@ -87,7 +87,6 @@ class Solver(AStar):
 
     def is_goal_reached(self, current, goal):
         if current.idx == goal.idx and len(current.tree) == 1:
-            import pdb; pdb.set_trace()
             return current.tree[0].is_no_missing_leaves()
         return False
 
