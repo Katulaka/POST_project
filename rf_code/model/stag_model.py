@@ -349,7 +349,6 @@ class STAGModel(BasicModel):
             loss = []
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
-                import pdb; pdb.set_trace()
 
                 # output_feed = [self.loss, t_loss, self.optimizer]
                 # step_loss, summary_loss, _ = self.step(input_feed, output_feed, True)
