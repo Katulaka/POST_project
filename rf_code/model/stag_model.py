@@ -49,7 +49,7 @@ class STAGModel(BasicModel):
 
 
     def _add_elmo(self):
-        self.c_dim = 256
+        self.c_dim = self.config['elmo_dim']
         elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
         word_embed = elmo(inputs={
                                         "tokens": self.w_t_in,
