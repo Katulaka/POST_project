@@ -30,14 +30,14 @@ def parse_cmdline():
     parser.add_argument('--h_char', default=32, type=int)
     parser.add_argument('--h_pos', default=64, type=int)
 
-    parser.add_argument('--drop_rate', default=0.2, type=float)
+    parser.add_argument('--drop_rate', default=0.5, type=float)
     # parser.add_argument('--keep_prob', default=0.8, type=float)
 
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--layer_norm', action='store_true', help='')
     parser.add_argument('--is_stack', action='store_true', help='')
-    parser.add_argument('--kp_bidi', type=float, default=0.5)
+    parser.add_argument('--kp_bidi', type=float, default=0.8)
     parser.add_argument('--n_layers', type=int, default=1)
     # parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
