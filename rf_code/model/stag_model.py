@@ -398,17 +398,7 @@ class STAGModel(BasicModel):
                         decode_trees.append(dill.load(f))
                     except EOFError:
                         break
-        # beams = []
-        # if os.path.exists(self.config['beams_file']):
-        #     with open(self.config['beams_file'], 'rb') as f:
-        #         while True:
-        #             try:
-        #                 beams.append(dill.load(f))
-        #             except EOFError:
-        #                 break
-
         s_idx = len(decode_trees)
-
 
         bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
@@ -447,8 +437,6 @@ class STAGModel(BasicModel):
 
             with open(self.config['decode_trees_file'], 'ab') as f:
                 dill.dump(trees, f)
-            # with open(self.config['beams_file'], 'ab') as f:
-            #     dill.dump(beams, f)
 
         return decode_trees
 
