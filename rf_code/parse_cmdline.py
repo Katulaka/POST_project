@@ -43,6 +43,7 @@ def parse_cmdline():
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch_size', type=int, default=32, help='')
     parser.add_argument('--batch_file', type=str, default='batch.pkl', help='')
+    parser.add_argument('--is_add_elmo', action='store_true', help='')
 
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
@@ -117,6 +118,7 @@ def parse_cmdline():
     config['is_stack'] = args.is_stack
     config['kp_bidi'] = args.kp_bidi
     config['n_layers'] = args.n_layers
+    config['is_add_elmo'] = args.is_add_elmo
     # config['affine'] = args.affine
 
     if config['mode'] == 'train':

@@ -266,13 +266,12 @@ class STAGModel(BasicModel):
                                         self.loss, global_step=self.global_step)
 
     def build_graph(self):
-        is_add_elmo = False
         with tf.Graph().as_default() as g:
             with tf.device('/gpu:%d' %self.config['gpu_n']):
                 with tf.variable_scope(self.config['scope_name']):
                     self._add_placeholders()
                     self._add_embeddings()
-                    if is_add_elmo:
+                    if self.config['is_add_elmo']:
                         self._add_elmo()
                     else:
                         if self.config['no_c_embed']:
@@ -280,7 +279,6 @@ class STAGModel(BasicModel):
                         else:
                             self._add_char_lstm()
                     self._add_word_bidi_lstm()
-
                     # if self.config['affine']:
                     #     self._affine_trans()
                     # else:
@@ -383,7 +381,6 @@ class STAGModel(BasicModel):
             if self.config['steps_per_ckpt']==0:
                 self.save()
                 sys.stdout.flush()
-
         self.sw.close()
 
         """"Decode Part """
