@@ -162,18 +162,6 @@ class STAGModel(BasicModel):
             hw_p = n_layers if self.config['is_stack'] else 1
             self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
 
-    # def _no_affine_trans(self):
-    #     with tf.variable_scope('no-affine'):
-    #         self.encode_state = self.w_bidi_in_out
-    #         self.c_dim += self.config['dim_pos'] + 2*self.config['hidden_word']
-    #
-    # def _affine_trans(self):
-    #     with tf.variable_scope('affine'):
-    #         self.encode_state = tf.layers.dense(self.w_bidi_in_out,
-    #                                             self.config['hidden_tag'],
-    #                                             use_bias=True)
-    #         self.c_dim = self.config['hidden_tag']
-
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
         with tf.variable_scope('tag-LSTM-Layer'):
@@ -273,10 +261,6 @@ class STAGModel(BasicModel):
                         else:
                             self._add_char_lstm()
                     self._add_word_bidi_lstm()
-                    # if self.config['affine']:
-                    #     self._affine_trans()
-                    # else:
-                    #     self._no_affine_trans()
                     self._add_tag_lstm_layer()
                     if self.config['no_attn']:
                         self.proj_in = self.decode_out
