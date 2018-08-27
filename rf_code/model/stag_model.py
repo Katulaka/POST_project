@@ -49,17 +49,16 @@ class STAGModel(BasicModel):
 
 
     def _add_elmo(self):
-        self.c_dim = self.config['elmo_dim']
         elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
-        word_embed = elmo(inputs={
+        word_elmo = elmo(inputs={
                                         "tokens": self.w_t_in,
                                         "sequence_len": self.word_t_len
                                     },
                                     signature="tokens",
                                     as_dict=True)["elmo"]
-        word_elmo_pad = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
-        word_embed_t = tf.layers.dense(word_embed_pad, self.c_dim)
-        self.word_embed_f = tf.contrib.layers.layer_norm(word_embed_t)
+        word_elmo_pad = tf.pad(word_elmo, [[0,0],[1,1],[0,0]], "CONSTANT")
+        word_elmo_t = tf.layers.dense(word_elmo_pad, self.config['elmo_dim'])
+        self.word_embed_elmo = tf.contrib.layers.layer_norm(word_elmo_t)
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -266,6 +265,8 @@ class STAGModel(BasicModel):
                     self._add_embeddings()
                     if self.config['is_add_elmo']:
                         self._add_elmo()
+                        self.word_embed_f = self.word_embed_elmo
+                        self.c_dim = self.config['elmo_dim']
                     else:
                         if self.config['no_c_embed']:
                             self._add_char_bridge()
