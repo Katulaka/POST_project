@@ -31,7 +31,8 @@ class STAGModel(BasicModel):
             self.char_len = tf.placeholder(tf.int32, [None], 'char-seq-len')
             #shape = (batch_size, max length of sentence)
             self.w_in = tf.placeholder(tf.int32, [None, None], 'word-input')
-            self.w_tok_in = tf.placeholder(tf.int32, [None, None], 'word-token-input')
+            self.w_t_in = tf.placeholder(tf.string, [None, None], 'word-token-input')
+            self.word_t_len = tf.placeholder(tf.int32, [None], 'word-tok-seq-len')
             #shape = (batch_size, max length of sentence)
             self.pos_in = tf.placeholder(tf.int32, [None, None], 'pos-input')
             #shape = (batch_size)
@@ -50,12 +51,13 @@ class STAGModel(BasicModel):
     def _add_elmo(self):
         print('_add_elmo')
         elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
-        self.word_embed_f = elmo(inputs={
-                                        "tokens": self.w_in,
-                                        "sequence_len": self.word_len
+        word_embed = elmo(inputs={
+                                        "tokens": self.w_t_in,
+                                        "sequence_len": self.word_t_len
                                     },
                                     signature="tokens",
                                     as_dict=True)["elmo"]
+        self.word_embed_f = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
         self.c_dim = 1024
 
     def _add_embeddings(self):
@@ -317,6 +319,8 @@ class STAGModel(BasicModel):
         input_feed = {
             self.w_in: bv['word']['in'],
             self.word_len: bv['word']['len'],
+            self.w_t_in: bv['word_t']['in'],
+            self.word_t_len: bv['word_t']['len'],
             self.char_in : bv['char']['in'],
             self.char_len : bv['char']['len'],
             self.pos_in : bv['pos']['in'],

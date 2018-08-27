@@ -296,7 +296,9 @@ class Batcher(object):
 
         seq_len_c, bv_c_in = self.process_chars(bv['chars'], max_len_w)
         batch.update({'char': {'in': bv_c_in, 'len': seq_len_c}})
-
+        bv_w_t = self.pad(bv['words'], max(self._seq_len))
+        bv_w_t_in = self._vocab['words'].to_tokens(bv_w_t)
+        batch.update({'word_t': {'in': bv_w_t_in, 'len': self._seq_len}})
         return batch
 
     def restore(self, batch):
