@@ -108,20 +108,12 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            ch_state_drop = ch_state[1]
-
             we_shape = tf.shape(self.word_embed)
             co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
-            char_out_reshape = tf.reshape(ch_state_drop, co_shape)
+            char_out_reshape = tf.reshape(ch_state[1], co_shape)
 
-            self.word_embed_f = tf.concat([self.word_embed, char_out_reshape],
+            self.word_embed_ch_lstm = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
-            self.c_dim = self.config['hidden_char'] + self.config['dim_word']
-
-    def _add_char_bridge(self):
-        with tf.variable_scope('char-Bridge'):
-            self.word_embed_f = self.word_embed
-            self.c_dim = self.config['dim_word']
 
     def _add_word_bidi_lstm(self):
         """ Bidirectional LSTM """
@@ -255,11 +247,13 @@ class STAGModel(BasicModel):
                         self._add_elmo()
                         self.word_embed_f = self.word_embed_elmo
                         self.c_dim = self.config['elmo_dim']
+                    elif not self.config['no_c_embed']:
+                        self._add_char_lstm()
+                        self.word_embed_f = self.word_embed_ch_lstm
+                        self.c_dim = self.config['hidden_char'] + self.config['dim_word']
                     else:
-                        if self.config['no_c_embed']:
-                            self._add_char_bridge()
-                        else:
-                            self._add_char_lstm()
+                        self.word_embed_f = self.word_embed
+                        self.c_dim = self.config['dim_word']
                     self._add_word_bidi_lstm()
                     self._add_tag_lstm_layer()
                     if self.config['no_attn']:
