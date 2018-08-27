@@ -112,9 +112,9 @@ class BasicModel(object):
         else:
             _cell_fn = tf.contrib.rnn.BasicLSTMCell
         _cell = _cell_fn(nhidden)
-        self.keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
+        keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
         _cell = tf.contrib.rnn.DropoutWrapper(_cell,
-                            output_keep_prob=self.keep_prob)
+                            output_keep_prob=keep_prob)
 
                             # variational_recurrent=True)
         return _cell

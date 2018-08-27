@@ -127,9 +127,7 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            # self.config['n_layers'] = 2
-
-            self.word_cell_fw = self._multi_cell(self.config['hidden_word'],
+            word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
                                             self.config['n_layers'],
@@ -147,13 +145,13 @@ class STAGModel(BasicModel):
             # Get lstm cell output
             if self.config['is_stack']:
                 w_bidi_out_c, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
-                                                self.word_cell_fw,
+                                                word_cell_fw,
                                                 word_cell_bw,
                                                 w_bidi_in,
                                                 dtype=self.dtype)
             else:
                 w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
-                                    tf.contrib.rnn.MultiRNNCell(self.word_cell_fw),
+                                    tf.contrib.rnn.MultiRNNCell(word_cell_fw),
                                     tf.contrib.rnn.MultiRNNCell(word_cell_bw),
                                     w_bidi_in,
                                     sequence_length=self.word_len,
@@ -184,21 +182,15 @@ class STAGModel(BasicModel):
             self.tag_init = tf.contrib.rnn.LSTMStateTuple(dec_init_state,
                                         tf.zeros_like(dec_init_state))
 
-            # tag_cell = self.cell(self.c_dim)
             tag_cell = self._single_cell(self.c_dim,
                                          1. - self.drop_rate,
                                           self.is_train)
 
-            decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
+            self.decode_out, self.decode_state = tf.nn.dynamic_rnn(tag_cell,
                                                 self.tag_embed,
                                                 initial_state=self.tag_init,
                                                 sequence_length=self.tag_len,
                                                 dtype=self.dtype)
-
-            # self.decode_out = tf.layers.dropout(decode_out, self.drop_rate,
-            #                                     training = self.is_train,
-            #                                     name='tag-lstm-dropout')
-            self.decode_out = decode_out
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
@@ -340,7 +332,6 @@ class STAGModel(BasicModel):
         else:
             subset_idx = None
             subset_idx_dev = None
-        # summary_writer = tf.summary.FileWriter(self.result_dir+'/graphs', self.graph)
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
 
@@ -350,12 +341,6 @@ class STAGModel(BasicModel):
             loss = []
             for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
                 input_feed = batcher.process(bv)
-
-                # output_feed = [self.loss, t_loss, self.optimizer]
-                # step_loss, summary_loss, _ = self.step(input_feed, output_feed, True)
-                # loss.append(step_loss)
-                # summary_writer.add_summary(summary_loss, current_step)
-
                 output_feed = [t_loss, self.optimizer]
                 summary_loss, _ = self.step(input_feed, output_feed, True)
                 self.sw.add_summary(summary_loss, current_step)
@@ -366,14 +351,12 @@ class STAGModel(BasicModel):
                         sys.stdout.flush()
 
             t_dev_loss = tf.Summary()
-            dev_loss = []
+            dev_losses = []
             for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev):
-                dev_loss.append([self.step(batcher.process(bv), self.loss, False)])
-            mean_dev_loss = np.mean(dev_loss)
-            # mean_loss = np.mean([self.step(batcher.process(bv), self.loss, False)
-            # for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev)])
+                dev_loss = [self.step(batcher.process(bv), self.loss, False)]
+                dev_losses.append(dev_loss)
+            mean_dev_loss = np.mean(dev_losses)
             t_dev_loss.value.add(tag="loss_epoch", simple_value=mean_dev_loss)
-            # summary_writer.add_summary(summary, current_epoch)
             self.sw.add_summary(t_dev_loss, current_epoch)
             epoch_inc = tf.assign_add(self.epoch, 1)
             current_epoch = self.sess.run(epoch_inc)
