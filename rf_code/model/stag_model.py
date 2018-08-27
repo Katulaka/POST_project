@@ -352,6 +352,8 @@ class STAGModel(BasicModel):
         """Return the top states from encoder for decoder."""
         input_feed = {self.w_in: enc_bv['word']['in'],
                         self.word_len: enc_bv['word']['len'],
+                        self.w_t_in: bv['word_t']['in'],
+                        self.word_t_len: bv['word_t']['len'],
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
                         self.pos_in: enc_bv['pos']['in'],
@@ -423,8 +425,8 @@ class STAGModel(BasicModel):
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 
             beams = bs.beam_search(self.encode_top_state,
-                                        self.decode_topk,
-                                        batcher.process(bv))
+                                    self.decode_topk,
+                                    batcher.process(bv))
 
             tags = batcher._vocab['tags'].to_tokens(beams['tokens'])
             tags = batcher._t_op.combine_fn(batcher._t_op.modify_fn(tags))
