@@ -352,8 +352,8 @@ class STAGModel(BasicModel):
         """Return the top states from encoder for decoder."""
         input_feed = {self.w_in: enc_bv['word']['in'],
                         self.word_len: enc_bv['word']['len'],
-                        self.w_t_in: bv['word_t']['in'],
-                        self.word_t_len: bv['word_t']['len'],
+                        self.w_t_in: enc_bv['word_t']['in'],
+                        self.word_t_len: enc_bv['word_t']['len'],
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
                         self.pos_in: enc_bv['pos']['in'],
