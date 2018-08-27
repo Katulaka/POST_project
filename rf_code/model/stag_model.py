@@ -127,7 +127,6 @@ class STAGModel(BasicModel):
             # Forward and Backward direction cell
             # self.config['n_layers'] = 2
 
-            import pdb; pdb.set_trace()
             self.word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
