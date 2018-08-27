@@ -150,7 +150,6 @@ class STAGModel(BasicModel):
                                                 w_bidi_in,
                                                 dtype=self.dtype)
             else:
-                import pdb; pdb.set_trace()
                 w_bidi_out , _ = tf.nn.bidirectional_dynamic_rnn(
                                     tf.contrib.rnn.MultiRNNCell(self.word_cell_fw),
                                     tf.contrib.rnn.MultiRNNCell(word_cell_bw),

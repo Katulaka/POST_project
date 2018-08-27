@@ -112,7 +112,8 @@ class BasicModel(object):
         else:
             _cell_fn = tf.contrib.rnn.BasicLSTMCell
         _cell = _cell_fn(nhidden)
-        keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
+        # keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
+        keep_prob = 5.0
         _cell = tf.contrib.rnn.DropoutWrapper(_cell,
                             output_keep_prob=keep_prob)
 
