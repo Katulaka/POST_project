@@ -114,6 +114,7 @@ class STAGModel(BasicModel):
             # Forward and Backward direction cell
             # self.config['n_layers'] = 2
 
+            import pdb; pdb.set_trace()
             self.word_cell_fw = self._multi_cell(self.config['hidden_word'],
                                             tf.constant(self.config['kp_bidi']),
                                             self.is_train,
@@ -144,11 +145,6 @@ class STAGModel(BasicModel):
                                     sequence_length=self.word_len,
                                     dtype=self.dtype)
                 w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
-
-            # w_bidi_out_drop = tf.layers.dropout(w_bidi_out_c, self.drop_rate,
-            #                                     training = self.is_train,
-            #                                     name='word-lstm-dropout')
-            # w_bidi_in_out = tf.concat([w_bidi_in, w_bidi_out_drop], -1)
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             hw_p = n_layers if self.config['is_stack'] else 1
