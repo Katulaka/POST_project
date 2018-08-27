@@ -49,7 +49,7 @@ class STAGModel(BasicModel):
 
 
     def _add_elmo(self):
-        # self.c_dim = self.config['elmo_dim']
+        self.c_dim = self.config['elmo_dim']
         elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
         word_embed = elmo(inputs={
                                         "tokens": self.w_t_in,
@@ -57,9 +57,9 @@ class STAGModel(BasicModel):
                                     },
                                     signature="tokens",
                                     as_dict=True)["elmo"]
-        self.word_elmo_pad = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
-        # word_embed_t = tf.layers.dense(word_embed_pad, self.c_dim)
-        # self.word_embed_f = tf.contrib.layers.layer_norm(word_embed_t)
+        word_elmo_pad = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
+        word_embed_t = tf.layers.dense(word_embed_pad, self.c_dim)
+        self.word_embed_f = tf.contrib.layers.layer_norm(word_embed_t)
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
@@ -117,11 +117,19 @@ class STAGModel(BasicModel):
 
             self.word_embed_ch = tf.concat([self.word_embed, char_out_reshape],
                                         -1, 'mod_word_embed')
-            # self.c_dim = self.config['hidden_char'] + self.config['dim_word']
+            self.c_dim = self.config['hidden_char'] + self.config['dim_word']
 
     def _add_elmo_and_ch_lstm(self):
         self.c_dim = self.config['elmo_dim']
-        w_em_ch_elmo = tf.concat([self.word_embed_ch, self.word_elmo_pad], -1)
+        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+        word_embed = elmo(inputs={
+                                        "tokens": self.w_t_in,
+                                        "sequence_len": self.word_t_len
+                                    },
+                                    signature="tokens",
+                                    as_dict=True)["elmo"]
+        word_elmo_pad = tf.pad(word_embed, [[0,0],[1,1],[0,0]], "CONSTANT")
+        w_em_ch_elmo = tf.concat([self.word_embed_ch, word_elmo_pad], -1)
         word_embed_t = tf.layers.dense(w_em_ch_elmo, self.c_dim)
         self.word_embed_f = tf.contrib.layers.layer_norm(word_embed_t)
 
