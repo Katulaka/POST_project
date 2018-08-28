@@ -297,6 +297,7 @@ class STAGModel(BasicModel):
 
         if self.config['use_pretrained_pos']:
             input_feed[self.pos_in] = self.pos_step(bv)
+        import pdb; pdb.set_trace()
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
