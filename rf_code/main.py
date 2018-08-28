@@ -15,19 +15,42 @@ from model.stag_model import STAGModel
 
 def main(_):
     config = parse_cmdline()
-    import os
+    if not config['mode'] in ['debug', 'evalb']:
+        import time
+        start_time = time.clock()
+        if not os.path.exists(config['result_dir']):
+            os.makedirs(config['result_dir'])
+        if not os.path.exists(config['batch_dir']):
+            os.makedirs(config['batch_dir'])
+        batch_file = config['batch_file']
+        if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
+            print ("[[main]] Couldn't find batcher file: %s" % batch_file)
+            print ("[[main]]  Creating new batcher ")
+            batcher = Batcher(**config['btch'])
+            with open(batch_file, 'wb') as output:
+                pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
+        else:
+            print ("[[main]] Loading batcher file: %s" % batch_file)
+            with open(batch_file, 'rb') as input:
+                batcher = pickle.load(input)
+            batcher.update_vars()
+        print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
+        batcher.create_dataset()
+
+        for k in batcher._vocab.keys():
+            config['n'+k] = batcher._vocab[k].vocab_size()`
+
     if (config['mode'] == 'debug'):
         # data = dict()
-        src_dir = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
-        lb_dir = '/Users/katia.patkin/Berkeley/Research/Tagger/loop_back'
+        src_dir = config['path']['gold_dir']
+        lb_dir = config['path']['lb_dir']
 
-        pdir = '~/Berkeley/Research/Tagger'
-        evalb = os.path.join(pdir, 'EVALB', 'evalb')
-        pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
+        pdir = config['path']['evalb_dir']
+        evalb = os.path.join(pdir, 'evalb')
+        pfile = os.path.join(pdir, 'COLLINS.prm')
         t_op = TagOp(**config['tags_type'])
         for directory, dirnames, filenames in os.walk(src_dir):
-            # if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
-            if directory[-1].isdigit() and directory[-2:] in ['15']:
+            if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
 
                 dir_idx = directory.split('/')[-1]
                 lb_c_dir = os.path.join(lb_dir, dir_idx)
@@ -101,37 +124,12 @@ def main(_):
         os.popen('%s -p %s %s %s > %s' % (evalb, pfile, gfile, dfile, rfile))
 
     else:
-        import time
-        start_time = time.clock()
-        if not os.path.exists(config['result_dir']):
-            os.makedirs(config['result_dir'])
-        if not os.path.exists(config['batch_dir']):
-            os.makedirs(config['batch_dir'])
-        batch_file = config['batch_file']
-        if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
-            print ("[[main]] Couldn't find batcher file: %s" % batch_file)
-            print ("[[main]]  Creating new batcher ")
-            batcher = Batcher(**config['btch'])
-            with open(batch_file, 'wb') as output:
-                pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
-        else:
-            print ("[[main]] Loading batcher file: %s" % batch_file)
-            with open(batch_file, 'rb') as input:
-                batcher = pickle.load(input)
-            batcher.update_vars()
-        print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
-        batcher.create_dataset()
-
-        for k in batcher._vocab.keys():
-            config['n'+k] = batcher._vocab[k].vocab_size()
-
         if (config['mode'] == 'test-multi'):
             import subprocess
             NGPU = 8
             for i in range(NGPU):
                 import pdb; pdb.set_trace()
                 subprocess.call(["ls", "-l"])
-
 
         else:
             model = POSModel(config) if config['pos'] else STAGModel(config)
