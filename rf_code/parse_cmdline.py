@@ -7,7 +7,6 @@ def parse_cmdline():
 
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('mode', type=str, default='debug', help='')
-    parser.add_argument('--gpu_n', type=int, default=0)
 
     parser.add_argument('--model_name', type=str, default='stags', help='')
     parser.add_argument('--pos', action='store_true', help='')
@@ -19,6 +18,8 @@ def parse_cmdline():
     parser.add_argument('--grad_clip', action='store_true', help='')
     parser.add_argument('--grad_norm', default=5.0, type=float)
     parser.add_argument('--opt_fn', type=str, default='adam', help='')
+
+    parser.add_argument('--gpu_n', type=int, default=0)
 
     parser.add_argument('--dim_word', default=64, type=int) # maybe too small: 256
     parser.add_argument('--dim_tag', default=32, type=int)  # plenty
@@ -32,7 +33,6 @@ def parse_cmdline():
 
     parser.add_argument('--drop_rate', default=0.5, type=float)
     # parser.add_argument('--keep_prob', default=0.8, type=float)
-
     parser.add_argument('--no_c_embed', action='store_true', help='')
     parser.add_argument('--no_attn', action='store_true', help='')
     parser.add_argument('--layer_norm', action='store_true', help='')
@@ -62,10 +62,6 @@ def parse_cmdline():
 
     args = parser.parse_args()
     config['mode'] = args.mode
-    config['gpu_n'] =args.gpu_n
-    config['pos'] = args.pos
-    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
-    config['model_name'] = args.model_name
 
     config['result_dir'] = os.path.join(os.getcwd(), 'results', args.model_name)
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
@@ -79,19 +75,10 @@ def parse_cmdline():
     config['beams_rank_file'] = os.path.join(config['decode_dir'] ,'ranks.p')
     config['tags_file'] = os.path.join(config['decode_dir'] ,'tags.p')
 
-    config['use_pretrained_pos'] = args.pos_model_name != None
-
-    if not config['pos'] and config['use_pretrained_pos']:
-        pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
-        config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
-        # config['pos_ckpt'] = tf.train.latest_checkpoint(pos_model_path)
-
     config['btch'] = {}
     config['btch']['batch_size'] = args.batch_size
     config['btch']['tags_type'] = {'reverse' : args.reverse, 'no_val_gap': args.no_val_gap}
-
     config['btch']['dir_range'] = {'train': (2,22), 'dev': (22,23), 'test': (23,24)}
-
     config['btch']['nsize'] = {'tags':0, 'words': 0, 'chars':0}
     config['btch']['src_dir'] = '/Users/katia.patkin/Berkeley/Research/Tagger/gold_data'
     config['btch']['data_file'] = 'at_data.out'
@@ -101,6 +88,16 @@ def parse_cmdline():
     config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
     config['subset_file_dev'] = os.path.join(os.getcwd(), 'batcher','sub_batch_dev.json')
 
+    config['use_pretrained_pos'] = args.pos_model_name != None
+
+    if not config['pos'] and config['use_pretrained_pos']:
+        pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
+        config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
+
+    config['gpu_n'] =args.gpu_n
+    config['pos'] = args.pos
+    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
+    config['model_name'] = args.model_name
     #embedding size
     config['dim_word'] = args.dim_word
     config['dim_tag'] = args.dim_tag
@@ -111,7 +108,6 @@ def parse_cmdline():
     config['hidden_pos'] = args.h_pos
     config['hidden_word'] = args.h_word
     config['hidden_tag'] = args.h_tag
-
     #model arch
     config['drop_rate'] = args.drop_rate
     config['no_c_embed'] = args.no_c_embed
@@ -122,7 +118,6 @@ def parse_cmdline():
     config['n_layers'] = args.n_layers
     config['is_add_elmo'] = args.is_add_elmo
     config['elmo_dim'] = args.elmo_dim
-    # config['affine'] = args.affine
 
     if config['mode'] == 'train':
         config['lr'] = args.lr
@@ -131,7 +126,6 @@ def parse_cmdline():
         config['steps_per_ckpt'] = args.steps_per_ckpt
         config['grad_clip'] = args.grad_clip
         config['grad_norm'] = args.grad_norm
-
     else:
         config['beam_size'] = args.beam_size
         config['beam_timesteps'] = args.beam_timesteps
