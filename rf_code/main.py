@@ -124,31 +124,41 @@ def main(_):
 
         for k in batcher._vocab.keys():
             config['n'+k] = batcher._vocab[k].vocab_size()
-        model = POSModel(config) if config['pos'] else STAGModel(config)
 
-        if (config['mode'] == 'train'):
-            model.train(batcher)
+        if (config['mode'] == 'test-multi'):
+            import subprocess
+            NGPU = 8
+            for i in range(NGPU):
+                import pdb; pdb.set_trace()
+                subprocess.call(["ls", "-l"])
 
-        elif (config['mode'] == 'test'):
-            decode_trees = model.decode('test', batcher)
-
-        elif (config['mode'] == 'stats'):
-
-            import cProfile
-            profile = cProfile.Profile()
-
-            profile.enable()
-            beams, tags, beams_rank = model.stats('test', batcher)
-            profile.disable()
-            profile.print_stats()
-
-            decode_trees, astar_ranks = model._decode(batcher)
-            with open(config['beams_rank_file'], 'rb') as f:
-                ranks = pickle.load(f)
-            ranks_m1 = [[r-1 for r in rank] for rank in ranks]
 
         else:
-            pass
+            model = POSModel(config) if config['pos'] else STAGModel(config)
+
+            if (config['mode'] == 'train'):
+                model.train(batcher)
+
+            elif (config['mode'] == 'test'):
+                decode_trees = model.decode('test', batcher)
+
+            elif (config['mode'] == 'stats'):
+
+                import cProfile
+                profile = cProfile.Profile()
+
+                profile.enable()
+                beams, tags, beams_rank = model.stats('test', batcher)
+                profile.disable()
+                profile.print_stats()
+
+                decode_trees, astar_ranks = model._decode(batcher)
+                with open(config['beams_rank_file'], 'rb') as f:
+                    ranks = pickle.load(f)
+                ranks_m1 = [[r-1 for r in rank] for rank in ranks]
+
+            else:
+                pass
 
 
 if __name__ == "__main__":
