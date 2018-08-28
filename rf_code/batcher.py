@@ -116,23 +116,14 @@ class Batcher(object):
 
     def get_batch(self, mode, permute=False, subset_idx=None):
 
-        if subset_idx is None:
-            _d_size = self._d_size[mode]
-        else:
-            _d_size = len(subset_idx)
+        _d_size = self._d_size[mode] if subset_idx is None else len(subset_idx)
 
         n_batches = int(np.ceil(float(_d_size)/self._batch_size))
-        if permute:
-            batch_idx = np.random.permutation(n_batches)
-        else:
-            batch_idx = range(n_batches)
+        batch_idx = np.random.permutation(n_batches) if permute else range(n_batches)
 
         batched = {}
         for k in self._vocab.keys():
-            if subset_idx is None:
-                data = self._ds[mode][k]
-            else:
-                data = np.array(self._ds[mode][k])[subset_idx].tolist()
+            data = self._ds[mode][k] if subset_idx is None else np.array(self._ds[mode][k])[subset_idx].tolist()
             batched.setdefault(k, np.array_split(data, n_batches))
 
         return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
