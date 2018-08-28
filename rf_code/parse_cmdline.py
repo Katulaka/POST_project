@@ -90,7 +90,7 @@ def parse_cmdline():
 
     config['use_pretrained_pos'] = args.pos_model_name != None
 
-    if not config['pos'] and config['use_pretrained_pos']:
+    if not args.pos and config['use_pretrained_pos']:
         pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
         config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
 
