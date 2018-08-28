@@ -114,7 +114,7 @@ class Batcher(object):
         print ("[[Batcher.get_subset_idx]] Loading sub indices from: %s" % src_file)
         return subset_idx
 
-    def get_batch(self, mode, permute=False, subset_idx=None):
+    def get_batch(self, mode, permute=False, subset_idx=None, s_idx=0, e_idx=None):
 
         _d_size = self._d_size[mode] if subset_idx is None else len(subset_idx)
 
@@ -126,7 +126,9 @@ class Batcher(object):
             data = self._ds[mode][k] if subset_idx is None else np.array(self._ds[mode][k])[subset_idx].tolist()
             batched.setdefault(k, np.array_split(data, n_batches))
 
-        return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
+        batch = [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
+
+        return batch[s_idx:e_idx]
 
     def update_vars(self):
         import sys

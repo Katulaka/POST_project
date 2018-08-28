@@ -75,11 +75,14 @@ def main(_):
                 except EOFError:
                      break
 
-        # import pdb; pdb.set_trace()
-        time_out = config['time_out']
-        time_th = config['time_th']
-        cost_coeff_rate = config['cost_coeff_rate']
-        decode_fname = 'decode_to_%.2f_tt_%.2f_ccr_%.2f.p' %(time_out, time_th, cost_coeff_rate)
+        to = config['time_out']
+        tt = config['time_th']
+        ccr = config['cost_coeff_rate']
+        s_idx = config['s_idx']
+        e_idx = config['e_idx']
+
+        decode_fname = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_rng_{}_{}.p'.format(\
+                        to, tt, ccr, s_idx, e_idx)
         dfile = os.path.join(config['decode_dir'], decode_fname)
         with open(dfile, 'w') as tf:
             for t in test:
@@ -92,7 +95,8 @@ def main(_):
         evalb = os.path.join(pdir, 'EVALB', 'evalb')
         pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
         gfile = os.path.join(os.getcwd(),'gold.p')
-        res_fname = 'res_to_%.2f_tt_%.2f_ccr_%.2f.eval' %(time_out, time_th, cost_coeff_rate)
+        res_fname = 'res_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_rng_{}_{}.eval'.format(\
+                        to, tt, ccr, s_idx, e_idx)
         rfile = os.path.join(config['decode_dir'], res_fname)
         os.popen('%s -p %s %s %s > %s' % (evalb, pfile, gfile, dfile, rfile))
 

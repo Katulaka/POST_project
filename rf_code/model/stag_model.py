@@ -391,6 +391,7 @@ class STAGModel(BasicModel):
                     raise
 
         decode_trees = []
+
         if os.path.exists(self.config['decode_trees_file']):
             with open(self.config['decode_trees_file'], 'rb') as f:
                 while True:
@@ -398,7 +399,7 @@ class STAGModel(BasicModel):
                         decode_trees.append(dill.load(f))
                     except EOFError:
                         break
-        s_idx = len(decode_trees)
+        s_idx = self.config['s_idx'] + len(decode_trees)
 
         bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
@@ -406,11 +407,12 @@ class STAGModel(BasicModel):
                         self.config['beam_timesteps'])
 
         if self.config['use_subset']:
-            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
+            sub_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
         else:
-            subset_idx = None
+            sub_idx = None
 
-        for bv in batcher.get_batch(mode=mode, subset_idx=subset_idx)[s_idx:]:
+        for bv in batcher.get_batch(mode=mode, subset_idx=sub_idx, \
+                        s_idx=self.config['s_idx'], e_idx=self.config['e_idx']):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 

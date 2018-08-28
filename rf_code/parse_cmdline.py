@@ -56,6 +56,8 @@ def parse_cmdline():
     parser.add_argument('--cost_coeff_rate', type=float, default=0.5, help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
 
+    parser.add_argument('--s_idx', type=int, default=0, help='')
+    parser.add_argument('--e_idx', type=str, default=None, help='')
     # parser.add_argument('--load_from_file', type=str, default=None, help='')
 
     config = dict()
@@ -71,7 +73,8 @@ def parse_cmdline():
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
     config['sw_dir'] = os.path.join(config['result_dir'], 'summary')
     config['decode_dir'] = os.path.join(config['result_dir'],'decode')
-    dec_tree_f = 'decode_trees_to_%.2f_tt_%.2f_ccr_%.2f.p' %(args.time_out, args.time_th, args.cost_coeff_rate)
+    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_rng_{}_{}.p'.format(args.time_out, \
+                    args.time_th, args.cost_coeff_rate, args.s_idx, args.e_idx)
     config['decode_trees_file'] = os.path.join(config['decode_dir'], dec_tree_f)
     config['astar_ranks_file'] = os.path.join(config['decode_dir'] ,'astar_ranks.p')
     config['beams_file'] = os.path.join(config['decode_dir'] ,'beams.p')
