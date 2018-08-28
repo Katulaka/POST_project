@@ -38,7 +38,7 @@ def main(_):
         batcher.create_dataset()
 
         for k in batcher._vocab.keys():
-            config['n'+k] = batcher._vocab[k].vocab_size()`
+            config['n'+k] = batcher._vocab[k].vocab_size()
 
     if (config['mode'] == 'debug'):
         # data = dict()
