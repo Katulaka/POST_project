@@ -151,7 +151,7 @@ class STAGModel(BasicModel):
                 w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
-            hw_p = n_layers if self.config['is_stack'] else 1
+            hw_p = self.config['n_layers'] if self.config['is_stack'] else 1
             self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
 
     def _add_tag_lstm_layer(self):
