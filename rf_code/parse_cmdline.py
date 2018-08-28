@@ -67,8 +67,8 @@ def parse_cmdline():
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
     config['sw_dir'] = os.path.join(config['result_dir'], 'summary')
     config['decode_dir'] = os.path.join(config['result_dir'],'decode')
-    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_rng_{}_{}.p'.format(args.time_out, \
-                    args.time_th, args.cost_coeff_rate, args.s_idx, args.e_idx)
+    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}.p'.format(args.time_out, \
+                    args.time_th, args.cost_coeff_rate)
     config['decode_trees_file'] = os.path.join(config['decode_dir'], dec_tree_f)
     config['astar_ranks_file'] = os.path.join(config['decode_dir'] ,'astar_ranks.p')
     config['beams_file'] = os.path.join(config['decode_dir'] ,'beams.p')
@@ -85,8 +85,8 @@ def parse_cmdline():
     config['batch_dir'] = os.path.join(os.getcwd(), 'batcher')
     config['batch_file'] = os.path.join(config['batch_dir'], args.batch_file)
     config['use_subset'] = args.use_subset
-    config['subset_file'] = os.path.join(os.getcwd(), 'batcher','sub_batch.json')
-    config['subset_file_dev'] = os.path.join(os.getcwd(), 'batcher','sub_batch_dev.json')
+    config['subset_file'] = os.path.join(config['batch_dir'],'sub_batch.json')
+    config['subset_file_dev'] = os.path.join(config['batch_dir'],'sub_batch_dev.json')
 
     config['use_pretrained_pos'] = args.pos_model_name != None
 
