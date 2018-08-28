@@ -399,7 +399,7 @@ class STAGModel(BasicModel):
                         decode_trees.append(dill.load(f))
                     except EOFError:
                         break
-        s_idx = self.config['s_idx'] + len(decode_trees)
+        s_idx = len(decode_trees)
 
         bs = BeamSearch(self.config['ntags'],
                         batcher._vocab['tags'].token_to_id('GO'),
@@ -411,8 +411,7 @@ class STAGModel(BasicModel):
         else:
             sub_idx = None
 
-        for bv in batcher.get_batch(mode=mode, subset_idx=sub_idx, \
-                        s_idx=self.config['s_idx'], e_idx=self.config['e_idx']):
+        for bv in batcher.get_batch(mode=mode, subset_idx=sub_idx):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 

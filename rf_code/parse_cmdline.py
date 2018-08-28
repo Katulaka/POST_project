@@ -56,8 +56,6 @@ def parse_cmdline():
     parser.add_argument('--cost_coeff_rate', type=float, default=0.5, help='')
     parser.add_argument('--num_goals', type=int, default=1, help='')
 
-    parser.add_argument('--s_idx', type=int, default=0, help='')
-    parser.add_argument('--e_idx', type=str, default=None, help='')
     # parser.add_argument('--load_from_file', type=str, default=None, help='')
 
     config = dict()
