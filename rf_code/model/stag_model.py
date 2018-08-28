@@ -16,8 +16,6 @@ class STAGModel(BasicModel):
 
     def __init__ (self, config):
         BasicModel.__init__(self, config)
-        # self.initializer = tf.contrib.layers.xavier_initializer()
-        # self.init_op = tf.global_variables_initializer()
         if self.config['use_pretrained_pos']:
             self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
             self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
@@ -50,12 +48,11 @@ class STAGModel(BasicModel):
 
     def _add_elmo(self):
         elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
-        word_elmo = elmo(inputs={
-                                        "tokens": self.w_t_in,
-                                        "sequence_len": self.word_t_len
-                                    },
-                                    signature="tokens",
-                                    as_dict=True)["elmo"]
+        word_elmo = elmo(inputs={"tokens": self.w_t_in,
+                                "sequence_len": self.word_t_len
+                                },
+                                signature="tokens",
+                                as_dict=True)["elmo"]
         word_elmo_pad = tf.pad(word_elmo, [[0,0],[1,1],[0,0]], "CONSTANT")
         word_elmo_t = tf.layers.dense(word_elmo_pad, self.config['elmo_dim'])
         self.word_embed_elmo = tf.contrib.layers.layer_norm(word_elmo_t)
@@ -194,9 +191,7 @@ class STAGModel(BasicModel):
                                                 self.encode_state), do_shape)
             self.proj_in = tf.concat([self.decode_out, context], -1)
 
-
     def _add_projection(self):
-
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
             proj_in = tf.layers.dense(self.proj_in, self.config['hidden_tag'],
