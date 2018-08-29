@@ -397,7 +397,8 @@ class STAGModel(BasicModel):
                         break
         s_idx = len(decode_trees)
 
-        bs = BeamSearch(self.config['ntags'],
+        # bs = BeamSearch(self.config['ntags'],
+        bs = BeamSearch(self.config['beam_size'],
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.config['beam_timesteps'])

@@ -49,7 +49,7 @@ def parse_cmdline():
     parser.add_argument('--no_val_gap', action='store_true', help='')
     parser.add_argument('--reverse', action='store_true', help='')
 
-    parser.add_argument('--beam_size', type=int, default=5, help='')
+    parser.add_argument('--beam_size', type=int, default=20, help='')
     parser.add_argument('--beam_timesteps', type=int, default=30, help='')
     parser.add_argument('--time_out', type=float, default=100., help='')
     parser.add_argument('--time_th', type=float, default=10., help='')
