@@ -67,8 +67,8 @@ def parse_cmdline():
     config['ckpt_dir'] = os.path.join(config['result_dir'], 'checkpoints')
     config['sw_dir'] = os.path.join(config['result_dir'], 'summary')
     config['decode_dir'] = os.path.join(config['result_dir'],'decode')
-    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}.p'.format(args.time_out, \
-                    args.time_th, args.cost_coeff_rate)
+    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_b_{}.p'.format(args.time_out, \
+                    args.time_th, args.cost_coeff_rate, args.beam_size)
     config['decode_trees_file'] = os.path.join(config['decode_dir'], dec_tree_f)
     config['astar_ranks_file'] = os.path.join(config['decode_dir'] ,'astar_ranks.p')
     config['beams_file'] = os.path.join(config['decode_dir'] ,'beams.p')
