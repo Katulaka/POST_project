@@ -128,8 +128,9 @@ class STAGModel(BasicModel):
                                             self.config['n_layers'],
                                             self.config['is_stack'])
 
-            w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
-                                        name='word-bidi-in')
+            # w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
+            #                             name='word-bidi-in')
+            w_bidi_in = self.word_embed_f
 
             # Get lstm cell output
             if self.config['is_stack']:
@@ -149,7 +150,8 @@ class STAGModel(BasicModel):
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             hw_p = self.config['n_layers'] if self.config['is_stack'] else 1
-            self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
+            # self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
+            self.c_dim += 2**hw_p*self.config['hidden_word']
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
