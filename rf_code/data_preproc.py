@@ -53,7 +53,6 @@ def clean_up_file(fin, fout):
 
 def clean_up(src_dir, dst_root_dir):
 
-    all_data = dict()
     for directory, dirnames, filenames in os.walk(src_dir):
         if directory[-1].isdigit():
             dst_dir = os.path.join(dst_root_dir, directory[-2:])
@@ -73,7 +72,7 @@ def create_data_file(src_dir, fout):
             for fname in sorted(filenames):
                 k = fname.split('_')[-1].split('.')[0]
                 fin = os.path.join(directory, fname)
-                data.setdefault(k, {}).update(gen_data_dict(fin))
+                data.setdefault(k, {}).update(gen_aug_tags(fin))
     with open(fout, 'w') as outfile:
         json.dump(data, outfile)
 

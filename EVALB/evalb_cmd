@@ -1,0 +1,1 @@
+EVALB/evalb -p EVALB/COLLINS.prm <predicted_file> <gold_file>
