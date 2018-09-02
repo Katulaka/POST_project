@@ -6,10 +6,14 @@ import time
 import numpy as np
 from itertools import islice
 
-from data_preproc import create_data_file
 from vocab import PAD, GO, EOS, UNK, Vocab
 from utils import operate_on_Narray, _operate_on_Narray, flatten_to_1D
 from tag_ops import TagOp
+
+from nltk.tree import Tree
+from tree_t import get_dependancies, TreeT
+import collections
+import pickle
 
 
 class Batcher(object):
@@ -19,40 +23,54 @@ class Batcher(object):
             setattr(self, '_'+k, v)
 
         self._t_op = TagOp(**self._tags_type)
-        self._data = self.create_data()
+        self._data = self.load_data()
         self._vocab = self.create_vocab()
         self.convert_to_ids()
 
+    def __call__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, '_'+k, v)
 
-    def load_fn(self, src_dir=None, data_file=None):
+    def create_data(self, data_file):
         """ """
-        start_time = time.clock()
-
-        if src_dir is None:
-            src_dir = self._src_dir
-        if data_file is None:
-            data_file = self._data_file
-
-        if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
-            print ("[[Batcher.load_fn]] Couldn't find data file: %s" % data_file)
-            data = create_data_file(src_dir, data_file)
-        else:
-            print ("[[Batcher.load_fn]] Loading data file: %s" % data_file)
-            with open (data_file, 'r') as outfile:
-                data = json.load(outfile)
-        print ("[[Batcher.load_fn]] %.3f to load data" % (time.clock()-start_time))
+        data = {}
+        types = ['train', 'dev', 'test']
+        fields = ['gold', 'words', 'pos', 'chars', 'tags']
+        Entry = collections.namedtuple('entry', fields)
+        for type, d_file in self._d_files.items():
+            tree_deps = get_dependancies(d_file)
+            gold, words, pos, chars, tags = [], [], [], [], []
+            with open(d_file) as f:
+                for line, dep in zip(f.readlines(), tree_deps):
+                    line = line.strip('\n')
+                    gold.append(line)
+                    word_pos = Tree.fromstring(line).pos()
+                    max_id = len(word_pos) + 1
+                    tup_words, tup_pos = zip(*word_pos)
+                    words.append(list(tup_words))
+                    pos.append(list(tup_pos))
+                    chars.append([list(w) for w in tup_words])
+                    line = line.replace('(', ' ( ').replace(')', ' ) ').split()
+                    tags.append(TreeT().from_ptb_to_tag(line, max_id, dep))
+            data_dict = Entry(gold, words, pos, chars, tags)._asdict()
+            data.setdefault(type,{}).update(data_dict)
+            with open(data_file, 'wb') as f:
+                pickle.dump(data, f)
         return data
 
-    def create_data(self):
-        """ """
-        _data = self.load_fn()
-        start_time = time.clock()
-        for k in _data.keys():
-            _data[k].setdefault('pos',[]).extend([[t[-1] for t in ts] for ts in _data[k]['tags']])
-            _data[k].setdefault('chars',[]).extend([[list(w) for w in s] for s in _data[k]['words']])
-            _data[k]['tags'] = [[self._t_op.modify_tag(t) for t in ts] for ts in _data[k]['tags']]
-        print ("[[Batcher.create_data]] %.3f to create dataset" % (time.clock()-start_time))
-        return _data
+    def load_data(self):
+
+        data_file = self._data_file
+        if not os.path.exists(data_file) or os.path.getsize(data_file) == 0:
+            print ("[[Batcher]] Couldn't find {}".format(data_file))
+            data = self.create_data(data_file)
+        else:
+            print ("[[Batcher]] Loading data from {}".format(data_file))
+            with open(data_file, 'rb') as f:
+                data = pickle.load(f)
+        for k in data.keys():
+            data[k]['tags'] = [[self._t_op.modify_tag(t) for t in ts] for ts in data[k]['tags']]
+        return data
 
     def create_vocab(self):
         """ """
@@ -66,8 +84,8 @@ class Batcher(object):
         for k, v in vocab_data.items():
             start_time = time.clock()
             _vocab[k] = Vocab(flatten_to_1D(v))
-            print ("[[Batcher.create_vocab]] %.3f for %s vocab (size: %s)" %
-                    (time.clock()-start_time, k, _vocab[k].vocab_size()))
+            print ("{:.3f} to creat {} vocab (size: {})".format(
+                        time.clock()-start_time, k, _vocab[k].vocab_size()))
         return _vocab
 
     def convert_to_ids(self):
@@ -76,25 +94,8 @@ class Batcher(object):
             start_time = time.clock()
             for d_k, d_v in self._data.items():
                 self._data[d_k][k] = v.to_ids(d_v[k])
-            print ("[[Batcher.convert_to_ids]] %.3f for %s vocab" %
-                    (time.clock()-start_time, k))
-        return self
-
-    def create_dataset(self):
-        """ """
-        start_time = time.clock()
-        self._ds = {}
-        self._d_size = {}
-        for mode_k, mode_v in self._dir_range.items():
-            _ds = {}
-            for k, v in self._vocab.items():
-                for d_k in sorted(self._data.keys()):
-                    if int(d_k[:2]) in range(*mode_v):
-                        _ds.setdefault(k,[]).extend(self._data[d_k][k])
-            self._ds.setdefault(mode_k,{}).update(_ds)
-            self._d_size.setdefault(mode_k,len(_ds[k]))
-            print ("[[Batcher.create_dataset]] %.3f to create ds %s" %
-            (time.clock()-start_time, mode_k))
+            print ("{:.3f} to convert to ids {} vocab".format(
+                                                    time.clock()-start_time, k))
         return self
 
     def get_subset_idx(self, src_file, precentage, mode):
@@ -114,23 +115,18 @@ class Batcher(object):
 
     def get_batch(self, mode, permute=False, subset_idx=None):
 
-        _d_size = self._d_size[mode] if subset_idx is None else len(subset_idx)
+        use_all = subset_idx is None
+        _d_size = len(self._data[mode]['gold']) if use_all else len(subset_idx)
 
         n_batches = int(np.ceil(float(_d_size)/self._batch_size))
         batch_idx = np.random.permutation(n_batches) if permute else range(n_batches)
 
         batched = {}
         for k in self._vocab.keys():
-            data = self._ds[mode][k] if subset_idx is None else np.array(self._ds[mode][k])[subset_idx].tolist()
+            data = self._data[mode][k] if use_all else np.array(self._data[mode][k])[subset_idx].tolist()
             batched.setdefault(k, np.array_split(data, n_batches))
 
         return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
-
-    def update_vars(self):
-        import sys
-        if '--batch_size' in sys.argv[1:]:
-            self._batch_size = int(sys.argv[1:][sys.argv[1:].index('--batch_size')+1])
-        return self
 
     def get_batch_size(self):
         return self._batch_size
