@@ -9,8 +9,6 @@ def parse_cmdline():
     parser.add_argument('mode', type=str, default='debug', help='')
 
     parser.add_argument('--model_name', type=str, default='stags', help='')
-    parser.add_argument('--pos', action='store_true', help='')
-    parser.add_argument('--pos_model_name', type=str, default=None, help='')
 
     parser.add_argument('--num_epochs', default=1, type=int)
     parser.add_argument('--lr', default=0.001, type=float)
@@ -39,7 +37,6 @@ def parse_cmdline():
     parser.add_argument('--is_stack', action='store_true', help='')
     parser.add_argument('--kp_bidi', type=float, default=0.8)
     parser.add_argument('--n_layers', type=int, default=1)
-    # parser.add_argument('--affine', action='store_true', help='')
     parser.add_argument('--use_subset', action='store_true', help='')
     parser.add_argument('--batch_size', type=int, default=32, help='')
     parser.add_argument('--batch_file', type=str, default='batch.pkl', help='')
@@ -88,15 +85,9 @@ def parse_cmdline():
     config['subset_file'] = os.path.join(config['batch_dir'],'sub_batch.json')
     config['subset_file_dev'] = os.path.join(config['batch_dir'],'sub_batch_dev.json')
 
-    config['use_pretrained_pos'] = args.pos_model_name != None
-
-    if not args.pos and config['use_pretrained_pos']:
-        pos_model_path = os.path.join(os.getcwd(), 'results', args.pos_model, 'checkpoints')
-        config['frozen_graph_fname'] = os.path.join(pos_model_path,'frozen_model.pb')
 
     config['gpu_n'] =args.gpu_n
-    config['pos'] = args.pos
-    config['scope_name'] = 'pos_model' if args.pos else 'stag_model'
+    config['scope_name'] = 'stag_model'
     config['model_name'] = args.model_name
     #embedding size
     config['dim_word'] = args.dim_word

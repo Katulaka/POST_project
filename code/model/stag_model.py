@@ -16,10 +16,6 @@ class STAGModel(BasicModel):
 
     def __init__ (self, config):
         BasicModel.__init__(self, config)
-        if self.config['use_pretrained_pos']:
-            self.pos_g = self.load_graph(self.config['frozen_graph_fname'])
-            self.pos_sess = tf.Session(config = self.sess_config, graph = self.pos_g)
-
 
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
@@ -128,9 +124,8 @@ class STAGModel(BasicModel):
                                             self.config['n_layers'],
                                             self.config['is_stack'])
 
-            # w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
-            #                             name='word-bidi-in')
-            w_bidi_in = self.word_embed_f
+            w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
+                                        name='word-bidi-in')
 
             # Get lstm cell output
             if self.config['is_stack']:
@@ -150,8 +145,7 @@ class STAGModel(BasicModel):
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             hw_p = self.config['n_layers'] if self.config['is_stack'] else 1
-            # self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
-            self.c_dim += 2**hw_p*self.config['hidden_word']
+            self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
@@ -265,22 +259,6 @@ class STAGModel(BasicModel):
             return g
 
         """"TRAIN Part """
-    def pos_step(self, bv):
-        input_feed = {}
-        for op in self.pos_g.get_operations():
-            #get only name wihtout the scope
-            op_key = op.name.split('/')[-1]
-            #if operation is placeholder
-            #get the tensor from graph and assign the input batch vector
-            if 'placeholders' in op.name:
-                tf_key = self.pos_g.get_tensor_by_name(op.name+':0')
-                bv_key = op_key.split('-')
-                input_feed[tf_key] = bv[bv_key[0]][bv_key[-1]]
-            #if operation is the prediction get the tensor from grapg
-            if op_key == 'pos_pred':
-                out = self.pos_g.get_tensor_by_name(op.name+':0')
-        return self.pos_sess.run(out, input_feed)
-
     def step(self, bv, output_feed, is_train=False):
         """ Training step, returns the loss"""
         input_feed = {
@@ -297,8 +275,6 @@ class STAGModel(BasicModel):
             self.drop_rate: self.config['drop_rate'],
             self.is_train : is_train}
 
-        if self.config['use_pretrained_pos']:
-            input_feed[self.pos_in] = self.pos_step(bv)
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -356,8 +332,6 @@ class STAGModel(BasicModel):
                         self.pos_in: enc_bv['pos']['in'],
                         self.drop_rate: self.config['drop_rate'],
                         self.is_train : False}
-        if self.config['use_pretrained_pos']:
-            input_feed[self.pos_in] = self.pos_step(enc_bv)
         output_feed = self.encode_state
         return self.sess.run(output_feed, input_feed)
 

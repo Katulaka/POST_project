@@ -128,7 +128,7 @@ def main(_):
                 subprocess.call(["ls", "-l"])
 
         else:
-            model = POSModel(config) if config['pos'] else STAGModel(config)
+            model = STAGModel(config)
 
             if (config['mode'] == 'train'):
                 model.train(batcher)
