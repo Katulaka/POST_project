@@ -20,8 +20,6 @@ def parse_cmdline():
     parser.add_argument('--no_val_gap', action='store_true')
     parser.add_argument('--reverse', action='store_true')
     parser.add_argument('--use_subset', action='store_true')
-    parser.add_argument('--subset_file', type=str, default='../batcher/data.sub')
-    parser.add_argument('--subset_file_dev', type=str, default='../batcher/data.dev.sub')
     parser.add_argument('--batch_size', type=int, default=32)
 
     parser.add_argument('--model_name', type=str, default='stags')

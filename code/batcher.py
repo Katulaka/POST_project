@@ -98,22 +98,13 @@ class Batcher(object):
                                                     time.clock()-start_time, k))
         return self
 
-    def get_subset_idx(self, src_file, precentage, mode):
-        """ """
-
-        if os.path.exists(src_file):
-            with open(src_file, 'r') as f:
-                    subset_idx = json.load(f)
-        else:
-            import random
-            size_subset = int(np.ceil(self._d_size[mode] * precentage))
-            subset_idx = random.sample(range(1, self._d_size[mode]), size_subset)
-            with open(src_file, 'w') as f:
-                json.dump(subset_idx, f)
-        print ("[[Batcher.get_subset_idx]] Loading sub indices from: %s" % src_file)
-        return subset_idx
-
     def get_batch(self, mode, permute=False, subset_idx=None):
+
+        if self._use_subset:
+            precentage = 0.1
+            _d_size = len(self._data[mode]['gold'])
+            skip_size = int(np.ceil(1/precentage))
+            subset_idx = range(_d_size)[0::skip_size]
 
         use_all = subset_idx is None
         _d_size = len(self._data[mode]['gold']) if use_all else len(subset_idx)

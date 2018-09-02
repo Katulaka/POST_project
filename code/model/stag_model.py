@@ -278,12 +278,6 @@ class STAGModel(BasicModel):
 
     def train(self, batcher):
 
-        if self.use_subset:
-            subset_idx = batcher.get_subset_idx(self.subset_file, 0.1, 'train')
-            subset_idx_dev = batcher.get_subset_idx(self.subset_file_dev, 0.1, 'dev')
-        else:
-            subset_idx = None
-            subset_idx_dev = None
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
 
@@ -291,7 +285,7 @@ class STAGModel(BasicModel):
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
             loss = []
-            for bv in batcher.get_batch(mode='train', permute=True, subset_idx=subset_idx):
+            for bv in batcher.get_batch(mode='train', permute=True):
                 input_feed = batcher.process(bv)
                 output_feed = [t_loss, self.optimizer]
                 summary_loss, _ = self.step(input_feed, output_feed, True)
@@ -304,7 +298,7 @@ class STAGModel(BasicModel):
 
             t_dev_loss = tf.Summary()
             dev_losses = []
-            for bv in batcher.get_batch(mode='dev', subset_idx=subset_idx_dev):
+            for bv in batcher.get_batch(mode='dev'):
                 dev_loss = [self.step(batcher.process(bv), self.loss, False)]
                 dev_losses.append(dev_loss)
             mean_dev_loss = np.mean(dev_losses)
@@ -375,12 +369,7 @@ class STAGModel(BasicModel):
                         batcher._vocab['tags'].token_to_id('EOS'),
                         self.beam_timesteps)
 
-        if self.use_subset:
-            sub_idx = batcher.get_subset_idx(self.subset_file, 0.1, mode)
-        else:
-            sub_idx = None
-
-        for bv in batcher.get_batch(mode=mode, subset_idx=sub_idx):
+        for bv in batcher.get_batch(mode=mode):
 
             words_token = batcher._vocab['words'].to_tokens(bv['words'])
 
