@@ -5,154 +5,97 @@ import pickle
 from parse_cmdline import parse_cmdline
 from batcher import Batcher
 
-from tree_t import gen_aug_tags
-from tag_ops import TagOp
-from astar.search import solve_tree_search
-
-from model.pos_model import POSModel
 from model.stag_model import STAGModel
 
+def load_batcher(args):
+    import time
+    start_time = time.clock()
+    parms = {}
+    parms['data_file'] = '../data/all.processed'
+
+    parms['d_files'] = {'train': args.train_path,
+                        'dev': args.dev_path,
+                        'test': args.test_path}
+
+    parms['tags_type'] = {'reverse' : args.reverse,
+                            'no_val_gap': args.no_val_gap}
+
+    batch_file = args.batch_path
+    path = '/'.join(batch_file.split('/')[:-1])
+    if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        print ("Couldn't find {}\n Creating new batcher".format(batch_file))
+        batcher = Batcher(**parms)
+        with open(batch_file, 'wb') as output:
+            pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
+    else:
+        print ("Loading batcher from {}".format(batch_file))
+        with open(batch_file, 'rb') as input:
+            batcher = pickle.load(input)
+    current_parms = {'batch_size': args.batch_size,
+                    'use_subset': args.use_subset}
+    batcher(**current_parms)
+    print ("{:.3f} to get batcher".format(time.clock()-start_time))
+
+    for k in batcher._vocab.keys():
+        vars(args)['n'+k] = batcher._vocab[k].vocab_size()
+
+    return batcher
+
+def run_train(args):
+    batcher = load_batcher(args)
+
+    model = STAGModel(args)
+    model.train(batcher)
+
+def run_test(config):
+    config['decode_dir'] = os.path.join(config['result_dir'],'decode')
+    dec_tree_f = 'dec_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}_b_{}.p'.format(args.time_out, \
+                    args.time_th, args.cost_coeff_rate, args.beam_size)
+    config['decode_trees_file'] = os.path.join(config['decode_dir'], dec_tree_f)
+    config['astar_ranks_file'] = os.path.join(config['decode_dir'] ,'astar_ranks.p')
+    config['beams_file'] = os.path.join(config['decode_dir'] ,'beams.p')
+    config['beams_rank_file'] = os.path.join(config['decode_dir'] ,'ranks.p')
+    config['tags_file'] = os.path.join(config['decode_dir'] ,'tags.p')
+    batcher, config = load_batcher(config)
+    model = STAGModel(config)
+    decode_trees = model.decode('test', batcher)
+    # evaluate
+
+def run_stats(config):
+    atcher, config = load_batcher(config)
+    model = STAGModel(config)
+    import cProfile
+    profile = cProfile.Profile()
+
+    profile.enable()
+    beams, tags, beams_rank = model.stats('test', batcher)
+    profile.disable()
+    profile.print_stats()
+
+    decode_trees, astar_ranks = model._decode(batcher)
+    with open(config['beams_rank_file'], 'rb') as f:
+        ranks = pickle.load(f)
+    ranks_m1 = [[r-1 for r in rank] for rank in ranks]
 
 def main(_):
-    config = parse_cmdline()
-    if not config['mode'] in ['debug', 'evalb']:
-        import time
-        start_time = time.clock()
-        if not os.path.exists(config['result_dir']):
-            os.makedirs(config['result_dir'])
-        if not os.path.exists(config['batch_dir']):
-            os.makedirs(config['batch_dir'])
-        batch_file = config['batch_file']
-        if not os.path.exists(batch_file) or os.path.getsize(batch_file) == 0:
-            print ("[[main]] Couldn't find batcher file: %s" % batch_file)
-            print ("[[main]]  Creating new batcher ")
-            batcher = Batcher(**config['btch'])
-            with open(batch_file, 'wb') as output:
-                pickle.dump(batcher, output, pickle.HIGHEST_PROTOCOL)
-        else:
-            print ("[[main]] Loading batcher file: %s" % batch_file)
-            with open(batch_file, 'rb') as input:
-                batcher = pickle.load(input)
-            batcher.update_vars()
-        print ("[[main]] %.3f  to get batcher" % (time.clock()-start_time))
-        batcher.create_dataset()
+    args = parse_cmdline()
 
-        for k in batcher._vocab.keys():
-            config['n'+k] = batcher._vocab[k].vocab_size()
+    if (args.mode == 'train'):
+        run_train(args)
 
-    if (config['mode'] == 'debug'):
-        # data = dict()
-        src_dir = config['path']['gold_dir']
-        lb_dir = config['path']['lb_dir']
+    elif (args.mode == 'test'):
+        run_test(config)
 
-        pdir = config['path']['evalb_dir']
-        evalb = os.path.join(pdir, 'evalb')
-        pfile = os.path.join(pdir, 'COLLINS.prm')
-        t_op = TagOp(**config['tags_type'])
-        for directory, dirnames, filenames in os.walk(src_dir):
-            if directory[-1].isdigit() and directory[-2:] not in ['00','01','24']:
+    elif (args.mode == 'loop_back'):
+        pass
 
-                dir_idx = directory.split('/')[-1]
-                lb_c_dir = os.path.join(lb_dir, dir_idx)
-                try:
-                    if not os.path.exists(lb_c_dir):
-                        os.makedirs(lb_c_dir)
-                except OSError:
-                    print ('Error: Creating directory. ' +  lb_c_dir)
-
-                import cProfile
-
-                pr = cProfile.Profile()
-                pr.enable()
-                for fname in sorted(filenames):
-                    fin = os.path.join(directory, fname)
-                    fout_lb = os.path.join(lb_c_dir, fname.split('.')[0]+'.lb')
-                    res = gen_aug_tags(fin)
-                    reconst = []
-                    for tags, words in zip(res['tags'], res['words']):
-                        mod_tags = [[t] for t in t_op.combine_fn(t_op.modify_fn(tags))]
-                        score = [[1.]]*len(tags)
-                        tag_score_mat = map(lambda x, y: zip(x, y), mod_tags, score)
-                        trees_res,_ = solve_tree_search(tag_score_mat, words,
-                        config['tags_type']['no_val_gap'], 1, 100)
-                        try:
-                            reconst.append(trees_res[0].from_tree_to_ptb())
-                        except:
-                            reconst.append('')
-                    pr.disable()
-                    pr.dump_stats(os.path.join(lb_c_dir, fname.split('.')[0]+'.pr'))
-                    with open(fout_lb, 'w') as fout:
-                        for rc in reconst:
-                            fout.write('%s\n' % rc)
-                    rfile = os.path.join(lb_c_dir, fname.split('.')[0]+'.evalb')
-                    os.popen('%s -p %s %s %s > %s' % (evalb, pfile, fin, fout_lb, rfile))
-
-    elif(config['mode'] == 'evalb'):
-
-        # tfile = config['decode_trees_file']
-        dec_tree_f = 'dec_to_100.00_tt_10.00_ccr_0.50.p'
-        tfile = os.path.join(config['decode_dir'], dec_tree_f)
-        test = []
-        with open(tfile, 'rb') as tf:
-            while True:
-                try:
-                    test.append(pickle.load(tf))
-                except EOFError:
-                     break
-
-        decode_fname = 'to_{:.2f}_tt_{:.2f}_ccr_{:.2f}.p'.format(\
-                            100.00, 10.00, 0.50)
-        dfile = os.path.join(config['decode_dir'], decode_fname)
-        with open(dfile, 'w') as tf:
-            for t in test:
-                try:
-                    tf.write(t[0].from_tree_to_ptb()+'\n')
-                except:
-                    tf.write('\n')
-
-        pdir = '~/Berkeley/Research/Tagger'
-        evalb = os.path.join(pdir, 'EVALB', 'evalb')
-        pfile = os.path.join(pdir, 'EVALB', 'COLLINS.prm')
-        gfile = os.path.join(os.getcwd(),'gold.p')
-        res_fname = 'res_to_{:.2f}_tt_{:.2f}_ccr_{:.2f}.eval'.format(\
-                                110.00, 10.00, 0.50)
-        rfile = os.path.join(config['decode_dir'], res_fname)
-        os.popen('%s -p %s %s %s > %s' % (evalb, pfile, gfile, dfile, rfile))
+    elif (args.mode == 'stats'):
+        run_stats(config)
 
     else:
-        if (config['mode'] == 'test-multi'):
-            import subprocess
-            NGPU = 8
-            for i in range(NGPU):
-                import pdb; pdb.set_trace()
-                subprocess.call(["ls", "-l"])
-
-        else:
-            model = STAGModel(config)
-
-            if (config['mode'] == 'train'):
-                model.train(batcher)
-
-            elif (config['mode'] == 'test'):
-                decode_trees = model.decode('test', batcher)
-
-            elif (config['mode'] == 'stats'):
-
-                import cProfile
-                profile = cProfile.Profile()
-
-                profile.enable()
-                beams, tags, beams_rank = model.stats('test', batcher)
-                profile.disable()
-                profile.print_stats()
-
-                decode_trees, astar_ranks = model._decode(batcher)
-                with open(config['beams_rank_file'], 'rb') as f:
-                    ranks = pickle.load(f)
-                ranks_m1 = [[r-1 for r in rank] for rank in ranks]
-
-            else:
-                pass
+        pass
 
 
 if __name__ == "__main__":
