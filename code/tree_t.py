@@ -234,7 +234,10 @@ class TreeT(object):
     def from_ptb_to_tag(self, line, max_id, depend):
         self.from_ptb_to_tree(line, max_id)
         self.add_height(depend)
-        return self.from_tree_to_tag()
+        path = {}
+        self.tree_to_path(self.tree.root, path)
+        return self.path_to_tags(path.values())
+        # return self.from_tree_to_tag()
 
 def trees_to_ptb(trees):
     return _getattr_operate_on_Narray(trees, 'from_tree_to_ptb')
