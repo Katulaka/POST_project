@@ -17,6 +17,7 @@ class STAGModel(BasicModel):
     def __init__ (self, config):
         BasicModel.__init__(self, config)
 
+
     def _add_placeholders(self):
         with tf.variable_scope('placeholders'):
             """Inputs to be fed to the graph."""
@@ -38,7 +39,6 @@ class STAGModel(BasicModel):
             #shape = (batch_size * length of sentences)
             self.targets = tf.placeholder(tf.int32, [None], 'targets')
             #dropout rate
-            self.drop_rate = tf.placeholder(tf.float32, shape=(), name='drop-rate')
             self.is_train = tf.placeholder(tf.bool, shape=(), name='is-train')
 
 
@@ -50,14 +50,14 @@ class STAGModel(BasicModel):
                                 signature="tokens",
                                 as_dict=True)["elmo"]
         word_elmo_pad = tf.pad(word_elmo, [[0,0],[1,1],[0,0]], "CONSTANT")
-        word_elmo_t = tf.layers.dense(word_elmo_pad, self.config['elmo_dim'])
+        word_elmo_t = tf.layers.dense(word_elmo_pad, self.elmo_dim)
         self.word_embed_elmo = tf.contrib.layers.layer_norm(word_elmo_t)
 
     def _add_embeddings(self):
         """ Look up embeddings for inputs. """
         with tf.variable_scope('embedding', initializer=self.initializer, dtype=self.dtype):
 
-            ch_mat_shape = [self.config['nchars'], self.config['dim_char']]
+            ch_mat_shape = [self.nchars, self.dim_char]
             ch_embed_mat = tf.get_variable('ch-embed-mat', shape=ch_mat_shape)
             char_embed = tf.nn.embedding_lookup(ch_embed_mat, self.char_in,
                                                     name='char-embed')
@@ -65,7 +65,7 @@ class STAGModel(BasicModel):
                                                     training = self.is_train,
                                                     name='char-embed-dropout')
 
-            w_mat_shape = [self.config['nwords'], self.config['dim_word']]
+            w_mat_shape = [self.nwords, self.dim_word]
             w_embed_mat = tf.get_variable('word-embed-mat', shape=w_mat_shape)
             word_embed = tf.nn.embedding_lookup(w_embed_mat, self.w_in,
                                                     name='word-embed')
@@ -73,7 +73,7 @@ class STAGModel(BasicModel):
                                                     training = self.is_train,
                                                     name='word-embed-dropout')
 
-            t_mat_shape = [self.config['ntags'], self.config['dim_tag']]
+            t_mat_shape = [self.ntags, self.dim_tag]
             t_embed_mat = tf.get_variable('tag-embed-mat', shape=t_mat_shape)
             tag_embed = tf.nn.embedding_lookup(t_embed_mat, self.t_in,
                                                     name='tag-embed')
@@ -81,7 +81,7 @@ class STAGModel(BasicModel):
                                                     training = self.is_train,
                                                     name='tag-embed-dropout')
 
-            pos_mat_shape = [self.config['npos'], self.config['dim_pos']]
+            pos_mat_shape = [self.npos, self.dim_pos]
             pos_embed_mat = tf.get_variable('pos-embed-mat', shape=pos_mat_shape)
             pos_embed = tf.nn.embedding_lookup(pos_embed_mat, self.pos_in,
                                                     name='pos-embed')
@@ -91,7 +91,7 @@ class STAGModel(BasicModel):
 
     def _add_char_lstm(self):
         with tf.variable_scope('char-LSTM-Layer', initializer=self.initializer):
-            char_cell = self._single_cell(self.config['hidden_char'],
+            char_cell = self._single_cell(self.h_char,
                                             1. - self.drop_rate,
                                             self.is_train)
 
@@ -102,7 +102,7 @@ class STAGModel(BasicModel):
                                             scope='char-lstm')
 
             we_shape = tf.shape(self.word_embed)
-            co_shape = [we_shape[0], we_shape[1], self.config['hidden_char']]
+            co_shape = [we_shape[0], we_shape[1], self.h_char]
             char_out_reshape = tf.reshape(ch_state[1], co_shape)
 
             self.word_embed_ch_lstm = tf.concat([self.word_embed, char_out_reshape],
@@ -112,23 +112,23 @@ class STAGModel(BasicModel):
         """ Bidirectional LSTM """
         with tf.variable_scope('word-bidirectional-LSTM-Layer'):
             # Forward and Backward direction cell
-            word_cell_fw = self._multi_cell(self.config['hidden_word'],
-                                            tf.constant(self.config['kp_bidi']),
+            word_cell_fw = self._multi_cell(self.h_word,
+                                            tf.constant(self.kp_bidi),
                                             self.is_train,
-                                            self.config['n_layers'],
-                                            self.config['is_stack'])
+                                            self.n_layers,
+                                            self.is_stack)
 
-            word_cell_bw = self._multi_cell(self.config['hidden_word'],
-                                            tf.constant(self.config['kp_bidi']),
+            word_cell_bw = self._multi_cell(self.h_word,
+                                            tf.constant(self.kp_bidi),
                                             self.is_train,
-                                            self.config['n_layers'],
-                                            self.config['is_stack'])
+                                            self.n_layers,
+                                            self.is_stack)
 
             w_bidi_in = tf.concat([self.word_embed_f, self.pos_embed], -1,
                                         name='word-bidi-in')
 
             # Get lstm cell output
-            if self.config['is_stack']:
+            if self.is_stack:
                 w_bidi_out_c, _, _ = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
                                                 word_cell_fw,
                                                 word_cell_bw,
@@ -144,8 +144,8 @@ class STAGModel(BasicModel):
                 w_bidi_out_c = tf.concat(w_bidi_out , -1, name='word-bidi-out')
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
-            hw_p = self.config['n_layers'] if self.config['is_stack'] else 1
-            self.c_dim += self.config['dim_pos'] + 2**hw_p*self.config['hidden_word']
+            hw_p = self.n_layers if self.is_stack else 1
+            self.c_dim += self.dim_pos + 2**hw_p*self.h_word
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
@@ -167,7 +167,7 @@ class STAGModel(BasicModel):
 
     def _add_attention(self):
         with tf.variable_scope('Attention', initializer=self.initializer):
-            self.dec_in_dim = self.config['hidden_word'] * 2
+            self.dec_in_dim = self.h_word * 2
             do_shape = tf.shape(self.decode_out)
             es_shape = tf.shape(self.encode_state)
             ak_shape = [es_shape[0], -1, self.dec_in_dim]
@@ -190,21 +190,21 @@ class STAGModel(BasicModel):
     def _add_projection(self):
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            proj_in = tf.layers.dense(self.proj_in, self.config['hidden_tag'],
+            proj_in = tf.layers.dense(self.proj_in, self.h_tag,
                                         use_bias=False,
                                         activation=self.activation_fn)
 
             mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
             v = tf.dynamic_partition(proj_in, mask_t, 2)
 
-            self.logits = tf.layers.dense(v[1], self.config['ntags'], use_bias=True)
+            self.logits = tf.layers.dense(v[1], self.ntags, use_bias=True)
             # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
     def _add_loss(self):
 
         with tf.variable_scope("loss"):
-            targets_1hot = tf.one_hot(self.targets, self.config['ntags'])
+            targets_1hot = tf.one_hot(self.targets, self.ntags)
 
             self.loss = tf.losses.softmax_cross_entropy(
                                 logits=self.logits,
@@ -212,16 +212,16 @@ class STAGModel(BasicModel):
                                 reduction=tf.losses.Reduction.MEAN)
 
     def _add_train_op(self):
-        self.lr = tf.Variable(float(self.config['lr']), trainable=False,
+        self.lr = tf.Variable(float(self.learn_rate), trainable=False,
                                 dtype=self.dtype, name='learning_rate')
         self.global_step =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='g_step')
         self.epoch =  tf.Variable(0, trainable=False,
                                         dtype=tf.int32, name='epoch')
 
-        if self.config['grad_clip']:
+        if self.grad_clip:
             gradients, variables = zip(*self.optimizer_fn(self.lr).compute_gradients(self.loss))
-            gradients, _ = tf.clip_by_global_norm(gradients, self.config['grad_norm'])
+            gradients, _ = tf.clip_by_global_norm(gradients, self.grad_norm)
             self.optimizer = self.optimizer_fn(self.lr).apply_gradients(zip(gradients, variables),
                 global_step=self.global_step)
         else:
@@ -230,31 +230,31 @@ class STAGModel(BasicModel):
 
     def build_graph(self):
         with tf.Graph().as_default() as g:
-            with tf.device('/gpu:%d' %self.config['gpu_n']):
-                with tf.variable_scope(self.config['scope_name']):
+            with tf.device('/gpu:%d' %self.gpu_n):
+                with tf.variable_scope(self.scope_name):
                     self._add_placeholders()
                     self._add_embeddings()
-                    if self.config['is_add_elmo']:
+                    if self.is_add_elmo:
                         self._add_elmo()
                         self.word_embed_f = self.word_embed_elmo
-                        self.c_dim = self.config['elmo_dim']
-                    elif not self.config['no_c_embed']:
+                        self.c_dim = self.elmo_dim
+                    elif not self.no_c_embed:
                         self._add_char_lstm()
                         self.word_embed_f = self.word_embed_ch_lstm
-                        self.c_dim = self.config['hidden_char'] + self.config['dim_word']
+                        self.c_dim = self.h_char + self.dim_word
                     else:
                         self.word_embed_f = self.word_embed
-                        self.c_dim = self.config['dim_word']
+                        self.c_dim = self.dim_word
                     self._add_word_bidi_lstm()
                     self._add_tag_lstm_layer()
-                    if self.config['no_attn']:
+                    if self.no_attn:
                         self.proj_in = self.decode_out
                     else:
                         self._add_attention()
                     self._add_projection()
-                    if (self.config['mode'] != 'test'):
+                    if (self.mode != 'test'):
                         self._add_loss()
-                    if (self.config['mode'] == 'train'):
+                    if (self.mode == 'train'):
                         self._add_train_op()
             return g
 
@@ -272,16 +272,15 @@ class STAGModel(BasicModel):
             self.t_in: bv['tag']['in'],
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out'],
-            self.drop_rate: self.config['drop_rate'],
             self.is_train : is_train}
 
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
 
-        if self.config['use_subset']:
-            subset_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, 'train')
-            subset_idx_dev = batcher.get_subset_idx(self.config['subset_file_dev'], 0.1, 'dev')
+        if self.use_subset:
+            subset_idx = batcher.get_subset_idx(self.subset_file, 0.1, 'train')
+            subset_idx_dev = batcher.get_subset_idx(self.subset_file_dev, 0.1, 'dev')
         else:
             subset_idx = None
             subset_idx_dev = None
@@ -298,8 +297,8 @@ class STAGModel(BasicModel):
                 summary_loss, _ = self.step(input_feed, output_feed, True)
                 self.sw.add_summary(summary_loss, current_step)
                 current_step += 1
-                if self.config['steps_per_ckpt']!=0:
-                    if current_step % self.config['steps_per_ckpt'] == 0:
+                if self.steps_per_ckpt!=0:
+                    if current_step % self.steps_per_ckpt == 0:
                         self.save()
                         sys.stdout.flush()
 
@@ -314,7 +313,7 @@ class STAGModel(BasicModel):
             epoch_inc = tf.assign_add(self.epoch, 1)
             current_epoch = self.sess.run(epoch_inc)
 
-            if self.config['steps_per_ckpt']==0:
+            if self.steps_per_ckpt==0:
                 self.save()
                 sys.stdout.flush()
         self.sw.close()
@@ -330,7 +329,6 @@ class STAGModel(BasicModel):
                         self.char_in : enc_bv['char']['in'],
                         self.char_len : enc_bv['char']['len'],
                         self.pos_in: enc_bv['pos']['in'],
-                        self.drop_rate: self.config['drop_rate'],
                         self.is_train : False}
         output_feed = self.encode_state
         return self.sess.run(output_feed, input_feed)
@@ -342,7 +340,6 @@ class STAGModel(BasicModel):
             self.t_in: np.array(latest_tokens),
             self.encode_state : enc_state,
             self.tag_len: np.ones(len(latest_tokens), np.int32),
-            self.drop_rate: self.config['drop_rate'],
             self.is_train : False}
         output_feed = [self.decode_state, self.pred]
         states, probs = self.sess.run(output_feed, input_feed)
@@ -354,17 +351,17 @@ class STAGModel(BasicModel):
         import pickle as dill
         import os
 
-        if not os.path.exists(self.config['decode_dir']):
+        if not os.path.exists(self.decode_dir):
             try:
-                os.makedirs(self.config['decode_dir'])
+                os.makedirs(self.decode_dir)
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
 
         decode_trees = []
 
-        if os.path.exists(self.config['decode_trees_file']):
-            with open(self.config['decode_trees_file'], 'rb') as f:
+        if os.path.exists(self.decode_trees_file):
+            with open(self.decode_trees_file, 'rb') as f:
                 while True:
                     try:
                         decode_trees.append(dill.load(f))
@@ -372,14 +369,14 @@ class STAGModel(BasicModel):
                         break
         s_idx = len(decode_trees)
 
-        # bs = BeamSearch(self.config['ntags'],
-        bs = BeamSearch(self.config['beam_size'],
+        # bs = BeamSearch(self.ntags,
+        bs = BeamSearch(self.beam_size,
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),
-                        self.config['beam_timesteps'])
+                        self.beam_timesteps)
 
-        if self.config['use_subset']:
-            sub_idx = batcher.get_subset_idx(self.config['subset_file'], 0.1, mode)
+        if self.use_subset:
+            sub_idx = batcher.get_subset_idx(self.subset_file, 0.1, mode)
         else:
             sub_idx = None
 
@@ -399,16 +396,16 @@ class STAGModel(BasicModel):
                 if all(tag_score_mat):
                     trees, _ = solve_tree_search(ts_entry, w_entry,
                                             batcher._t_op.no_val_gap,
-                                            self.config['num_goals'],
-                                            self.config['time_out'],
-                                            self.config['time_th'],
-                                            self.config['cost_coeff_rate'])
+                                            self.num_goals,
+                                            self.time_out,
+                                            self.time_th,
+                                            self.cost_coeff_rate)
                 else:
                     trees = []
 
                 decode_trees.append(trees)
 
-            with open(self.config['decode_trees_file'], 'ab') as f:
+            with open(self.decode_trees_file, 'ab') as f:
                 dill.dump(trees, f)
 
         return decode_trees

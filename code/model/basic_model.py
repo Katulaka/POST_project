@@ -19,19 +19,19 @@ class BasicModel(object):
         # if config['debug']: # This is a personal check i like to do
         #     print('config', self.config)
         # self.random_seed = self.config['random_seed']
-        self.config = copy.deepcopy(config)
+        for k,v in vars(config).items():
+            setattr(self, k, v)
 
-        if self.config['mode'] == 'train':
-            self.num_epochs = self.config['num_epochs']
-            if self.config['opt_fn'] == 'adam':
+        if self.mode == 'train':
+            if self.opt_fn == 'adam':
                 self.optimizer_fn = tf.train.AdamOptimizer
-            elif self.config['opt_fn'] == 'adagrad':
+            elif self.opt_fn == 'adagrad':
                 self.optimizer_fn = tf.train.AdagradOptimizer
-            elif self.config['opt_fn'] == 'adadelta':
+            elif self.opt_fn == 'adadelta':
                 self.optimizer_fn = tf.train.AdadeltaOptimizer
-            elif self.config['opt_fn'] == 'rms':
+            elif self.opt_fn == 'rms':
                 self.optimizer_fn = tf.train.RMSPropOptimizer
-            elif self.config['opt_fn'] == 'momentum':
+            elif self.opt_fn == 'momentum':
                 self.optimizer_fn = tf.train.MomentumOptimizer(momentum=0.9)
             else:
                 self.optimizer_fn = tf.train.GradientDescentOptimizer
@@ -42,6 +42,14 @@ class BasicModel(object):
 
         self.graph = self.build_graph()
 
+        if not os.path.exists(self.result_dir):
+            os.makedirs(self.result_dir)
+        self.ckpt_dir = os.path.join(self.result_dir, self.model_name, 'chekpoints')
+        self.sw_dir = os.path.join(self.result_dir, self.model_name, 'summary')
+
+        with open(os.path.join(self.result_dir,self.model_name,'config.json'), 'w') as f:
+            json.dump(vars(config), f)
+
         with self.graph.as_default():
             self.saver = tf.train.Saver(max_to_keep=10)
             self.init_op = tf.global_variables_initializer()
@@ -50,18 +58,20 @@ class BasicModel(object):
         self.sess_config.gpu_options.allow_growth=True
         self.sess = tf.Session(config=self.sess_config, graph=self.graph)
 
-        self.sw = tf.summary.FileWriter(self.config['sw_dir'], self.graph)
+        self.sw = tf.summary.FileWriter(self.sw_dir, self.graph)
 
         self.init()
 
-        total_parameters = 0
-        for variable in self.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
-            shape = variable.get_shape()
-            variable_parameters = 1
-            for dim in shape:
-                variable_parameters *= dim.value
-            total_parameters += variable_parameters
-        print('[[basic_model.init]] There are %d trainable parameters in model' %total_parameters)
+        @staticmethod
+        def number_of_parms():
+            total_parameters = 0
+            for variable in self.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES):
+                shape = variable.get_shape()
+                variable_parameters = 1
+                for dim in shape:
+                    variable_parameters *= dim.value
+                total_parameters += variable_parameters
+            print('There are {} trainable parameters in model'.format(total_parameters))
 
         # def set_agent_props(self):
         # # This function is here to be overriden completely.
@@ -83,14 +93,14 @@ class BasicModel(object):
         # This function is usually common to all your models
         # but making separate than the __init__ function allows it to be overidden cleanly
         # this is an example of such a function
-        checkpoint = tf.train.get_checkpoint_state(self.config['ckpt_dir'])
+        checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
         if checkpoint is None:
-            if self.config['mode'] == 'train':
+            if self.mode == 'train':
                 self.sess.run(self.init_op)
             else:
                 raise ValueError('Model not found to restore.')
         else:
-            print('[[basic_model.init]] Loading model from folder: %s' % self.config['ckpt_dir'])
+            print('[[basic_model.init]] Loading model from folder: %s' % self.ckpt_dir)
             self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
 
 
@@ -107,7 +117,7 @@ class BasicModel(object):
         raise NotImplementedError
 
     def _single_cell(self, nhidden, dropout, is_training):
-        if self.config['layer_norm']:
+        if self.layer_norm:
             _cell_fn = tf.contrib.rnn.LayerNormBasicLSTMCell
         else:
             _cell_fn = tf.contrib.rnn.BasicLSTMCell
@@ -131,23 +141,19 @@ class BasicModel(object):
     def save(self):
     # This function is usually common to all your models, Here is an example:
         global_step = self.sess.run(self.global_step)
-        if not os.path.exists(self.config['ckpt_dir']):
+        if not os.path.exists(self.ckpt_dir):
             try:
-                os.makedirs(os.path.abspath(self.config['ckpt_dir']))
+                os.makedirs(os.path.abspath(self.ckpt_dir))
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
         self.saver.save(self.sess,
-                        os.path.join(self.config['ckpt_dir'], self.config['model_name']),
+                        os.path.join(self.ckpt_dir, self.model_name),
                         global_step)
-
-        # I always keep the configuration that
-        with open(os.path.join(self.config['result_dir'],'config.json'), 'w') as f:
-            json.dump({self.config['mode']: self.config}, f)
 
 
     def freeze_graph(self, output_node_names):
-        if not tf.gfile.Exists(self.config['ckpt_dir']):
+        if not tf.gfile.Exists(self.ckpt_dir):
             raise AssertionError(
                 "Export directory doesn't exists. Please specify an export "
                 "directory: %s" % model_dir)
@@ -157,7 +163,7 @@ class BasicModel(object):
             return -1
 
         # We retrieve our checkpoint fullpath
-        checkpoint = tf.train.get_checkpoint_state(self.config['ckpt_dir'])
+        checkpoint = tf.train.get_checkpoint_state(self.ckpt_dir)
         input_checkpoint = checkpoint.model_checkpoint_path
 
         # We precise the file fullname of our freezed graph
