@@ -121,9 +121,6 @@ class Batcher(object):
         b_idx = np.random.permutation(n_batches) if permute else range(n_batches)
         return [{k: batched[k][i].tolist() for k in d_keys} for i in b_idx]
 
-    def get_batch_size(self):
-        return self._batch_size
-
     def seq_len(self, batch_data):
         return operate_on_Narray(batch_data, len)
 
