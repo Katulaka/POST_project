@@ -89,12 +89,10 @@ class Batcher(object):
             _ds = {}
             for k, v in self._vocab.items():
                 for d_k in sorted(self._data.keys()):
-                    # if int(d_k[:2]) in range(*self._dir_range[mode]):
                     if int(d_k[:2]) in range(*mode_v):
                         _ds.setdefault(k,[]).extend(self._data[d_k][k])
             self._ds.setdefault(mode_k,{}).update(_ds)
             self._d_size.setdefault(mode_k,len(_ds[k]))
-        # self._d_size = len(self._ds[k])
             print ("[[Batcher.create_dataset]] %.3f to create ds %s" %
             (time.clock()-start_time, mode_k))
         return self
@@ -199,8 +197,6 @@ class Batcher(object):
 
     def remove_pad(self, data):
         return list(filter(None, self.remove_len(data)))
-
-
 
     def id_to_unk(self, _id, vocab):
         rnd_val = np.random.random()
