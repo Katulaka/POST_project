@@ -98,26 +98,28 @@ class Batcher(object):
                                                     time.clock()-start_time, k))
         return self
 
-    def get_batch(self, mode, permute=False, subset_idx=None):
+    def get_batch(self, mode, permute=False):
 
+        _d_size = len(self._data[mode]['gold'])
         if self._use_subset:
             precentage = 0.1
-            _d_size = len(self._data[mode]['gold'])
             skip_size = int(np.ceil(1/precentage))
-            subset_idx = range(_d_size)[0::skip_size]
-
-        use_all = subset_idx is None
-        _d_size = len(self._data[mode]['gold']) if use_all else len(subset_idx)
+            sub_idx = range(_d_size)[0::skip_size]
+            _d_size = len(sub_idx)
 
         n_batches = int(np.ceil(float(_d_size)/self._batch_size))
-        batch_idx = np.random.permutation(n_batches) if permute else range(n_batches)
 
         batched = {}
-        for k in self._vocab.keys():
-            data = self._data[mode][k] if use_all else np.array(self._data[mode][k])[subset_idx].tolist()
+
+        d_keys = list(self._data[mode].keys())
+        d_keys.remove('gold')
+        for k in d_keys:
+            v = self._data[mode][k]
+            data = np.array(v)[sub_idx].tolist(v) if self._use_subset else v
             batched.setdefault(k, np.array_split(data, n_batches))
 
-        return [{k: batched[k][i].tolist() for k in self._vocab.keys()} for i in batch_idx]
+        b_idx = np.random.permutation(n_batches) if permute else range(n_batches)
+        return [{k: batched[k][i].tolist() for k in d_keys} for i in b_idx]
 
     def get_batch_size(self):
         return self._batch_size
