@@ -14,18 +14,29 @@ class TagOp(object):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
-    def _mod_tag(self, tag, l_sym, r_sym):
-        return tag.replace(L, l_sym+L+r_sym).replace(R, l_sym+R+r_sym)
+    # def _mod_tag(self, tag, l_sym, r_sym):
+    #     return tag.replace(L, l_sym+L+r_sym).replace(R, l_sym+R+r_sym)
+    #
+    # def _tag_split(self, tag):
+    #     return self._mod_tag(tag, UP, '').split(UP)
+    #
+    # def _slash_split(self, tag):
+    #     return self._mod_tag(tag, UP, UP).split(UP)
 
-    def _tag_split(self, tag):
-        return self._mod_tag(tag, UP, '').split(UP)
+    # def add_right(self, tag):
+    #     return R + tag
 
-    def _slash_split(self, tag):
-        return self._mod_tag(tag, UP, UP).split(UP)
+    # def add_left(self, tag):
+    #     return L + tag
+
+    # def _get_pos(self, tag):
+    #     return tag[-1]
+    #
+    # def get_pos(self, tags):
+    #     return operate_on_Narray(tags, self._get_pos)
+
 
     def _reverse(self, tag):
-
-        # return tag[::-1]
 
         _tag = []
         sub_tag = []
@@ -60,15 +71,8 @@ class TagOp(object):
             tag = self._remove_val_gap(tag)
         return tag
 
-
     def modify_fn(self, tags):
         return operate_on_Narray(tags, self.modify_tag)
-
-    def _get_pos(self, tag):
-        return tag[-1]
-
-    def get_pos(self, tags):
-        return operate_on_Narray(tags, self._get_pos)
 
     def combine_tag(self, tag):
         res = []
@@ -90,9 +94,3 @@ class TagOp(object):
 
     def combine_fn(self, tags):
         return operate_on_Narray(tags, self.combine_tag)
-
-    def add_right(self, tag):
-        return R + tag
-
-    def add_left(self, tag):
-        return L + tag
