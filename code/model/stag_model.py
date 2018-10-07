@@ -8,7 +8,6 @@ import tensorflow_hub as hub
 
 from .basic_model import BasicModel
 from beam.search import BeamSearch
-
 from astar.search import solve_tree_search
 
 
@@ -73,7 +72,7 @@ class STAGModel(BasicModel):
                                                     training = self.is_train,
                                                     name='word-embed-dropout')
 
-            t_mat_shape = [self.ntags, self.dim_tag]
+            t_mat_shape = [self.nlabels, self.dim_label]
             t_embed_mat = tf.get_variable('tag-embed-mat', shape=t_mat_shape)
             tag_embed = tf.nn.embedding_lookup(t_embed_mat, self.t_in,
                                                     name='tag-embed')
@@ -81,7 +80,7 @@ class STAGModel(BasicModel):
                                                     training = self.is_train,
                                                     name='tag-embed-dropout')
 
-            pos_mat_shape = [self.npos, self.dim_pos]
+            pos_mat_shape = [self.ntags, self.dim_tag]
             pos_embed_mat = tf.get_variable('pos-embed-mat', shape=pos_mat_shape)
             pos_embed = tf.nn.embedding_lookup(pos_embed_mat, self.pos_in,
                                                     name='pos-embed')
@@ -145,7 +144,7 @@ class STAGModel(BasicModel):
 
             self.encode_state = tf.concat([w_bidi_in, w_bidi_out_c], -1)
             hw_p = self.n_layers if self.is_stack else 1
-            self.c_dim += self.dim_pos + 2**hw_p*self.h_word
+            self.c_dim += self.dim_tag + 2**hw_p*self.h_word
 
     def _add_tag_lstm_layer(self):
         """Generate sequences of tags"""
@@ -190,21 +189,21 @@ class STAGModel(BasicModel):
     def _add_projection(self):
         with tf.variable_scope('predictions', initializer=self.initializer, dtype=self.dtype):
 
-            proj_in = tf.layers.dense(self.proj_in, self.h_tag,
+            proj_in = tf.layers.dense(self.proj_in, self.h_label,
                                         use_bias=False,
                                         activation=self.activation_fn)
 
             mask_t = tf.sequence_mask(self.tag_len, dtype=tf.int32)
             v = tf.dynamic_partition(proj_in, mask_t, 2)
 
-            self.logits = tf.layers.dense(v[1], self.ntags, use_bias=True)
+            self.logits = tf.layers.dense(v[1], self.nlabels, use_bias=True)
             # compute softmax
             self.pred = tf.nn.softmax(self.logits, name='pred')
 
     def _add_loss(self):
 
         with tf.variable_scope("loss"):
-            targets_1hot = tf.one_hot(self.targets, self.ntags)
+            targets_1hot = tf.one_hot(self.targets, self.nlabels)
 
             self.loss = tf.losses.softmax_cross_entropy(
                                 logits=self.logits,
@@ -280,7 +279,6 @@ class STAGModel(BasicModel):
 
         # Create a summary to monitor loss tensor
         t_loss = tf.summary.scalar("loss", self.loss)
-
         current_epoch = self.sess.run(self.epoch)
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
@@ -363,7 +361,7 @@ class STAGModel(BasicModel):
                         break
         s_idx = len(decode_trees)
 
-        # bs = BeamSearch(self.ntags,
+        # bs = BeamSearch(self.nlabels,
         bs = BeamSearch(self.beam_size,
                         batcher._vocab['tags'].token_to_id('GO'),
                         batcher._vocab['tags'].token_to_id('EOS'),

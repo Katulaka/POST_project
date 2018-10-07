@@ -42,8 +42,9 @@ class BasicModel(object):
 
         self.graph = self.build_graph()
 
-        if not os.path.exists(self.result_dir):
-            os.makedirs(self.result_dir)
+        if not os.path.exists(os.path.join(self.result_dir,self.model_name)):
+            os.makedirs(os.path.join(self.result_dir,self.model_name))
+
         self.ckpt_dir = os.path.join(self.result_dir, self.model_name, 'chekpoints')
         self.sw_dir = os.path.join(self.result_dir, self.model_name, 'summary')
 

@@ -11,7 +11,7 @@ def load_batcher(args):
     import time
     start_time = time.clock()
     parms = {}
-    parms['data_file'] = '../data/all.processed'
+    parms['data_file'] = 'data/all1.processed'
 
     parms['d_files'] = {'train': args.train_path,
                         'dev': args.dev_path,
@@ -45,7 +45,6 @@ def load_batcher(args):
 
 def run_train(args):
     batcher = load_batcher(args)
-
     model = STAGModel(args)
     model.train(batcher)
 

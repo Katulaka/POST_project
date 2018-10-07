@@ -7,3 +7,5 @@ rf_code/batcher
 misc/
 results/
 code/checkpoints
+batcher
+data
