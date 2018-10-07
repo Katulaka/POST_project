@@ -11,7 +11,7 @@ def load_batcher(args):
     import time
     start_time = time.clock()
     parms = {}
-    parms['data_file'] = 'data/all1.processed'
+    parms['data_file'] = 'data/new.processed'
 
     parms['d_files'] = {'train': args.train_path,
                         'dev': args.dev_path,
@@ -34,7 +34,7 @@ def load_batcher(args):
         with open(batch_file, 'rb') as input:
             batcher = pickle.load(input)
     current_parms = {'batch_size': args.batch_size,
-                    'use_subset': args.use_subset}
+                        'precentage': args.precentage}
     batcher(**current_parms)
     print ("{:.3f} to get batcher".format(time.clock()-start_time))
 

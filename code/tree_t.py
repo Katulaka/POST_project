@@ -242,7 +242,7 @@ class TreeT(object):
 def trees_to_ptb(trees):
     return _getattr_operate_on_Narray(trees, 'from_tree_to_ptb')
 
-def get_dependancies(fin, penn_path='pennconverter.jar'):
+def get_dependancies(fin, penn_path='code/pennconverter.jar'):
 
     dep_dict_file = []
     dep_dict_tree = {}
@@ -312,3 +312,14 @@ def combine_trees(tree_lst, miss_tag_any, r_dst_l_src):
     miss_tag = ANY if miss_tag_any else t_src.root_tag
     leaves = t_dst.get_missing_leaves_to(miss_tag, miss_side)
     return [t_dst_cp.combine_tree(t_src, leaves[-1])]
+
+class Parse(object):
+    def __init__(self, gold, dep):
+        self.gold = gold.strip('\n')
+        tup_words, tup_tags = zip(*Tree_.fromstring(self.gold).pos())
+        self.words = list(tup_words)
+        self.tags = list(tup_tags)
+        self.chars = [list(w) for w in tup_words]
+        line = self.gold.replace('(', ' ( ').replace(')', ' ) ').split()
+        max_id = len(self.tags) + 1
+        self.labels = TreeT().from_ptb_to_tag(line, max_id, dep)

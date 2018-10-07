@@ -100,8 +100,7 @@ class STAGModel(BasicModel):
                                             dtype=self.dtype,
                                             scope='char-lstm')
 
-            we_shape = tf.shape(self.word_embed)
-            co_shape = [we_shape[0], we_shape[1], self.h_char]
+            co_shape = [self.batch_size, -1, self.h_char]
             char_out_reshape = tf.reshape(ch_state[1], co_shape)
 
             self.word_embed_ch_lstm = tf.concat([self.word_embed, char_out_reshape],
@@ -272,7 +271,6 @@ class STAGModel(BasicModel):
             self.tag_len: bv['tag']['len'],
             self.targets: bv['tag']['out'],
             self.is_train : is_train}
-
         return self.sess.run(output_feed, input_feed)
 
     def train(self, batcher):
@@ -283,9 +281,10 @@ class STAGModel(BasicModel):
         for epoch_id in range(self.num_epochs):
             current_step = self.sess.run(self.global_step)
             loss = []
-            for bv in batcher.get_batch(mode='train', permute=True):
+            for bv in batcher.get_batch(mode='train', shuffle=True):
                 input_feed = batcher.process(bv)
                 output_feed = [t_loss, self.optimizer]
+                print('running train')
                 summary_loss, _ = self.step(input_feed, output_feed, True)
                 self.sw.add_summary(summary_loss, current_step)
                 current_step += 1
