@@ -101,7 +101,7 @@ class STAGModel(BasicModel):
                                             scope='char-lstm')
 
             # char_out_shape = [self.batch_size, -1, self.h_char]
-            char_out_shape = [tf.shape(self.tag_embed)[0], -1, self.h_char]
+            char_out_shape = [tf.shape(self.word_embed)[0], -1, self.h_char]
             char_out_reshape = tf.reshape(ch_state[1], char_out_shape)
 
             self.word_embed_ch_lstm = tf.concat([self.word_embed, char_out_reshape],
