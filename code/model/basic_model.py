@@ -126,8 +126,6 @@ class BasicModel(object):
         keep_prob = tf.cond(is_training, lambda:dropout, lambda:tf.constant(1.0))
         _cell = tf.contrib.rnn.DropoutWrapper(_cell,
                             output_keep_prob=keep_prob)
-
-                            # variational_recurrent=True)
         return _cell
 
     def _multi_cell(self, nhidden, dropout, is_training, n_layers, is_stack):
